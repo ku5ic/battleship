@@ -10,7 +10,11 @@ interface CellProps {
   tabIndex?: number;
 }
 
-function buildAriaLabel(coord: CoordinateKey, status: CellStatus): string {
+function buildAriaLabel(
+  coord: CoordinateKey,
+  status: CellStatus,
+  isFireable: boolean,
+): string {
   const [col, row] = coord.split(",").map(Number) as [number, number];
   const colLabel = COLUMN_LABELS[col];
   const rowLabel = String(row + 1);
@@ -21,7 +25,10 @@ function buildAriaLabel(coord: CoordinateKey, status: CellStatus): string {
     miss: "miss",
   };
 
-  return `${colLabel}${rowLabel}, ${statusLabel[status]}`;
+  const base = `${colLabel}${rowLabel}, ${statusLabel[status]}`;
+  // Append a brief activation hint only for fireable cells — this supplements
+  // the board-level instruction without duplicating it on every already-fired cell.
+  return isFireable ? `${base}. Press Space to fire` : base;
 }
 
 export function Cell({
@@ -33,6 +40,7 @@ export function Cell({
 }: CellProps) {
   const isFired = status !== "untouched";
   const isDisabled = isFired || disabled;
+  const isFireable = !isDisabled;
 
   return (
     <button
@@ -40,7 +48,7 @@ export function Cell({
       data-coord={coord}
       disabled={isDisabled}
       tabIndex={isDisabled ? undefined : tabIndex}
-      aria-label={buildAriaLabel(coord, status)}
+      aria-label={buildAriaLabel(coord, status, isFireable)}
       onClick={() => {
         onFire(coord);
       }}
@@ -48,8 +56,10 @@ export function Cell({
         "relative flex items-center justify-center",
         "w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10",
         "border border-slate-600",
+        // Focus ring: yellow to stand out against the dark board at any state.
+        // ring-offset-2 gives a small gap so the ring doesn't blend with neighbors.
         "focus-visible:outline-none focus-visible:ring-2",
-        "focus-visible:ring-yellow-400 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-900",
+        "focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
         "focus-visible:z-10",
         status === "untouched" &&
           !disabled &&
