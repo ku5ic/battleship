@@ -1,12 +1,9 @@
 import { useRef, useState } from "react";
-import { cn } from "../../lib/cn";
-import { BOARD_SIZE, COLUMN_LABELS } from "../../features/battleship/constants";
-import type {
-  CellStatus,
-  CoordinateKey,
-} from "../../features/battleship/types";
-import { allBoardKeys } from "../../features/battleship/utils/coordinates";
-import { Cell } from "./Cell";
+import { cn } from "@/lib/cn";
+import { BOARD_SIZE, COLUMN_LABELS } from "@/features/battleship/constants";
+import type { CellStatus, CoordinateKey } from "@/features/battleship/types";
+import { allBoardKeys } from "@/features/battleship/utils/coordinates";
+import { Cell } from "@/components/board/Cell";
 
 interface BoardProps {
   shots: ReadonlyMap<CoordinateKey, CellStatus>;

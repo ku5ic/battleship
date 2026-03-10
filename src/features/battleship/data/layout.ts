@@ -3,8 +3,12 @@ import {
   deriveOrientation,
   isInBounds,
   fromKey,
-} from "../utils/coordinates";
-import type { RawGameConfig, Ship, CoordinateKey } from "../types";
+} from "@/features/battleship/utils/coordinates";
+import type {
+  RawGameConfig,
+  Ship,
+  CoordinateKey,
+} from "@/features/battleship/types";
 
 /**
  * Parses and validates the raw layout config into typed Ship records.

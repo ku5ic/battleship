@@ -1,5 +1,10 @@
-import type { CellStatus, CoordinateKey, Ship, ShipType } from "../types";
-import { ShipStatusItem } from "./ShipStatusItem";
+import type {
+  CellStatus,
+  CoordinateKey,
+  Ship,
+  ShipType,
+} from "@/features/battleship/types";
+import { ShipStatusItem } from "@/features/battleship/components/ShipStatusItem";
 
 interface ShipStatusListProps {
   ships: readonly Ship[];

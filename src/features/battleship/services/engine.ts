@@ -5,7 +5,7 @@ import type {
   CellStatus,
   ShotOutcome,
   ShotResult,
-} from "../types";
+} from "@/features/battleship/types";
 
 // ---------------------------------------------------------------------------
 // Position index

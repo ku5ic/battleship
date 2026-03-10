@@ -1,4 +1,4 @@
-import { BattleshipGame } from "../components/game";
+import { BattleshipGame } from "@/components/game";
 
 export function App() {
   return (

@@ -1,11 +1,11 @@
-import { Board } from "../board";
+import { Board } from "@/components/board";
 import {
   GameStatus,
   ShipStatusList,
   ShotResultAnnouncer,
-} from "../../features/battleship/components";
-import { useBattleshipGame } from "../../features/battleship/hooks/useBattleshipGame";
-import type { CoordinateKey } from "../../features/battleship/types";
+} from "@/features/battleship/components";
+import { useBattleshipGame } from "@/features/battleship/hooks/useBattleshipGame";
+import type { CoordinateKey } from "@/features/battleship/types";
 
 /**
  * Wires the game hook to the presentational layer.

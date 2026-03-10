@@ -1,20 +1,20 @@
 import { useCallback, useMemo, useReducer } from "react";
-import { RAW_GAME_CONFIG } from "../data/config";
-import { parseLayout } from "../data/layout";
+import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
+import { parseLayout } from "@/features/battleship/data/layout";
 import {
   buildPositionIndex,
   isGameOver,
   outcomeToStatus,
   resolveShot,
-} from "../services/engine";
+} from "@/features/battleship/services/engine";
 import type {
   CellStatus,
   CoordinateKey,
   GameState,
   ShipType,
   ShotResult,
-} from "../types";
-import { toKey } from "../utils/coordinates";
+} from "@/features/battleship/types";
+import { toKey } from "@/features/battleship/utils/coordinates";
 
 // ---------------------------------------------------------------------------
 // Ships are static — parse and index once outside the hook so neither

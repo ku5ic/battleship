@@ -1,5 +1,8 @@
-import { SHIP_DISPLAY_NAMES, SHOT_OUTCOME_LABELS } from "../constants";
-import type { ShotResult } from "../types";
+import {
+  SHIP_DISPLAY_NAMES,
+  SHOT_OUTCOME_LABELS,
+} from "@/features/battleship/constants";
+import type { ShotResult } from "@/features/battleship/types";
 
 interface ShotResultAnnouncerProps {
   result: ShotResult | null;

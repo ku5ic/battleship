@@ -1,4 +1,4 @@
-import type { ShipType } from "../types";
+import type { ShipType } from "@/features/battleship/types";
 
 export const BOARD_SIZE = 10 as const;
 

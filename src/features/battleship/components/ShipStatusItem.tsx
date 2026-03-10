@@ -1,6 +1,6 @@
-import { cn } from "../../../lib/cn";
-import { SHIP_DISPLAY_NAMES } from "../constants";
-import type { ShipType } from "../types";
+import { cn } from "@/lib/cn";
+import { SHIP_DISPLAY_NAMES } from "@/features/battleship/constants";
+import type { ShipType } from "@/features/battleship/types";
 
 export interface ShipStatusItemProps {
   id: ShipType;

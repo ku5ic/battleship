@@ -1,5 +1,9 @@
-import { BOARD_SIZE } from "../constants";
-import type { Coordinate, CoordinateKey, RawCoordinate } from "../types";
+import { BOARD_SIZE } from "@/features/battleship/constants";
+import type {
+  Coordinate,
+  CoordinateKey,
+  RawCoordinate,
+} from "@/features/battleship/types";
 
 /**
  * Converts a [col, row] tuple from the raw layout data into the canonical

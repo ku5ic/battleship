@@ -1,4 +1,4 @@
-import type { RawGameConfig } from "../types";
+import type { RawGameConfig } from "@/features/battleship/types";
 
 /**
  * The canonical ship layout provided by the assignment.

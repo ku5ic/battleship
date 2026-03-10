@@ -1,6 +1,6 @@
-import { parseLayout } from "./layout";
-import { RAW_GAME_CONFIG } from "./config";
-import type { Ship } from "../types";
+import { parseLayout } from "@/features/battleship/data/layout";
+import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
+import type { Ship } from "@/features/battleship/types";
 
 /**
  * Parsed and validated ship layout. Computed once at module load time.
