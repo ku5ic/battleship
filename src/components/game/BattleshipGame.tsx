@@ -1,0 +1,55 @@
+import { Board } from "../board";
+import {
+  GameStatus,
+  ShipStatusList,
+  ShotResultAnnouncer,
+} from "../../features/battleship/components";
+import { useBattleshipGame } from "../../features/battleship/hooks/useBattleshipGame";
+import type { CoordinateKey } from "../../features/battleship/types";
+
+/**
+ * Wires the game hook to the presentational layer.
+ *
+ * This is the only component that calls useBattleshipGame. Everything below
+ * it receives plain props and emits callbacks — no child is aware the hook
+ * exists.
+ */
+export function BattleshipGame() {
+  const {
+    ships,
+    shots,
+    sunkShipIds,
+    isGameOver,
+    lastResult,
+    fireShot,
+    resetGame,
+  } = useBattleshipGame();
+
+  function handleFire(coord: CoordinateKey) {
+    const [col, row] = coord.split(",").map(Number) as [number, number];
+    fireShot(col, row);
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-6 w-full max-w-2xl mx-auto">
+      <h1 className="text-xl font-semibold tracking-wide text-slate-100">
+        Battleship
+      </h1>
+
+      <ShotResultAnnouncer result={lastResult} />
+      <GameStatus isGameOver={isGameOver} shotCount={shots.size} />
+      <Board shots={shots} onFire={handleFire} isGameOver={isGameOver} />
+      <ShipStatusList ships={ships} shots={shots} sunkShipIds={sunkShipIds} />
+
+      {isGameOver && (
+        <button
+          type="button"
+          onClick={resetGame}
+          className="mt-2 px-4 py-2 text-sm font-medium rounded border border-slate-500 text-slate-300 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+        >
+          Play again
+        </button>
+      )}
+    </div>
+  );
+}
