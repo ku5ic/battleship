@@ -31,7 +31,7 @@ export function BattleshipGame() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-2xl mx-auto">
+    <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-3xl mx-auto">
       <h1 className="text-xl font-semibold tracking-wide text-slate-100">
         Battleship
       </h1>
@@ -45,14 +45,29 @@ export function BattleshipGame() {
       */}
       <ShotResultAnnouncer result={lastResult} />
       <GameStatus isGameOver={isGameOver} shotCount={shots.size} />
-      <Board shots={shots} onFire={handleFire} isGameOver={isGameOver} />
-      <ShipStatusList ships={ships} shots={shots} sunkShipIds={sunkShipIds} />
+
+      {/*
+        On large screens the board and fleet panel sit side-by-side, with the
+        fleet aligned to the top of the board. On smaller screens they stack
+        vertically, with the fleet centered below the board.
+      */}
+      <div className="flex flex-col items-center gap-4 sm:gap-6 lg:flex-row lg:items-start lg:gap-8">
+        <Board shots={shots} onFire={handleFire} isGameOver={isGameOver} />
+
+        <div className="w-full max-w-xs lg:w-48 lg:shrink-0">
+          <ShipStatusList
+            ships={ships}
+            shots={shots}
+            sunkShipIds={sunkShipIds}
+          />
+        </div>
+      </div>
 
       {isGameOver && (
         <button
           type="button"
           onClick={resetGame}
-          className="mt-2 px-4 py-2 text-sm font-medium rounded border border-slate-500 text-slate-300 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          className="px-4 py-2 text-sm font-medium rounded border border-slate-500 text-slate-300 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
         >
           Play again
         </button>
