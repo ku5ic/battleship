@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { BOARD_SIZE, COLUMN_LABELS } from "@/features/battleship/constants";
 import type { CellStatus, CoordinateKey } from "@/features/battleship/types";
@@ -33,9 +33,7 @@ const ARROW_DELTAS: Partial<Record<string, [number, number]>> = {
  * breaking the page layout.
  */
 export function Board({ shots, onFire, isGameOver }: BoardProps) {
-  const [focusedCoord, setFocusedCoord] = useState<CoordinateKey>(
-    "0,0" as CoordinateKey,
-  );
+  const [focusedCoord, setFocusedCoord] = useState<CoordinateKey>("0,0");
   const boardRef = useRef<HTMLDivElement>(null);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
@@ -60,7 +58,38 @@ export function Board({ shots, onFire, isGameOver }: BoardProps) {
       ?.focus();
   }
 
-  const rows = groupByRow(allBoardKeys());
+  // ALL_KEYS is stable — allBoardKeys() is pure and always returns the same
+  // 100 keys, so memoising with [] avoids recreating the array on every render.
+  const ALL_KEYS = useMemo(() => allBoardKeys(), []);
+
+  /**
+   * Fires the shot then immediately advances keyboard focus to the next unfired
+   * cell in row-major order. `shots` hasn't updated yet at call time, so `fired`
+   * is excluded manually when searching for the next target.
+   *
+   * requestAnimationFrame defers the focus call until after React has flushed
+   * the render that marks the fired cell as disabled. Without this, the browser
+   * may focus a button that is about to become disabled and silently drop focus.
+   */
+  function handleCellFire(fired: CoordinateKey) {
+    onFire(fired);
+
+    const firedIndex = ALL_KEYS.indexOf(fired);
+    const next =
+      ALL_KEYS.slice(firedIndex + 1).find((k) => !shots.has(k)) ??
+      ALL_KEYS.slice(0, firedIndex).find((k) => !shots.has(k));
+
+    if (!next) return; // every cell is now fired — game over
+
+    setFocusedCoord(next);
+    requestAnimationFrame(() => {
+      boardRef.current
+        ?.querySelector<HTMLElement>(`[data-coord="${next}"]`)
+        ?.focus();
+    });
+  }
+
+  const rows = groupByRow(ALL_KEYS);
 
   return (
     // Horizontal scroll container — keeps the board usable on narrow screens
@@ -80,7 +109,7 @@ export function Board({ shots, onFire, isGameOver }: BoardProps) {
       >
         {/* Column headers — decorative; cell aria-labels encode position */}
         <div role="row" className="flex pl-6 sm:pl-8 mb-0.5" aria-hidden="true">
-          {COLUMN_LABELS.map((label: string) => (
+          {COLUMN_LABELS.map((label) => (
             <div
               key={label}
               className={cn(
@@ -116,7 +145,7 @@ export function Board({ shots, onFire, isGameOver }: BoardProps) {
                 <Cell
                   coord={coord}
                   status={shots.get(coord) ?? "untouched"}
-                  onFire={onFire}
+                  onFire={handleCellFire}
                   disabled={isGameOver}
                   tabIndex={coord === focusedCoord ? 0 : -1}
                 />
