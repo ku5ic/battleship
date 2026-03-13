@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useReducer } from "react";
-import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
-import { parseLayout } from "@/features/battleship/data/layout";
+import { SHIPS } from "@/features/battleship/data";
 import {
   buildPositionIndex,
   isGameOver,
@@ -22,7 +21,6 @@ import { toKey } from "@/features/battleship/utils/coordinates";
 // changes during a session.
 // ---------------------------------------------------------------------------
 
-const SHIPS = parseLayout(RAW_GAME_CONFIG);
 const POSITION_INDEX = buildPositionIndex(SHIPS);
 
 // ---------------------------------------------------------------------------
