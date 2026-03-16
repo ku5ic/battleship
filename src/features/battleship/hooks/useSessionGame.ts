@@ -9,7 +9,8 @@ import {
   applyShotToBoard,
 } from "@/features/battleship/services/engine";
 
-const COMPUTER_POSITION_INDEX = buildPositionIndex();
+const COMPUTER_POSITION_INDEX = buildPositionIndex(SHIPS);
+const PLAYER_POSITION_INDEX = buildPositionIndex(SHIPS);
 
 // ---------------------------------------------------------------------------
 // Session action union
@@ -79,6 +80,26 @@ function reducer(state: SessionState, action: SessionAction): SessionState {
         // AI thinking begins only if the turn switched to the computer.
         isAiThinking:
           result.outcome === "miss" && !nextComputerBoard.isGameOver,
+      };
+    }
+    case "COMPUTER_FIRE": {
+      // Guard: ignore if it's not the computer's turn or the session is already over.
+      if (state.activeTurn !== "computer" || state.winner !== null) {
+        return state;
+      }
+
+      const { board: nextPlayerBoard, result } = applyShotToBoard(
+        action.coordinate,
+        state.board.player,
+        PLAYER_POSITION_INDEX,
+      );
+
+      return {
+        ...state,
+        board: { ...state.board, player: nextPlayerBoard },
+        activeTurn: result.outcome === "miss" ? "player" : "computer",
+        winner: nextPlayerBoard.isGameOver ? "computer" : null,
+        isAiThinking: result.outcome !== "miss" && !nextPlayerBoard.isGameOver,
       };
     }
     case "RESET": {
