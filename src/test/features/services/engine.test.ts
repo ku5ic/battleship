@@ -68,7 +68,6 @@ function shotsMap(
 
 describe("buildPositionIndex", () => {
   it("maps every ship coordinate to its ship", () => {
-    const index = buildPositionIndex(fleet);
     expect(index.get("0,0")).toBe(destroyer);
     expect(index.get("1,0")).toBe(destroyer);
     expect(index.get("3,0")).toBe(submarine);
@@ -78,12 +77,10 @@ describe("buildPositionIndex", () => {
   });
 
   it("returns undefined for an empty cell", () => {
-    const index = buildPositionIndex(fleet);
     expect(index.get("9,9" as CoordinateKey)).toBeUndefined();
   });
 
   it("contains exactly as many entries as total ship cells", () => {
-    const index = buildPositionIndex(fleet);
     const expectedSize = fleet.reduce((sum, s) => sum + s.size, 0);
     expect(index.size).toBe(expectedSize);
   });
@@ -98,8 +95,6 @@ describe("buildPositionIndex", () => {
 // ---------------------------------------------------------------------------
 
 describe("resolveShot", () => {
-  const index = buildPositionIndex(fleet);
-
   it("returns 'miss' for an empty cell", () => {
     const result = resolveShot("9,9", new Map(), index);
     expect(result.outcome).toBe("miss");
