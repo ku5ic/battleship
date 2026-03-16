@@ -88,16 +88,19 @@ export interface GameState {
 // and existing single-board hook remain untouched.
 // ---------------------------------------------------------------------------
 
-export type PlayerId = "player" | "opponent";
+export type PlayerId = "player" | "computer";
 
 /** One player's board as seen by their opponent. Structurally identical to GameState. */
 export type BoardState = GameState;
 
+export interface SessionBoards {
+  player: BoardState;
+  computer: BoardState;
+}
+
 export interface SessionState {
-  /** Whose turn it is to fire. */
-  activePlayer: PlayerId;
-  /** The board being shot at by the "player". Opponent's ships, player's shots. */
-  playerBoard: BoardState;
-  /** The board being shot at by the "opponent". Player's ships, opponent's shots. */
-  opponentBoard: BoardState;
+  board: SessionBoards;
+  activeTurn: PlayerId;
+  winner: PlayerId | null;
+  isAiThinking: boolean;
 }
