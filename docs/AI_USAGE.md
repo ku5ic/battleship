@@ -14,156 +14,190 @@ AI was treated as a fast-drafting tool, not an authority. No generated output wa
 
 ### Project scaffolding
 
-AI was used to generate the initial Vite + React + TypeScript project structure, including the `tsconfig.json` strict mode configuration, the ESLint flat config (`eslint.config.js`) with `typescript-eslint`, `eslint-plugin-jsx-a11y`, and `eslint-plugin-react-hooks`, and the Prettier configuration. These are largely mechanical to produce and well-understood in structure.
+AI was used to generate the initial Vite + React + TypeScript project structure, including the `tsconfig.json` strict mode configuration, the ESLint flat config (`eslint.config.js`) with `typescript-eslint`, `eslint-plugin-jsx-a11y`, and `eslint-plugin-react-hooks`, and the Prettier configuration.
 
-**What was reviewed:** Every config file was read and checked against the actual needs of the project. Several ESLint rules were adjusted (strictness on `no-explicit-any`, enabling `react/self-closing-comp`) after evaluating the generated defaults.
-
-**Example prompt used:**
-
-> Set up ESLint flat config for a Vite React TypeScript project. Include typescript-eslint strict, jsx-a11y, react-hooks, and prettier compat. Show the full eslint.config.js.
+**What was reviewed:** Every config file was read and checked against the actual needs of the project. Several ESLint rules were adjusted after evaluating the generated defaults.
 
 ---
 
 ### Domain type definitions (`src/features/battleship/types/index.ts`)
 
-AI was used to produce an initial draft of the type file. The prompt described the domain clearly: ships, coordinates, shot outcomes, game state. The draft included most of the right types but used a looser `string` type for coordinate keys.
+AI was used to produce an initial draft of the type file.
 
 **What was changed:**
 
-- `CoordinateKey` was strengthened to a template literal type (`\`${number},${number}\``) — the generated draft used plain `string`, which would allow any string to be used as a key without a cast.
-- The `GameState` interface was restructured so `shots` uses `ReadonlyMap` and `sunkShipIds` uses `ReadonlySet`. The draft used mutable `Map` and `Set`.
-- `ShotResult.sunkShipId` was made optional (`?`) and typed as `ShipType` rather than `string`. The draft had it as a required `string`.
+- `CoordinateKey` was strengthened to a template literal type — the draft used plain `string`.
+- `GameState` was restructured to use `ReadonlyMap` and `ReadonlySet`. The draft used mutable variants.
+- `ShotResult.sunkShipId` was made optional and typed as `ShipType` rather than `string`.
+- `BoardState`, `PlayerId`, `SessionBoards`, and `SessionState` were added in a later session to support the two-board session model. The draft of `SessionState` initially included callbacks (`playerFireShot`, `reset`) which were moved to the hook return interface instead — state types should describe data, not actions.
 
 ---
 
 ### Coordinate utilities (`src/features/battleship/utils/coordinates.ts`)
 
-AI drafted `toKey`, `fromKey`, `rawToKey`, `isInBounds`, and `deriveOrientation`. The logic in each was straightforward enough to verify at a glance.
+AI drafted `toKey`, `fromKey`, `rawToKey`, `isInBounds`, and `deriveOrientation`.
 
 **What was added (not generated):**
 
-- `allBoardKeys()` — the draft did not include a board enumeration utility. It was added after recognising that both the `Board` component and tests needed a stable, pure source of all 100 keys in row-major order.
-
-**What was reviewed:** The `deriveOrientation` implementation was checked for the single-coordinate edge case and confirmed to default to `"horizontal"` correctly.
+- `allBoardKeys()` — needed by both the `Board` component and `chooseRandomUnfiredCoordinate`. The draft did not include it.
 
 ---
 
 ### Layout parser (`src/features/battleship/data/layout.ts`)
 
-AI was used to draft `parseLayout` with validation. The initial draft validated position count and bounds but was missing overlap detection and the contiguity check.
+AI drafted `parseLayout` with validation. The initial draft validated position count and bounds but was missing overlap detection and the contiguity check.
 
 **What was added:**
 
 - Overlap detection using a shared `Set<CoordinateKey>` across all ships.
-- `assertAligned()` — the draft had no check for diagonal or non-contiguous placement. This was written from scratch after identifying it as a required domain invariant.
+- `assertAligned()` — written from scratch after identifying diagonal and non-contiguous placement as domain invariants the draft missed.
 
 **What was changed:**
 
-- Error messages were rewritten to be specific and testable (e.g., referencing the ship name, the exact position, and the constraint violated). The generated messages were generic.
-- The function was restructured so the `occupied` set is populated only after all validations pass for a given ship, not before. The draft's ordering would have caused false overlap errors.
+- Error messages were rewritten to be specific and testable.
+- The function was restructured so the `occupied` set is populated only after all validations pass for a given ship. The draft's ordering caused false overlap errors.
 
 ---
 
 ### Game engine (`src/features/battleship/services/engine.ts`)
 
-AI was used to draft `buildPositionIndex`, `resolveShot`, `isShipSunk`, `isGameOver`, and `outcomeToStatus`.
+AI drafted `buildPositionIndex`, `resolveShot`, `isShipSunk`, `isGameOver`, and `outcomeToStatus`.
 
 **What was changed:**
 
-- `resolveShot` in the draft mutated the `shots` map directly. This was rewritten so the function is pure — it returns a result and the caller applies state changes. The comment in the final source explains this explicitly.
-- `isGameOver` in the draft had no guard for an empty fleet (zero ships would have returned `true`). A length check was added.
-- `outcomeToStatus` was not in the initial draft. It was added to centralise the mapping from `ShotOutcome` to `CellStatus`, removing a switch statement that had been inlined in the hook.
-- All function signatures were tightened to use `ReadonlyMap` and `readonly` array types where mutation is not intended.
+- `resolveShot` in the draft mutated the shots map. Rewritten to be pure.
+- `isGameOver` had no guard for an empty fleet.
+- `outcomeToStatus` was not in the initial draft — added to centralise the mapping.
+- All signatures tightened to use `ReadonlyMap` and `readonly` arrays.
+
+**`applyShotToBoard` (added for session mode):**
+
+AI drafted this board-level coordinator which sequences `resolveShot`, updates `shots`, `sunkShipIds`, and `isGameOver`, and returns a new immutable `BoardState`. The draft initially took the position index as a parameter. Changed to build it internally from `board.ships` — the per-call cost is negligible for user-paced shots, and the simpler signature is the better API.
 
 ---
 
-### Game hook (`src/features/battleship/hooks/useBattleshipGame.ts`)
+### AI service (`src/features/battleship/services/ai.ts`)
 
-AI was used to draft the hook using `useReducer`. The initial draft used `useState` with two separate setters, which led to a fragile pattern where both had to be updated in sync.
+AI drafted `chooseRandomUnfiredCoordinate`. The function is four lines and straightforward. No changes were needed to the implementation. The decision to keep it purely functional — no timing, no side effects — was deliberate, with timing owned by the hook's `useEffect` instead.
+
+---
+
+### Single-player hook (`src/features/battleship/hooks/useBattleshipGame.ts`)
+
+AI drafted the hook using `useReducer`.
 
 **What was changed:**
 
-- Switched to `useReducer` with explicit `FIRE` and `RESET` actions. The reducer structure makes the guard-then-commit pattern for `already-fired` reads clearly in one place.
-- `sunkShipIds` and `isGameOver` derivation were moved into `useMemo` calls in the hook body. The draft had them computed inline in the reducer, which mixed domain logic with state machinery.
-- `SHIPS` and `POSITION_INDEX` were moved outside the hook. The draft recomputed them inside the hook on every render. This is a meaningful correctness issue: `parseLayout` and `buildPositionIndex` are expensive relative to what hooks normally do inline, and the layout never changes during a session.
+- Switched from `useState` to `useReducer` to make the guard-then-commit pattern atomic.
+- `sunkShipIds` and `isGameOver` derivation moved into `useMemo`. The draft computed them inline in the reducer.
+- `SHIPS` and `POSITION_INDEX` moved outside the hook. The draft recomputed them on every render.
 - The `fireShot` guard (`if (gameOver) return`) was added. The draft accepted shots after the game ended.
+
+---
+
+### Session hook (`src/features/battleship/hooks/useBattleshipSessionGame.ts`)
+
+AI drafted the session hook incrementally across several prompts: the action union, the `PLAYER_FIRE` reducer branch, the `COMPUTER_FIRE` reducer branch, the `useEffect` for AI timing, and the return shape.
+
+**Key decisions made or confirmed during review:**
+
+- The reducer stays synchronous. The `useEffect` owns the `setTimeout` and dispatch. This was an explicit requirement and was correctly reflected in the generated output.
+- `isAiThinking` is set atomically inside the reducer — it is derived directly from the shot result and must change in the same state update as `activeTurn`. Setting it in the effect would create a frame where `activeTurn === "computer"` but `isAiThinking === false`.
+- `PLAYER_POSITION_INDEX` and `COMPUTER_POSITION_INDEX` are separate module-scope constants despite currently pointing at the same `SHIPS`. The separation is intentional — it makes the code ready for distinct layouts without any structural changes.
+- The effect cleanup (`clearTimeout`) correctly cancels the AI timer on reset and unmount. This was verified explicitly and is covered by the reset test in `BattleshipMultiplayerGame.test.tsx`.
+- `AI_SHOT_DELAY_MS` is exported so tests can override it to `0` without fake timers.
+
+**What was changed:**
+
+- Initial draft of `buildInitialSessionState` included both boards inside a single `board` object (correct), but an earlier draft had `playerBoard` and `computerBoard` as flat siblings. Corrected to the nested shape.
+- The `useEffect` dependency array initially included only `state.activeTurn`. Added `state.winner` and `state.board.player.shots` to match the actual conditions the effect reads.
 
 ---
 
 ### Board component (`src/components/board/Board.tsx`)
 
-AI was used to draft the grid structure and the roving tabindex keyboard navigation pattern.
+AI drafted the grid structure and roving tabindex pattern. Extended in a later session to support `isReadOnly`.
 
-**What was changed:**
+**`isReadOnly` addition:**
 
-- The column header row was given `aria-hidden="true"`. The draft included it in the accessibility tree, which polluted the row count and confused screen readers.
-- The `handleCellFire` function was rewritten to advance focus to the next unfired cell after firing. The draft did not move focus at all, leaving keyboard users stranded on a disabled button after every shot.
-- The `requestAnimationFrame` deferral in `handleCellFire` was added after identifying that React's render and the browser's focus call can race if called synchronously. This was not in the generated version.
-- `aria-readonly` was added to the grid element to signal the game-over state to assistive technology.
+- `onFire` made optional (`onFire?`).
+- `isReadOnly?: boolean` added to props.
+- `aria-readonly` updated to `isGameOver || isReadOnly`.
+- Cell `disabled` prop updated to `isGameOver || isReadOnly`.
+- `onFire` call in `handleCellFire` guarded with optional chaining (`onFire?.(fired)`).
+
+**Original changes (still in place):**
+
+- Column header row given `aria-hidden="true"`.
+- `handleCellFire` rewritten to advance focus after firing.
+- `requestAnimationFrame` deferral added to avoid race with disabled state.
+- `aria-readonly` added to the grid element.
 
 ---
 
 ### Cell component (`src/components/board/Cell.tsx`)
 
-AI was used to draft the button structure and visual states (hit, miss, untouched).
+AI drafted the button structure and visual states. No changes to the component for multiplayer — it correctly receives `disabled` as a prop and renders accordingly.
 
-**What was changed:**
+**Original changes (still in place):**
 
-- `buildAriaLabel` was written from scratch. The draft had a minimal label that only communicated column and row. The final label encodes column letter, row number, fired state, and a conditional activation hint for unfired cells.
-- The `tabIndex` handling was tightened. The draft set `tabIndex={-1}` unconditionally on disabled cells, which is redundant (disabled buttons are already removed from the tab sequence) and slightly misleading.
-- SVG markers (`HitMarker`, `MissMarker`) were added with `aria-hidden="true"` to ensure they are not announced by screen readers. The draft used text characters (`×`, `•`) which would be read aloud.
+- `buildAriaLabel` written from scratch — the draft only communicated column and row.
+- `tabIndex` handling tightened.
+- SVG markers added with `aria-hidden="true"`.
 
 ---
 
-### Feature components (`ShotResultAnnouncer`, `GameStatus`, `ShipStatusList`)
+### Feature components
 
-AI was used to draft initial versions of all three.
+**`ShotResultAnnouncer`, `GameStatus`, `ShipStatusList`** — original components unchanged. AI drafted initial versions; review changes documented in the original `AI_USAGE.md` remain accurate.
 
-**What was changed:**
+**`GameStatusMultiplayer` (new):**
 
-- `ShotResultAnnouncer` in the draft used a single `aria-live` region that was always visible. The final version renders a visually hidden element (`sr-only`) and uses a `key` prop to force React to remount the element on each new result, which reliably triggers re-announcement even when the message text does not change (e.g., two consecutive misses).
-- `GameStatus` in the draft used `aria-live` for the game-over message. This was changed to `role="status"` because game-over is a stable state change, not a transient event. Using two separate mechanisms (`aria-live` for shots, `role="status"` for game over) prevents announcements from clobbering each other.
-- `ShipStatusList` had no visual distinction between intact and sunk ships other than text. A strikethrough style and muted color were added to communicate sunk state through more than one channel, satisfying the WCAG requirement that information not be conveyed by color alone.
+AI drafted this component. The initial draft used an inline ternary expression directly in JSX. Extracted into a `buildMessage()` function for clarity. The `data-testid` attribute was added after test ambiguity issues with multiple `role="status"` elements in the DOM (two `ShotResultAnnouncer` instances plus `GameStatusMultiplayer`).
+
+---
+
+### App mode toggle (`src/app/App.tsx`)
+
+AI drafted the toggle. `aria-pressed` was in the generated output, which is correct — it communicates the selected mode to screen readers. No changes needed.
 
 ---
 
 ### Tests
 
-AI was used to generate initial test file stubs for `coordinates.test.ts`, `layout.test.ts`, `engine.test.ts`, `useBattleshipGame.test.ts`, `Cell.test.tsx`, and `Board.test.tsx`.
+AI generated initial stubs for all test files. The multiplayer-specific tests required the most iteration.
 
-**What was added or changed:**
+**`useBattleshipSessionGame.test.ts`:**
 
-- `layout.test.ts`: the generated tests covered the happy path and a few error cases. Tests for diagonal placement, non-contiguous positions, and the overlap edge case were written manually after implementing `assertAligned`.
-- `engine.test.ts`: the generated suite lacked tests for `isShipSunk`, `outcomeToStatus`, and the empty-fleet guard on `isGameOver`. These were added.
-- `useBattleshipGame.test.ts`: the generated tests did not cover the no-fire-after-game-over guard. That test was added explicitly because the guard is a deliberate design choice worth protecting.
-- `Board.test.tsx`: the generated tests used `getByRole('button')` without name matchers, which meant they would pass even if the accessible labels were completely wrong. All queries were tightened to use `{ name: /pattern/ }` matchers that verify the actual label content.
-- All test fixtures were reviewed for type safety. Several generated tests used bare string literals where `CoordinateKey` was expected; these were cast explicitly.
+- AI draft used `vi.useFakeTimers()` throughout. Replaced with exporting `AI_SHOT_DELAY_MS` and mocking it to `0` in tests — eliminates fake-timer complexity entirely and keeps `userEvent` working correctly.
+- Mock of `chooseRandomUnfiredCoordinate` to a fixed coordinate (`"9,8"`) makes AI shots deterministic and assertable.
 
----
+**`BattleshipMultiplayerGame.test.tsx`:**
 
-### Documentation (`README.md`, `ARCHITECTURE.md`)
+- Multiple rounds of debugging: `userEvent` with fake timers causes 5s hangs because `userEvent` uses `setTimeout(0)` internally. Resolved by the same approach — zero-delay AI shots via module mock, real timers throughout.
+- `getByRole("status")` was ambiguous with multiple `role="status"` elements. Resolved by adding `data-testid="session-status"` to `GameStatusMultiplayer` and querying by testid.
+- Cell queries scoped to `within(grid)` rather than `within(section)` to exclude non-cell buttons (Restart, fleet panel) from button count assertions.
 
-AI was used to produce initial drafts of both documents.
+**What was rejected in testing:**
 
-**What was changed:**
-
-- `ARCHITECTURE.md`: the generated draft described the architecture accurately at a high level but contained several vague justifications ("this is a common pattern", "this improves maintainability"). These were rewritten with specific, defensible reasoning — for example, why `useReducer` rather than `useState`, why `SHIPS` is parsed outside the hook, and why `sunkShipIds` is derived rather than persisted.
-- `README.md`: the generated version included a features section that described items out of scope for the assignment. This was trimmed. The accessibility section was expanded with specifics rather than generic bullet points.
+- `userEvent.setup({ advanceTimers: vi.advanceTimersByTime })` — does not work reliably with Vitest fake timers. Rejected in favour of the zero-delay mock approach.
+- `vi.runAllTimers()` with `act()` — fragile when `userEvent` itself uses timers. Rejected.
 
 ---
 
 ## What was rejected
 
-- **Global state library suggestion.** AI suggested adding Zustand for game state. This was rejected. The assignment scope does not justify a global state library. A single `useReducer` hook with a clean interface is both simpler and easier to test.
-- **Animated shot feedback.** AI suggested CSS transitions on cell state changes. This was rejected as out of scope and potentially disruptive for users with motion sensitivity preferences.
-- **Ship placement UI.** AI offered to scaffold a ship placement interface. This was explicitly out of scope and declined.
-- **Memoised cell rendering with `React.memo`.** AI suggested wrapping `Cell` in `React.memo`. This was rejected as premature optimisation. The board renders 100 cells but the component is cheap; the added indirection is not justified without a measured performance problem.
-- **`any` types in test fixtures.** Several generated test helpers used `as any` to bypass type checking. All of these were replaced with properly typed alternatives.
+- **Global state library.** AI suggested Zustand. Rejected — a single `useReducer` hook is sufficient at this scope.
+- **Async reducer.** AI suggested handling AI timing in the reducer via middleware. Rejected — reducers must be synchronous. Timing belongs in `useEffect`.
+- **Shared `POSITION_INDEX`.** AI initially suggested one shared position index for both boards. Rejected — separate constants signal distinct ownership and make future divergence easier.
+- **Animated shot feedback.** Rejected as out of scope.
+- **`React.memo` on `Cell`.** Rejected as premature optimisation.
+- **`any` types in test fixtures.** All replaced with properly typed alternatives.
 
 ---
 
 ## Final responsibility
 
-Every file in this repository was read and understood before being committed. Where generated code was wrong, incomplete, or insufficiently reasoned, it was rewritten. The architecture, the domain model, the accessibility decisions, and the test coverage strategy reflect deliberate engineering choices made by the author.
+Every file in this repository was read and understood before being committed. Where generated code was wrong, incomplete, or insufficiently reasoned, it was rewritten. The architecture, the domain model, the session design, the accessibility decisions, and the test coverage strategy reflect deliberate engineering choices made by the author.
 
 AI accelerated the drafting phase. The quality, correctness, and defensibility of the result are the author's responsibility.
