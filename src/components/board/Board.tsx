@@ -7,8 +7,9 @@ import { Cell } from "@/components/board/Cell";
 
 interface BoardProps {
   shots: ReadonlyMap<CoordinateKey, CellStatus>;
-  onFire: (coord: CoordinateKey) => void;
+  onFire?: (coord: CoordinateKey) => void;
   isGameOver: boolean;
+  isReadOnly?: boolean;
 }
 
 const ARROW_DELTAS: Partial<Record<string, [number, number]>> = {
@@ -72,7 +73,7 @@ export function Board({ shots, onFire, isGameOver }: BoardProps) {
    * may focus a button that is about to become disabled and silently drop focus.
    */
   function handleCellFire(fired: CoordinateKey) {
-    onFire(fired);
+    onFire?.(fired);
 
     const firedIndex = ALL_KEYS.indexOf(fired);
     const next =
