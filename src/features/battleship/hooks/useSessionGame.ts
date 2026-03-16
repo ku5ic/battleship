@@ -4,6 +4,12 @@ import type {
   CoordinateKey,
   SessionState,
 } from "@/features/battleship/types";
+import {
+  buildPositionIndex,
+  applyShotToBoard,
+} from "@/features/battleship/services/engine";
+
+const COMPUTER_POSITION_INDEX = buildPositionIndex();
 
 // ---------------------------------------------------------------------------
 // Session action union
@@ -48,6 +54,39 @@ export function buildInitialSessionState(): SessionState {
     winner: null,
     isAiThinking: false,
   };
+}
+
+function reducer(state: SessionState, action: SessionAction): SessionState {
+  switch (action.type) {
+    case "PLAYER_FIRE": {
+      // Guard: ignore if it's not the player's turn or the session is already over.
+      if (state.activeTurn !== "player" || state.winner !== null) {
+        return state;
+      }
+
+      const { board: nextComputerBoard, result } = applyShotToBoard(
+        action.coordinate,
+        state.board.computer,
+        COMPUTER_POSITION_INDEX,
+      );
+
+      return {
+        ...state,
+        board: { ...state.board, computer: nextComputerBoard },
+        // Player keeps their turn on a hit — computer only gets to fire on a miss.
+        activeTurn: result.outcome === "miss" ? "computer" : "player",
+        winner: nextComputerBoard.isGameOver ? "player" : null,
+        // AI thinking begins only if the turn switched to the computer.
+        isAiThinking:
+          result.outcome === "miss" && !nextComputerBoard.isGameOver,
+      };
+    }
+    case "RESET": {
+      return buildInitialSessionState();
+    }
+    default:
+      return state;
+  }
 }
 
 /**
