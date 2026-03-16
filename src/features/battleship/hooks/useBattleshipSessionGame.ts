@@ -4,8 +4,9 @@ import type {
   BoardState,
   CoordinateKey,
   PlayerId,
-  SessionState,
   SessionBoards,
+  SessionState,
+  ShotResult,
 } from "@/features/battleship/types";
 import {
   buildPositionIndex,
@@ -15,7 +16,7 @@ import { chooseRandomUnfiredCoordinate } from "@/features/battleship/services/ai
 
 const COMPUTER_POSITION_INDEX = buildPositionIndex(SHIPS);
 const PLAYER_POSITION_INDEX = buildPositionIndex(SHIPS);
-const AI_SHOT_DELAY_MS = 1000;
+export const AI_SHOT_DELAY_MS = 1000;
 
 // ---------------------------------------------------------------------------
 // Session action union
@@ -37,6 +38,8 @@ export interface UseBattleshipSessionReturn {
   activeTurn: PlayerId;
   winner: PlayerId | null;
   isAiThinking: boolean;
+  playerLastResult: ShotResult | null;
+  computerLastResult: ShotResult | null;
   playerFireShot: (coordinate: CoordinateKey) => void;
   reset: () => void;
 }
@@ -170,6 +173,8 @@ export function useBattleshipSessionGame(): UseBattleshipSessionReturn {
     activeTurn: state.activeTurn,
     winner: state.winner,
     isAiThinking: state.isAiThinking,
+    playerLastResult: state.board.player.lastResult,
+    computerLastResult: state.board.computer.lastResult,
     playerFireShot,
     reset,
   };

@@ -33,7 +33,7 @@ const ARROW_DELTAS: Partial<Record<string, [number, number]>> = {
  * very narrow viewports (≥ 320px) the grid scrolls horizontally rather than
  * breaking the page layout.
  */
-export function Board({ shots, onFire, isGameOver }: BoardProps) {
+export function Board({ shots, onFire, isGameOver, isReadOnly }: BoardProps) {
   const [focusedCoord, setFocusedCoord] = useState<CoordinateKey>("0,0");
   const boardRef = useRef<HTMLDivElement>(null);
 
@@ -147,7 +147,7 @@ export function Board({ shots, onFire, isGameOver }: BoardProps) {
                   coord={coord}
                   status={shots.get(coord) ?? "untouched"}
                   onFire={handleCellFire}
-                  disabled={isGameOver}
+                  disabled={isGameOver || isReadOnly}
                   tabIndex={coord === focusedCoord ? 0 : -1}
                 />
               </div>
