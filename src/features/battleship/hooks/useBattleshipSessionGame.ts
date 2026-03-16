@@ -1,16 +1,21 @@
+import { useEffect, useReducer, useCallback } from "react";
 import { SHIPS } from "@/features/battleship/data";
 import type {
   BoardState,
   CoordinateKey,
+  PlayerId,
   SessionState,
+  SessionBoards,
 } from "@/features/battleship/types";
 import {
   buildPositionIndex,
   applyShotToBoard,
 } from "@/features/battleship/services/engine";
+import { chooseRandomUnfiredCoordinate } from "@/features/battleship/services/ai";
 
 const COMPUTER_POSITION_INDEX = buildPositionIndex(SHIPS);
 const PLAYER_POSITION_INDEX = buildPositionIndex(SHIPS);
+const AI_SHOT_DELAY_MS = 1000;
 
 // ---------------------------------------------------------------------------
 // Session action union
@@ -26,6 +31,15 @@ export type SessionAction =
   | { type: "PLAYER_FIRE"; coordinate: CoordinateKey }
   | { type: "COMPUTER_FIRE"; coordinate: CoordinateKey }
   | { type: "RESET" };
+
+export interface UseBattleshipSessionReturn {
+  board: SessionBoards;
+  activeTurn: PlayerId;
+  winner: PlayerId | null;
+  isAiThinking: boolean;
+  playerFireShot: (coordinate: CoordinateKey) => void;
+  reset: () => void;
+}
 
 // ---------------------------------------------------------------------------
 // Both players share the same fleet layout for now. When distinct layouts
@@ -118,6 +132,45 @@ function reducer(state: SessionState, action: SessionAction): SessionState {
  * per board independently. Session logic (turn switching, game-over guard)
  * lives here and nowhere else.
  */
-export function useSessionGame(): SessionState {
-  throw new Error("useSessionGame is not yet implemented");
+export function useBattleshipSessionGame(): UseBattleshipSessionReturn {
+  const [state, dispatch] = useReducer(reducer, buildInitialSessionState());
+
+  const playerFireShot = useCallback(
+    (coordinate: CoordinateKey) => {
+      if (state.activeTurn !== "player" || state.winner !== null) return;
+      dispatch({ type: "PLAYER_FIRE", coordinate });
+    },
+    [state.activeTurn, state.winner],
+  );
+
+  const reset = useCallback(() => {
+    dispatch({ type: "RESET" });
+  }, []);
+
+  useEffect(() => {
+    if (state.activeTurn !== "computer" || state.winner !== null) return;
+
+    const coordinate = chooseRandomUnfiredCoordinate(state.board.player.shots);
+    if (coordinate === null) return;
+
+    const timeout = setTimeout(() => {
+      dispatch({ type: "COMPUTER_FIRE", coordinate });
+    }, AI_SHOT_DELAY_MS);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [state.activeTurn, state.winner, state.board.player.shots]);
+
+  return {
+    board: {
+      player: state.board.player,
+      computer: state.board.computer,
+    },
+    activeTurn: state.activeTurn,
+    winner: state.winner,
+    isAiThinking: state.isAiThinking,
+    playerFireShot,
+    reset,
+  };
 }
