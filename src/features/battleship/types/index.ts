@@ -72,3 +72,32 @@ export interface GameState {
   isGameOver: boolean;
   lastResult: ShotResult | null;
 }
+
+// ---------------------------------------------------------------------------
+// Two-board session model
+//
+// PlayerId identifies which player owns which board. "player" fires at the
+// "opponent" board; the hook decides whose turn it is and which board to
+// resolve shots against.
+//
+// BoardState is a semantic alias for GameState — the two types are
+// structurally identical. The alias signals "this is one player's board"
+// without duplicating the definition or introducing an inheritance hierarchy.
+//
+// SessionState is the top-level shape owned by the session hook. The engine
+// and existing single-board hook remain untouched.
+// ---------------------------------------------------------------------------
+
+export type PlayerId = "player" | "opponent";
+
+/** One player's board as seen by their opponent. Structurally identical to GameState. */
+export type BoardState = GameState;
+
+export interface SessionState {
+  /** Whose turn it is to fire. */
+  activePlayer: PlayerId;
+  /** The board being shot at by the "player". Opponent's ships, player's shots. */
+  playerBoard: BoardState;
+  /** The board being shot at by the "opponent". Player's ships, opponent's shots. */
+  opponentBoard: BoardState;
+}
