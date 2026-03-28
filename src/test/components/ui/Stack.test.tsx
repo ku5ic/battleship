@@ -51,6 +51,10 @@ describe("Stack", () => {
     const { container } = render(
       <Stack className="max-w-3xl mx-auto">content</Stack>,
     );
-    expect(container.firstChild).toHaveClass("max-w-3xl", "mx-auto", "flex-col");
+    expect(container.firstChild).toHaveClass(
+      "max-w-3xl",
+      "mx-auto",
+      "flex-col",
+    );
   });
 });

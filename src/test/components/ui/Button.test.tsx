@@ -16,7 +16,9 @@ describe("Button", () => {
 
   it("renders children", () => {
     render(<Button>Play again</Button>);
-    expect(screen.getByRole("button", { name: "Play again" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Play again" }),
+    ).toBeInTheDocument();
   });
 
   it("has type='button' by default", () => {
@@ -44,7 +46,11 @@ describe("Button", () => {
   it("does not call onClick when disabled", async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
-    render(<Button onClick={onClick} disabled>Click me</Button>);
+    render(
+      <Button onClick={onClick} disabled>
+        Click me
+      </Button>,
+    );
     await user.click(screen.getByRole("button"));
     expect(onClick).not.toHaveBeenCalled();
   });
