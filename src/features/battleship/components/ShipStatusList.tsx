@@ -1,3 +1,4 @@
+import { Text } from "@/components/ui";
 import type { Ship, ShipType } from "@/features/battleship/types";
 import { ShipStatusItem } from "@/features/battleship/components/ShipStatusItem";
 
@@ -21,9 +22,9 @@ export function ShipStatusList({
 }: ShipStatusListProps) {
   return (
     <section aria-label="Fleet status">
-      <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">
+      <Text as="h2" variant="label" className="mb-2">
         Fleet
-      </h2>
+      </Text>
       <ul
         className="divide-y divide-slate-700/50"
         aria-label={`${String(sunkShipIds.size)} of ${String(ships.length)} ships sunk`}

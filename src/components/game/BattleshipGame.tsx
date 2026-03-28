@@ -1,4 +1,5 @@
 import { Board } from "@/components/board";
+import { Button, Stack, Text } from "@/components/ui";
 import {
   GameStatus,
   ShipStatusList,
@@ -33,10 +34,10 @@ export function BattleshipGame() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-3xl mx-auto">
-      <h1 className="text-xl font-semibold tracking-wide text-slate-100">
+    <Stack className="w-full max-w-3xl mx-auto">
+      <Text as="h1" variant="title">
         Battleship
-      </h1>
+      </Text>
 
       {/*
         ShotResultAnnouncer is visually hidden and announces transient shot
@@ -65,15 +66,7 @@ export function BattleshipGame() {
         </div>
       </div>
 
-      {isGameOver && (
-        <button
-          type="button"
-          onClick={resetGame}
-          className="px-4 py-2 text-sm font-medium rounded border border-slate-500 text-slate-300 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-        >
-          Play again
-        </button>
-      )}
-    </div>
+      {isGameOver && <Button onClick={resetGame}>Play again</Button>}
+    </Stack>
   );
 }
