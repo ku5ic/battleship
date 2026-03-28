@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useCallback } from "react";
+import { useEffect, useReducer, useCallback, useMemo } from "react";
 import { SHIPS } from "@/features/battleship/data";
 import type {
   BoardState,
@@ -6,6 +6,7 @@ import type {
   PlayerId,
   SessionBoards,
   SessionState,
+  ShipType,
   ShotResult,
 } from "@/features/battleship/types";
 import {
@@ -40,6 +41,8 @@ export interface UseBattleshipSessionReturn {
   isAiThinking: boolean;
   playerLastResult: ShotResult | null;
   computerLastResult: ShotResult | null;
+  playerShipHitCounts: ReadonlyMap<ShipType, number>;
+  computerShipHitCounts: ReadonlyMap<ShipType, number>;
   playerFireShot: (coordinate: CoordinateKey) => void;
   reset: () => void;
 }
@@ -150,6 +153,30 @@ export function useBattleshipSessionGame(): UseBattleshipSessionReturn {
     dispatch({ type: "RESET" });
   }, []);
 
+  const playerShipHitCounts = useMemo<ReadonlyMap<ShipType, number>>(() => {
+    const counts = new Map<ShipType, number>();
+    for (const ship of PLAYER_SHIPS) {
+      counts.set(
+        ship.id,
+        ship.coordinates.filter((key) => state.board.player.shots.has(key))
+          .length,
+      );
+    }
+    return counts;
+  }, [state.board.player.shots]);
+
+  const computerShipHitCounts = useMemo<ReadonlyMap<ShipType, number>>(() => {
+    const counts = new Map<ShipType, number>();
+    for (const ship of COMPUTER_SHIPS) {
+      counts.set(
+        ship.id,
+        ship.coordinates.filter((key) => state.board.computer.shots.has(key))
+          .length,
+      );
+    }
+    return counts;
+  }, [state.board.computer.shots]);
+
   useEffect(() => {
     if (state.activeTurn !== "computer" || state.winner !== null) return;
 
@@ -175,6 +202,8 @@ export function useBattleshipSessionGame(): UseBattleshipSessionReturn {
     isAiThinking: state.isAiThinking,
     playerLastResult: state.board.player.lastResult,
     computerLastResult: state.board.computer.lastResult,
+    playerShipHitCounts,
+    computerShipHitCounts,
     playerFireShot,
     reset,
   };

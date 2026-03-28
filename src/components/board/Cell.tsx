@@ -1,6 +1,7 @@
 import { cn } from "@/lib/cn";
 import { COLUMN_LABELS } from "@/features/battleship/constants";
 import type { CellStatus, CoordinateKey } from "@/features/battleship/types";
+import { fromKey } from "@/features/battleship/utils/coordinates";
 
 interface CellProps {
   coord: CoordinateKey;
@@ -15,7 +16,7 @@ function buildAriaLabel(
   status: CellStatus,
   isFireable: boolean,
 ): string {
-  const [col, row] = coord.split(",").map(Number) as [number, number];
+  const { col, row } = fromKey(coord);
   const colLabel = COLUMN_LABELS[col];
   const rowLabel = String(row + 1);
 

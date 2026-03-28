@@ -1,4 +1,5 @@
 import { Board } from "@/components/board";
+import { Button, Stack, Text } from "@/components/ui";
 import {
   GameStatusMultiplayer,
   ShipStatusList,
@@ -22,6 +23,8 @@ export function BattleshipMultiplayerGame() {
     isAiThinking,
     playerLastResult,
     computerLastResult,
+    playerShipHitCounts,
+    computerShipHitCounts,
     playerFireShot,
     reset,
   } = useBattleshipSessionGame();
@@ -29,10 +32,10 @@ export function BattleshipMultiplayerGame() {
   const sessionOver = winner !== null;
 
   return (
-    <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-5xl mx-auto">
-      <h1 className="text-xl font-semibold tracking-wide text-slate-100">
+    <Stack className="w-full max-w-5xl mx-auto">
+      <Text as="h1" variant="title">
         Battleship
-      </h1>
+      </Text>
 
       {/* Announcers — visually hidden, one per board so events don't collide */}
       <ShotResultAnnouncer result={computerLastResult} />
@@ -49,9 +52,9 @@ export function BattleshipMultiplayerGame() {
       <div className="flex flex-col items-start gap-8 lg:flex-row">
         {/* Player board — read-only, shows what the computer fired at */}
         <section aria-label="Your board">
-          <h2 className="text-xs font-medium text-slate-400 uppercase tracking-widest mb-2">
+          <Text as="h2" variant="label" className="mb-2">
             Your fleet
-          </h2>
+          </Text>
           <Board
             shots={board.player.shots}
             isGameOver={board.player.isGameOver}
@@ -60,17 +63,17 @@ export function BattleshipMultiplayerGame() {
           <div className="mt-2">
             <ShipStatusList
               ships={board.player.ships}
-              shots={board.player.shots}
               sunkShipIds={board.player.sunkShipIds}
+              hitCounts={playerShipHitCounts}
             />
           </div>
         </section>
 
         {/* Opponent board — interactive, player fires here */}
         <section aria-label="Opponent's board">
-          <h2 className="text-xs font-medium text-slate-400 uppercase tracking-widest mb-2">
+          <Text as="h2" variant="label" className="mb-2">
             Enemy fleet
-          </h2>
+          </Text>
           <Board
             shots={board.computer.shots}
             onFire={(coord: CoordinateKey) => {
@@ -82,21 +85,15 @@ export function BattleshipMultiplayerGame() {
           <div className="mt-2">
             <ShipStatusList
               ships={board.computer.ships}
-              shots={board.computer.shots}
               sunkShipIds={board.computer.sunkShipIds}
+              hitCounts={computerShipHitCounts}
             />
           </div>
         </section>
       </div>
 
       {/* Reset — always available */}
-      <button
-        type="button"
-        onClick={reset}
-        className="px-4 py-2 text-sm font-medium rounded border border-slate-500 text-slate-300 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-      >
-        {sessionOver ? "Play again" : "Restart"}
-      </button>
-    </div>
+      <Button onClick={reset}>{sessionOver ? "Play again" : "Restart"}</Button>
+    </Stack>
   );
 }

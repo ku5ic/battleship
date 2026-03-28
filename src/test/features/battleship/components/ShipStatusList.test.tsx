@@ -1,11 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ShipStatusList } from "@/features/battleship/components/ShipStatusList";
-import type {
-  CellStatus,
-  CoordinateKey,
-  Ship,
-} from "@/features/battleship/types";
+import type { Ship, ShipType } from "@/features/battleship/types";
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -26,6 +22,11 @@ const twoShipFleet: readonly Ship[] = [
   },
 ];
 
+const zeroCounts = new Map<ShipType, number>([
+  ["destroyer", 0],
+  ["submarine", 0],
+]);
+
 describe("ShipStatusList", () => {
   // ---------------------------------------------------------------------------
   // Structure
@@ -35,7 +36,7 @@ describe("ShipStatusList", () => {
     render(
       <ShipStatusList
         ships={twoShipFleet}
-        shots={new Map()}
+        hitCounts={zeroCounts}
         sunkShipIds={new Set()}
       />,
     );
@@ -48,7 +49,7 @@ describe("ShipStatusList", () => {
     render(
       <ShipStatusList
         ships={twoShipFleet}
-        shots={new Map()}
+        hitCounts={zeroCounts}
         sunkShipIds={new Set()}
       />,
     );
@@ -58,7 +59,11 @@ describe("ShipStatusList", () => {
 
   it("renders an empty list when the fleet is empty", () => {
     render(
-      <ShipStatusList ships={[]} shots={new Map()} sunkShipIds={new Set()} />,
+      <ShipStatusList
+        ships={[]}
+        hitCounts={new Map()}
+        sunkShipIds={new Set()}
+      />,
     );
     expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
   });
@@ -71,7 +76,7 @@ describe("ShipStatusList", () => {
     render(
       <ShipStatusList
         ships={twoShipFleet}
-        shots={new Map()}
+        hitCounts={zeroCounts}
         sunkShipIds={new Set()}
       />,
     );
@@ -84,7 +89,7 @@ describe("ShipStatusList", () => {
     render(
       <ShipStatusList
         ships={twoShipFleet}
-        shots={new Map()}
+        hitCounts={zeroCounts}
         sunkShipIds={new Set(["destroyer"])}
       />,
     );
@@ -97,7 +102,7 @@ describe("ShipStatusList", () => {
     render(
       <ShipStatusList
         ships={twoShipFleet}
-        shots={new Map()}
+        hitCounts={zeroCounts}
         sunkShipIds={new Set(["destroyer", "submarine"])}
       />,
     );
@@ -107,42 +112,44 @@ describe("ShipStatusList", () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Hit count derivation from shots map
+  // Hit count display
   // ---------------------------------------------------------------------------
 
-  it("derives a zero hit count from an empty shots map", () => {
+  it("shows zero hit count when provided", () => {
     render(
       <ShipStatusList
         ships={twoShipFleet}
-        shots={new Map()}
+        hitCounts={zeroCounts}
         sunkShipIds={new Set()}
       />,
     );
     expect(screen.getByLabelText("Destroyer: 0 of 2 hit")).toBeInTheDocument();
   });
 
-  it("derives a partial hit count from the shots map", () => {
-    const shots = new Map<CoordinateKey, CellStatus>([["0,0", "hit"]]);
+  it("shows a partial hit count when provided", () => {
+    const counts = new Map<ShipType, number>([
+      ["destroyer", 1],
+      ["submarine", 0],
+    ]);
     render(
       <ShipStatusList
         ships={twoShipFleet}
-        shots={shots}
+        hitCounts={counts}
         sunkShipIds={new Set()}
       />,
     );
     expect(screen.getByLabelText("Destroyer: 1 of 2 hit")).toBeInTheDocument();
   });
 
-  it("does not count hits on other ships toward a given ship's total", () => {
-    // Only submarine coords are hit; destroyer should remain at 0.
-    const shots = new Map<CoordinateKey, CellStatus>([
-      ["3,0", "hit"],
-      ["3,1", "hit"],
+  it("renders each ship's hit count independently", () => {
+    const counts = new Map<ShipType, number>([
+      ["destroyer", 0],
+      ["submarine", 2],
     ]);
     render(
       <ShipStatusList
         ships={twoShipFleet}
-        shots={shots}
+        hitCounts={counts}
         sunkShipIds={new Set()}
       />,
     );
@@ -158,7 +165,7 @@ describe("ShipStatusList", () => {
     render(
       <ShipStatusList
         ships={twoShipFleet}
-        shots={new Map()}
+        hitCounts={zeroCounts}
         sunkShipIds={new Set(["destroyer"])}
       />,
     );

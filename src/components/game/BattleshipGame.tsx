@@ -1,4 +1,5 @@
 import { Board } from "@/components/board";
+import { Button, Stack, Text } from "@/components/ui";
 import {
   GameStatus,
   ShipStatusList,
@@ -6,6 +7,7 @@ import {
 } from "@/features/battleship/components";
 import { useBattleshipGame } from "@/features/battleship/hooks/useBattleshipGame";
 import type { CoordinateKey } from "@/features/battleship/types";
+import { fromKey } from "@/features/battleship/utils/coordinates";
 
 /**
  * Wires the game hook to the presentational layer.
@@ -21,20 +23,21 @@ export function BattleshipGame() {
     sunkShipIds,
     isGameOver,
     lastResult,
+    shipHitCounts,
     fireShot,
     resetGame,
   } = useBattleshipGame();
 
   function handleFire(coord: CoordinateKey) {
-    const [col, row] = coord.split(",").map(Number) as [number, number];
+    const { col, row } = fromKey(coord);
     fireShot(col, row);
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-3xl mx-auto">
-      <h1 className="text-xl font-semibold tracking-wide text-slate-100">
+    <Stack className="w-full max-w-3xl mx-auto">
+      <Text as="h1" variant="title">
         Battleship
-      </h1>
+      </Text>
 
       {/*
         ShotResultAnnouncer is visually hidden and announces transient shot
@@ -57,21 +60,13 @@ export function BattleshipGame() {
         <div className="w-full max-w-xs lg:w-48 lg:shrink-0">
           <ShipStatusList
             ships={ships}
-            shots={shots}
             sunkShipIds={sunkShipIds}
+            hitCounts={shipHitCounts}
           />
         </div>
       </div>
 
-      {isGameOver && (
-        <button
-          type="button"
-          onClick={resetGame}
-          className="px-4 py-2 text-sm font-medium rounded border border-slate-500 text-slate-300 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-        >
-          Play again
-        </button>
-      )}
-    </div>
+      {isGameOver && <Button onClick={resetGame}>Play again</Button>}
+    </Stack>
   );
 }

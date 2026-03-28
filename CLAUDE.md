@@ -1,81 +1,227 @@
-# CLAUDE.md
+# Claude Code Instructions
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
----
-
-## Commands
-
-```bash
-npm run dev              # Vite dev server at http://localhost:5173
-npm run build            # tsc -b && vite build
-npm run typecheck        # tsc --noEmit
-npm run lint             # ESLint across src/ (zero warnings allowed)
-npm run format           # Prettier write
-npm run format:check     # Prettier check
-npm run test             # Vitest run (all tests)
-npm run test:coverage    # Vitest with v8 coverage
-```
-
-Run a single test file:
-```bash
-npx vitest run src/test/features/battleship/services/engine.test.ts
-```
-
-Filter by test name:
-```bash
-npx vitest run -t "resolveShot"
-```
-
-CI gate: `typecheck` → `lint` → `format:check` → `test`. All four must pass.
+This file governs how Claude Code operates in this repository. Read it in full before generating, modifying, or reviewing any code.
 
 ---
 
-## Architecture
+## Read before touching code
 
-The codebase follows a strict layering principle: game rules live in plain TypeScript, React is a thin rendering shell. The dependency flow is one-directional:
+1. Search the existing codebase before writing anything. Do not reinvent types, utilities, or logic that already exist.
+2. Produce only the delta — the minimum change that satisfies the task.
+3. If a task is ambiguous, ask one focused clarification question. Do not guess.
+4. If a request conflicts with the rules below, explain why and propose the correct approach instead of complying.
+
+---
+
+## Repository map
 
 ```
-types → data → utils → services → hooks → components
+src/
+  app/                          # App.tsx — entry point and mode toggle only
+  components/
+    board/                      # Board, Cell — generic grid rendering, no domain knowledge
+    game/                       # BattleshipGame, BattleshipMultiplayerGame — wiring only
+  features/
+    battleship/
+      components/               # Presentational feature components, props-in/callbacks-out
+      constants/                # BOARD_SIZE, column labels, ship display names
+      data/                     # config.ts (raw JSON), layout.ts (parseLayout), index.ts
+      hooks/                    # useBattleshipGame, useBattleshipSessionGame
+      services/                 # Pure engine and AI functions — no React
+      types/                    # All domain types — single source of truth
+      utils/                    # Pure coordinate helpers
+  lib/                          # Shared utilities — cn() only
+  test/                         # Mirrors src/ — one test file per source file
 ```
 
-### Path alias
+Every new file must land in the correct layer. If the right layer is ambiguous, ask before creating.
 
-`@` resolves to `src/`. Use `@/features/battleship/...` throughout.
+---
 
-### Layer responsibilities
+## Layer contracts
 
-**`features/battleship/types/`** — all domain types. Key types: `CoordinateKey` (template literal `${number},${number}`), `Ship`, `CellStatus`, `ShotOutcome`, `ShotResult`, `GameState`, `BoardState` (alias for `GameState`), `SessionState`.
+### `types/`
 
-**`features/battleship/data/`** — `parseLayout()` converts raw JSON config into typed `Ship[]` with eager validation (bounds, size, overlap, contiguity). Throws on any violation. The exported `SHIPS` constant is computed once at module load. Nothing else calls `parseLayout`.
+- Single source of truth for all domain types.
+- No logic, no imports from other feature layers, no React.
+- Adding a concept to the domain means adding a type here first.
+- `any` is forbidden. Use `unknown` with a type guard if the shape is genuinely unknown.
 
-**`features/battleship/utils/coordinates.ts`** — all coordinate manipulation. `toKey()` is the single place that produces `CoordinateKey` strings — nothing constructs them by hand.
+### `data/`
 
-**`features/battleship/services/engine.ts`** — pure domain logic: `buildPositionIndex`, `resolveShot`, `applyShotToBoard`, `isShipSunk`, `isGameOver`, `outcomeToStatus`. No React dependency. `resolveShot` is used by the single-player hook directly; `applyShotToBoard` (which wraps `resolveShot` and returns a full new `BoardState`) is used by the session hook reducer.
+- Parses and validates raw input once at module load.
+- `parseLayout` throws on invalid input — this is intentional. The layout is static; an error is a programming mistake, not a runtime condition.
+- Parsed output is exported as a module-scope constant. Nothing re-parses at runtime.
+- No React, no hooks, no side effects beyond the initial parse.
 
-**`features/battleship/services/ai.ts`** — single pure function `chooseRandomUnfiredCoordinate(shotsReceived)`. No timing logic; that belongs in the hook.
+### `utils/`
 
-**`features/battleship/hooks/useBattleshipGame.ts`** — single-player hook. `useReducer` with `FIRE`/`RESET`. Persists only `shots` and `lastResult`; derives `sunkShipIds` and `isGameOver` via `useMemo`.
+- Pure functions only. No state, no side effects, no React.
+- `toKey()` is the single point of `CoordinateKey` production. Do not construct `"col,row"` strings anywhere else.
+- `RawCoordinate` tuples must not escape this layer or the data layer.
 
-**`features/battleship/hooks/useBattleshipSessionGame.ts`** — vs-computer hook. `useReducer` with `PLAYER_FIRE`/`COMPUTER_FIRE`/`RESET`. Reducer is strictly synchronous. AI timing (`AI_SHOT_DELAY_MS`) lives in a `useEffect` that dispatches `COMPUTER_FIRE` after a delay; cleanup cancels the timeout. `AI_SHOT_DELAY_MS` is exported so tests can override it to `0`.
+### `services/`
 
-### Component structure
+- Pure functions only. No React imports, no hooks, no `useEffect`.
+- Own all game rules: hit detection, miss detection, sunk logic, game-over logic, AI coordinate selection.
+- Independently unit testable with no React dependency.
+- Never call `toKey()` inline — import from `utils/`. Never reconstruct a `CoordinateKey` by string interpolation outside `toKey`.
 
-`BattleshipGame` is the only component that calls `useBattleshipGame`. `BattleshipMultiplayerGame` is the only component that calls `useBattleshipSessionGame`. Both are wiring components — they pass hook output down as props; nothing below them touches hooks or services.
+### `hooks/`
 
-`Board` is shared across both modes. The `isReadOnly` prop disables all cells and sets `aria-readonly` on the grid — used for the player's own board in vs-computer mode.
+- Orchestrate feature-level state and side effects.
+- `useReducer` is preferred over multiple `useState` calls when transitions have guard logic or need to be atomic.
+- Reducers must stay synchronous. Async behaviour (AI timing, network) belongs in `useEffect` — the effect dispatches an action carrying a pre-resolved value.
+- Derive values with `useMemo`. Do not persist what can be derived.
+- Module-scope constants (position indexes, ship arrays) are computed once, not inside the hook body.
+- Hooks expose typed, view-ready data. They do not expose raw state slices.
 
-`ShotResultAnnouncer` is a visually hidden `aria-live="polite"` region. Multiplayer mode mounts two instances (one per board) to prevent concurrent events from clobbering each other. A `key` prop forces remount on each result so repeated identical outcomes are re-announced.
+### `components/board/` and `components/game/`
 
-`App` renders a mode toggle (`aria-pressed` buttons). Switching mode unmounts the current game component, resetting state without any explicit reset call.
+- `Board` and `Cell` render a grid. They have no knowledge of ships, fleets, or game rules.
+- `BattleshipGame` and `BattleshipMultiplayerGame` are wiring components — the only place hooks are called. They pass results down as props; they contain no logic of their own.
+- Wiring components are the sole callers of their respective hooks.
 
-### Testing conventions
+### `features/battleship/components/`
 
-- Test files mirror `src/` under `src/test/`
-- Target cells via `data-coord` attributes, not aria-label regex
-- Mock `chooseRandomUnfiredCoordinate` and set `AI_SHOT_DELAY_MS = 0` in session hook tests to avoid fake timers (they conflict with `userEvent`)
-- Domain logic (engine, coordinates, layout) has unit tests; component/integration tests use Testing Library with accessible-name queries
+- Presentational only: receive props, render UI, emit callbacks.
+- No game rules, no direct hook calls, no data parsing, no domain calculations.
+- Derive nothing from raw state — receive only what the hook has already prepared.
 
-### Accessibility constraints
+### `app/`
 
-WCAG 2.2 AA. Board cells are `<button>` elements. Each cell's accessible name encodes column letter, row number, and status. `GameStatus` uses `role="status"` for stable state transitions; `ShotResultAnnouncer` uses `aria-live="polite"` for transient shot events. Color is never the sole signal — hits use × icon, misses use dot icon.
+- `App.tsx` handles mode toggling and mounts the correct game component. Nothing else.
+- Switching mode unmounts the current game; reset is implicit, not explicit.
+
+---
+
+## Component composition rules
+
+### What a component must do
+
+- Receive props and render UI.
+- Emit user intent via typed callback props.
+- Be fully understandable in isolation.
+
+### What a component must not do
+
+- Contain game rules or derive game outcomes.
+- Call hooks other than the designated wiring component.
+- Reach into sibling or parent state.
+- Mix rendering with domain computation.
+- Own data parsing or validation.
+- Use `any` in props or internal types.
+
+### Naming and structure
+
+- One component per file. File name matches the exported component name exactly.
+- Props interfaces are defined in the same file as the component. If a props type is shared, it belongs in `types/`.
+- Do not create a component to solve a logic problem. Extract logic to a service or hook first, then render the result.
+- Do not create a component purely to reduce line count. Extract only when it aids clarity or reuse.
+
+---
+
+## State design rules
+
+**Persist only:** shots fired, last shot result, sunk ship IDs, game-over flag, session turn state, AI thinking flag.
+
+**Derive with `useMemo`:** whether a cell is hit or miss, whether a ship is sunk, whether all ships are sunk, status labels, shot counts.
+
+**Never duplicate a source of truth.** If a value can be computed from persisted state plus constants, it must be computed, not stored.
+
+**Atomic updates.** When two values must change together (e.g. shots + lastResult), use `useReducer` so the update is a single dispatch.
+
+---
+
+## Coordinate rules
+
+- `CoordinateKey` is `${number},${number}` — a template literal type, not a plain string.
+- `toKey(col, row)` is the only legal production site. No inline string interpolation.
+- `RawCoordinate` `[col, row]` tuples exist only in `data/` and are converted immediately on parse.
+- `fromKey` is the only legal parse site. No manual splitting of key strings.
+- Coordinates are 0-indexed. `col` is the horizontal axis; `row` is the vertical axis.
+
+---
+
+## TypeScript rules
+
+- `any` is forbidden everywhere. ESLint enforces this.
+- Use `satisfies` for type-checking object literals without widening.
+- Use template literal types for constrained string values (`CoordinateKey`, `ShipType`).
+- Prefer type aliases over interfaces for union types and template literals.
+- Import types with `import type`. ESLint enforces `@typescript-eslint/consistent-type-imports`.
+- Do not use type assertions (`as`) to paper over a type error. Fix the type.
+
+---
+
+## Accessibility rules (WCAG 2.2 AA — non-negotiable)
+
+- Interactive cells must be `<button>` elements. No `div` click handlers.
+- Every cell must have a computed accessible name encoding: column letter + row number + current state. Fireable cells must append a hint (`"Press Space to fire"`).
+- `aria-live="polite"` announcers for transient shot events (hit, miss, sunk). Use separate announcer instances for concurrent event sources so they do not clobber each other.
+- Use the `key` prop remount technique when the same announcement must repeat (e.g. multiple misses in a row).
+- Keyboard navigation is mandatory: arrow keys, roving tabindex, focus advancement after a shot.
+- Focus advancement after firing must be deferred with `requestAnimationFrame` to avoid a race with the disabled-state flush.
+- Color is never the sole differentiator for state. Hit and miss must have distinct icons as well as distinct colors.
+- Touch targets must meet minimum size requirements at all breakpoints including 320px width.
+- Contrast must meet AA at every cell state.
+
+---
+
+## Testing rules
+
+### Domain (services, utils, data)
+
+- Thorough unit coverage. Pure functions with no dependencies — test every rule, edge case, and guard.
+- A test failure here means a game rule is broken.
+
+### Hooks
+
+- Test with `renderHook`.
+- Export timing constants (e.g. `AI_SHOT_DELAY_MS`) and override to `0` in tests. Do not use `vi.useFakeTimers()` — it conflicts with `userEvent`.
+- Mock non-deterministic collaborators (e.g. `chooseRandomUnfiredCoordinate`) to a fixed coordinate.
+
+### Components
+
+- Use `data-coord` attributes for cell targeting. Do not use `aria-label` regex patterns — they are ambiguous against row-10 variants (e.g. `/B1/` matches `B10`).
+- Use exact rendered strings in assertions. Avoid loose regex patterns.
+- Cover: rendering, user interaction, hit/miss rendering, sunk messaging, game-over display.
+- Include accessibility-relevant assertions where practical.
+
+### Structure
+
+- `src/test/` mirrors `src/`. One test file per source file.
+- All four CI gates must pass: `typecheck`, `lint`, `format:check`, `test`.
+
+---
+
+## Style rules
+
+- Tailwind utility classes for all styling. No inline `style` props without a documented reason.
+- Use `cn()` from `lib/` for conditional class composition.
+- Do not produce long, unreadable class strings on a single element — extract a small presentational component if it aids clarity.
+- No `@apply` unless the use case is explicitly justified.
+
+---
+
+## Code quality bar
+
+- Code must read naturally, as though manually written and reviewed by a senior engineer.
+- Names must be meaningful and consistent with existing conventions in the codebase.
+- Avoid generic or obvious comments. Comments explain *why*, not *what*.
+- Avoid unnecessary abstraction. Every abstraction must be justifiable in a code review.
+- Prefer explicit over magical. Prefer pure functions for game rules.
+- Implement only what is needed. Structure for clean extension, but do not build the extension.
+- When uncertain between two approaches, choose the one that is easier to explain in a code review.
+
+---
+
+## What to do when generating code
+
+1. Search the project knowledge base and existing source files first.
+2. Identify the correct layer for each piece of logic.
+3. Write the minimum change. Do not modify unrelated files.
+4. Verify: does each new function, type, or component have a clear, single responsibility?
+5. Verify: does anything new duplicate something that already exists?
+6. Verify: do all four CI gates still pass after the change?
+7. List every modified file with its relative path. Do not summarise content — show the diff or full file.
