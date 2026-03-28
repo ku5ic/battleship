@@ -52,7 +52,7 @@ Nothing uses `any`. Raw tuples are kept in the data layer only and do not escape
 
 ### `data/`
 
-Two files. `config.ts` holds the raw JSON provided by the assignment, typed as `RawGameConfig`. `layout.ts` exports `parseLayout()`, which converts that config into typed `Ship[]` and validates it eagerly:
+Two files. `config.ts` holds the raw ship layout JSON, typed as `RawGameConfig`. `layout.ts` exports `parseLayout()`, which converts that config into typed `Ship[]` and validates it eagerly:
 
 - positions are within bounds
 - position count matches declared ship size
@@ -182,7 +182,7 @@ Tests are prioritized by the cost of a regression.
 
 ## Deliberate Omissions
 
-**Player ship placement, opponent turns, persistence, multiplayer.** These are explicitly out of scope per the assignment. The architecture does not block adding them: the engine layer could accept a second fleet, the state shape could be extended to include player ships, and `parseLayout` already validates any layout configuration.
+**Player ship placement, opponent turns, persistence, multiplayer.** These are deliberately out of scope. The architecture does not block adding them: the engine layer could accept a second fleet, the state shape could be extended to include player ships, and `parseLayout` already validates any layout configuration.
 
 **Animations.** Not justified by the requirements and would add complexity without improving the core experience.
 
