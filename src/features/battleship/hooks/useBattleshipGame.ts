@@ -83,6 +83,7 @@ function reducer(state: State, action: Action): State {
 // ---------------------------------------------------------------------------
 
 export interface UseBattleshipGameReturn extends GameState {
+  shipHitCounts: ReadonlyMap<ShipType, number>;
   fireShot: (col: number, row: number) => void;
   resetGame: () => void;
 }
@@ -102,6 +103,17 @@ export function useBattleshipGame(): UseBattleshipGameReturn {
 
   const gameOver = useMemo(() => isGameOver(SHIPS, sunkShipIds), [sunkShipIds]);
 
+  const shipHitCounts = useMemo<ReadonlyMap<ShipType, number>>(() => {
+    const counts = new Map<ShipType, number>();
+    for (const ship of SHIPS) {
+      counts.set(
+        ship.id,
+        ship.coordinates.filter((key) => state.shots.has(key)).length,
+      );
+    }
+    return counts;
+  }, [state.shots]);
+
   const fireShot = useCallback(
     (col: number, row: number): void => {
       if (gameOver) return;
@@ -120,6 +132,7 @@ export function useBattleshipGame(): UseBattleshipGameReturn {
     sunkShipIds,
     isGameOver: gameOver,
     lastResult: state.lastResult,
+    shipHitCounts,
     fireShot,
     resetGame,
   };

@@ -6,6 +6,7 @@ import {
 } from "@/features/battleship/components";
 import { useBattleshipGame } from "@/features/battleship/hooks/useBattleshipGame";
 import type { CoordinateKey } from "@/features/battleship/types";
+import { fromKey } from "@/features/battleship/utils/coordinates";
 
 /**
  * Wires the game hook to the presentational layer.
@@ -21,12 +22,13 @@ export function BattleshipGame() {
     sunkShipIds,
     isGameOver,
     lastResult,
+    shipHitCounts,
     fireShot,
     resetGame,
   } = useBattleshipGame();
 
   function handleFire(coord: CoordinateKey) {
-    const [col, row] = coord.split(",").map(Number) as [number, number];
+    const { col, row } = fromKey(coord);
     fireShot(col, row);
   }
 
@@ -57,8 +59,8 @@ export function BattleshipGame() {
         <div className="w-full max-w-xs lg:w-48 lg:shrink-0">
           <ShipStatusList
             ships={ships}
-            shots={shots}
             sunkShipIds={sunkShipIds}
+            hitCounts={shipHitCounts}
           />
         </div>
       </div>

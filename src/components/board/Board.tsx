@@ -2,7 +2,11 @@ import { useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { BOARD_SIZE, COLUMN_LABELS } from "@/features/battleship/constants";
 import type { CellStatus, CoordinateKey } from "@/features/battleship/types";
-import { allBoardKeys } from "@/features/battleship/utils/coordinates";
+import {
+  allBoardKeys,
+  fromKey,
+  toKey,
+} from "@/features/battleship/utils/coordinates";
 import { Cell } from "@/components/board/Cell";
 
 interface BoardProps {
@@ -47,11 +51,11 @@ export function Board({ shots, onFire, isGameOver, isReadOnly }: BoardProps) {
 
     e.preventDefault();
 
-    const [col, row] = raw.split(",").map(Number) as [number, number];
+    const { col, row } = fromKey(raw as CoordinateKey);
     const [dc, dr] = delta;
     const nextCol = Math.min(BOARD_SIZE - 1, Math.max(0, col + dc));
     const nextRow = Math.min(BOARD_SIZE - 1, Math.max(0, row + dr));
-    const nextCoord = `${String(nextCol)},${String(nextRow)}` as CoordinateKey;
+    const nextCoord = toKey(nextCol, nextRow);
 
     setFocusedCoord(nextCoord);
     boardRef.current

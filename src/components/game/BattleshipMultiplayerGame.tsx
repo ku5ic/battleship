@@ -22,6 +22,8 @@ export function BattleshipMultiplayerGame() {
     isAiThinking,
     playerLastResult,
     computerLastResult,
+    playerShipHitCounts,
+    computerShipHitCounts,
     playerFireShot,
     reset,
   } = useBattleshipSessionGame();
@@ -60,8 +62,8 @@ export function BattleshipMultiplayerGame() {
           <div className="mt-2">
             <ShipStatusList
               ships={board.player.ships}
-              shots={board.player.shots}
               sunkShipIds={board.player.sunkShipIds}
+              hitCounts={playerShipHitCounts}
             />
           </div>
         </section>
@@ -82,8 +84,8 @@ export function BattleshipMultiplayerGame() {
           <div className="mt-2">
             <ShipStatusList
               ships={board.computer.ships}
-              shots={board.computer.shots}
               sunkShipIds={board.computer.sunkShipIds}
+              hitCounts={computerShipHitCounts}
             />
           </div>
         </section>
