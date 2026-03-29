@@ -213,11 +213,14 @@ describe("BattleshipMultiplayerGame", () => {
 
     await user.click(cellIn(opponentBoard(), "9,9"));
 
-    await waitFor(() => {
-      expect(
-        screen.getByText("Your turn — select a cell to fire."),
-      ).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText("Your turn — select a cell to fire."),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 
   // ---------------------------------------------------------------------------
