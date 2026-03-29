@@ -55,7 +55,10 @@ export function Cell({
       }}
       className={cn(
         "relative flex items-center justify-center",
-        "w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10",
+        // w-full fills the grid cell; aspect-square keeps it square when space
+        // allows; min-h-[44px] ensures the touch target meets WCAG 2.5.5 even
+        // when cell width is narrower than 44px on dense grids.
+        "w-full aspect-square min-h-[44px]",
         "border border-slate-600",
         // Focus ring: yellow to stand out against the dark board at any state.
         // ring-offset-2 gives a small gap so the ring doesn't blend with neighbors.
