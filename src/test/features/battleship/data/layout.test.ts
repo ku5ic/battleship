@@ -99,7 +99,7 @@ describe("parseLayout — invalid configs", () => {
 
   it("throws when a ship has no positions", () => {
     expect(() =>
-      parseLayout(withReplacedShip("destroyer", { positions: [] })),
+      parseLayout(withReplacedShip("destroyer", { positions: [] }), 10),
     ).toThrow(/no positions/);
   });
 
@@ -113,6 +113,7 @@ describe("parseLayout — invalid configs", () => {
             [2, 0],
           ],
         }),
+        10,
       ),
     ).toThrow(/expected 2/);
   });
@@ -126,6 +127,7 @@ describe("parseLayout — invalid configs", () => {
             [11, 0],
           ],
         }),
+        10,
       ),
     ).toThrow(/out-of-bounds/);
   });
@@ -139,6 +141,7 @@ describe("parseLayout — invalid configs", () => {
             [3, 1],
           ],
         }),
+        10,
       ),
     ).toThrow(/overlaps/);
   });
@@ -152,6 +155,7 @@ describe("parseLayout — invalid configs", () => {
             [1, 1],
           ],
         }),
+        10,
       ),
     ).toThrow(/not aligned/);
   });
@@ -165,6 +169,7 @@ describe("parseLayout — invalid configs", () => {
             [2, 0],
           ],
         }),
+        10,
       ),
     ).toThrow(/gap/);
   });
