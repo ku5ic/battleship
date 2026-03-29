@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useCallback, useMemo } from "react";
-import { parseLayout } from "@/features/battleship/data/layout";
+import { generateRandomLayout } from "@/features/battleship/services/placement";
 import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
 import type {
   BoardState,
@@ -73,23 +73,29 @@ export function useBattleshipSessionGame(
 ): UseBattleshipSessionReturn {
   const { boardSize, columnLabels } = DIFFICULTY_CONFIG[difficulty];
 
-  // Ships and position indexes are stable for this hook's lifetime.
-  // Both players share the same fleet layout; the useMemo is the fork point
-  // when distinct layouts per player are introduced.
-  const { ships, playerPositionIndex, computerPositionIndex } = useMemo(() => {
-    const parsed = parseLayout(RAW_GAME_CONFIG, boardSize);
+  // Each player gets an independent random layout. Position indexes are
+  // derived once and stable for this hook's lifetime.
+  const {
+    playerShips,
+    computerShips,
+    playerPositionIndex,
+    computerPositionIndex,
+  } = useMemo(() => {
+    const pShips = generateRandomLayout(RAW_GAME_CONFIG, boardSize);
+    const cShips = generateRandomLayout(RAW_GAME_CONFIG, boardSize);
     return {
-      ships: parsed,
-      playerPositionIndex: buildPositionIndex(parsed),
-      computerPositionIndex: buildPositionIndex(parsed),
+      playerShips: pShips,
+      computerShips: cShips,
+      playerPositionIndex: buildPositionIndex(pShips),
+      computerPositionIndex: buildPositionIndex(cShips),
     };
   }, [boardSize]);
 
   function buildInitialSessionState(): SessionState {
     return {
       board: {
-        player: createBoardState(ships),
-        computer: createBoardState(ships),
+        player: createBoardState(playerShips),
+        computer: createBoardState(computerShips),
       },
       activeTurn: "player",
       winner: null,
@@ -172,7 +178,7 @@ export function useBattleshipSessionGame(
 
   const playerShipHitCounts = useMemo<ReadonlyMap<ShipType, number>>(() => {
     const counts = new Map<ShipType, number>();
-    for (const ship of ships) {
+    for (const ship of playerShips) {
       counts.set(
         ship.id,
         ship.coordinates.filter((key) => state.board.player.shots.has(key))
@@ -180,11 +186,11 @@ export function useBattleshipSessionGame(
       );
     }
     return counts;
-  }, [ships, state.board.player.shots]);
+  }, [playerShips, state.board.player.shots]);
 
   const computerShipHitCounts = useMemo<ReadonlyMap<ShipType, number>>(() => {
     const counts = new Map<ShipType, number>();
-    for (const ship of ships) {
+    for (const ship of computerShips) {
       counts.set(
         ship.id,
         ship.coordinates.filter((key) => state.board.computer.shots.has(key))
@@ -192,7 +198,7 @@ export function useBattleshipSessionGame(
       );
     }
     return counts;
-  }, [ships, state.board.computer.shots]);
+  }, [computerShips, state.board.computer.shots]);
 
   useEffect(() => {
     if (state.activeTurn !== "computer" || state.winner !== null) return;

@@ -4,6 +4,19 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { BattleshipMultiplayerGame } from "@/components/game/BattleshipMultiplayerGame";
 
 // ---------------------------------------------------------------------------
+// Mock placement to return the same deterministic layout used by the
+// original static config. This keeps all existing coordinate-based
+// assertions valid after the switch to randomised placement.
+// ---------------------------------------------------------------------------
+vi.mock("@/features/battleship/services/placement", async () => {
+  const { parseLayout } = await import("@/features/battleship/data/layout");
+  const { RAW_GAME_CONFIG } = await import("@/features/battleship/data/config");
+  return {
+    generateRandomLayout: vi.fn(() => parseLayout(RAW_GAME_CONFIG, 10)),
+  };
+});
+
+// ---------------------------------------------------------------------------
 // Mock the AI service so the computer always fires at a known empty cell
 // and the shot is deterministic across all tests.
 //

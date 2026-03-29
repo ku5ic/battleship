@@ -1,6 +1,19 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { useBattleshipGame } from "@/features/battleship/hooks/useBattleshipGame";
+
+// ---------------------------------------------------------------------------
+// Mock placement to return the same deterministic layout used by the
+// original static config. This keeps all existing coordinate-based
+// assertions valid after the switch to randomised placement.
+// ---------------------------------------------------------------------------
+vi.mock("@/features/battleship/services/placement", async () => {
+  const { parseLayout } = await import("@/features/battleship/data/layout");
+  const { RAW_GAME_CONFIG } = await import("@/features/battleship/data/config");
+  return {
+    generateRandomLayout: vi.fn(() => parseLayout(RAW_GAME_CONFIG, 10)),
+  };
+});
 
 // The full layout is known, so tests target specific coordinates with confidence.
 //   destroyer:  [0,0] [1,0]
