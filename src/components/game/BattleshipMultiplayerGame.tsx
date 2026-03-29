@@ -1,21 +1,28 @@
 import { Board } from "@/components/board";
 import { Button, Stack, Text } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import {
   GameStatusMultiplayer,
   ShipStatusList,
   ShotResultAnnouncer,
 } from "@/features/battleship/components";
 import { useBattleshipSessionGame } from "@/features/battleship/hooks/useBattleshipSessionGame";
-import type { CoordinateKey } from "@/features/battleship/types";
+import type { Difficulty, CoordinateKey } from "@/features/battleship/types";
+
+interface BattleshipMultiplayerGameProps {
+  difficulty: Difficulty;
+}
 
 /**
- * Wires the game hook to the presentational layer.
+ * Wires the session hook to the presentational layer.
  *
- * This is the only component that calls useBattleshipGame. Everything below
- * it receives plain props and emits callbacks — no child is aware the hook
- * exists.
+ * This is the only component that calls useBattleshipSessionGame. Everything
+ * below it receives plain props and emits callbacks — no child is aware the
+ * hook exists.
  */
-export function BattleshipMultiplayerGame() {
+export function BattleshipMultiplayerGame({
+  difficulty,
+}: BattleshipMultiplayerGameProps) {
   const {
     board,
     activeTurn,
@@ -25,9 +32,11 @@ export function BattleshipMultiplayerGame() {
     computerLastResult,
     playerShipHitCounts,
     computerShipHitCounts,
+    boardSize,
+    columnLabels,
     playerFireShot,
     reset,
-  } = useBattleshipSessionGame();
+  } = useBattleshipSessionGame(difficulty);
 
   const sessionOver = winner !== null;
 
@@ -49,13 +58,29 @@ export function BattleshipMultiplayerGame() {
       />
 
       {/* Boards */}
-      <div className="flex flex-col items-start gap-8 lg:flex-row">
+      {/* Side-by-side only at easy — moderate and hard grids are too wide
+           to share a row without sub-pixel cells and unreadable labels. */}
+      <div
+        className={cn(
+          "w-full flex flex-col items-center gap-8",
+          difficulty === "easy" &&
+            "lg:flex-row lg:justify-center lg:items-start",
+        )}
+      >
         {/* Player board — read-only, shows what the computer fired at */}
-        <section aria-label="Your board">
+        <section
+          aria-label="Your board"
+          className={cn(
+            "w-full",
+            difficulty === "easy" && "lg:w-auto lg:flex-1",
+          )}
+        >
           <Text as="h2" variant="label" className="mb-2">
             Your fleet
           </Text>
           <Board
+            boardSize={boardSize}
+            columnLabels={columnLabels}
             shots={board.player.shots}
             isGameOver={board.player.isGameOver}
             isReadOnly
@@ -70,11 +95,19 @@ export function BattleshipMultiplayerGame() {
         </section>
 
         {/* Opponent board — interactive, player fires here */}
-        <section aria-label="Opponent's board">
+        <section
+          aria-label="Opponent's board"
+          className={cn(
+            "w-full",
+            difficulty === "easy" && "lg:w-auto lg:flex-1",
+          )}
+        >
           <Text as="h2" variant="label" className="mb-2">
             Enemy fleet
           </Text>
           <Board
+            boardSize={boardSize}
+            columnLabels={columnLabels}
             shots={board.computer.shots}
             onFire={(coord: CoordinateKey) => {
               playerFireShot(coord);

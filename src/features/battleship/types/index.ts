@@ -104,3 +104,11 @@ export interface SessionState {
   winner: PlayerId | null;
   isAiThinking: boolean;
 }
+
+export type Difficulty = "easy" | "moderate" | "hard";
+
+export interface DifficultyConfig {
+  boardSize: number;
+  columnLabels: readonly string[];
+  label: string;
+}

@@ -77,46 +77,46 @@ describe("BattleshipMultiplayerGame", () => {
   // ---------------------------------------------------------------------------
 
   it("renders the heading", () => {
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
     expect(
       screen.getByRole("heading", { level: 1, name: "Battleship" }),
     ).toBeInTheDocument();
   });
 
   it("renders both board sections", () => {
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
     expect(yourBoard()).toBeInTheDocument();
     expect(opponentBoard()).toBeInTheDocument();
   });
 
   it("renders two fleet status panels", () => {
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
     expect(
       screen.getAllByRole("region", { name: /Fleet status/i }),
     ).toHaveLength(2);
   });
 
   it("shows the player turn prompt on load", () => {
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
     expect(
       screen.getByText("Your turn — select a cell to fire."),
     ).toBeInTheDocument();
   });
 
   it("renders the Restart button on load", () => {
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
     expect(screen.getByRole("button", { name: "Restart" })).toBeInTheDocument();
   });
 
   it("all player board cells are disabled on load", () => {
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
     const grid = within(yourBoard()).getByRole("grid");
     const buttons = within(grid).getAllByRole("button");
     expect(buttons.every((b) => b.hasAttribute("disabled"))).toBe(true);
   });
 
   it("opponent board cells are enabled on the player's turn", () => {
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
     const buttons = within(opponentBoard()).getAllByRole("button");
     expect(buttons.some((b) => !b.hasAttribute("disabled"))).toBe(true);
   });
@@ -127,7 +127,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("marks the opponent cell as hit when the player hits a ship", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     await user.click(cellIn(opponentBoard(), "0,0")); // destroyer
 
@@ -136,7 +136,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("keeps the player's turn after a hit", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     await user.click(cellIn(opponentBoard(), "0,0"));
 
@@ -151,7 +151,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("marks the opponent cell as miss when the player fires at empty water", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     await user.click(cellIn(opponentBoard(), "9,9"));
 
@@ -160,7 +160,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("shows the computer thinking status immediately after a player miss", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     await user.click(cellIn(opponentBoard(), "9,9"));
 
@@ -169,7 +169,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("disables all opponent board cells while the computer is thinking", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     await user.click(cellIn(opponentBoard(), "9,9"));
 
@@ -184,7 +184,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("computer fires on the player board after the delay", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     await user.click(cellIn(opponentBoard(), "9,9")); // miss
 
@@ -196,7 +196,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("returns the turn to the player after the computer misses", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     await user.click(cellIn(opponentBoard(), "9,9"));
 
@@ -213,7 +213,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("marks the destroyer as sunk after both cells are hit", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     await user.click(cellIn(opponentBoard(), "0,0"));
     await user.click(cellIn(opponentBoard(), "1,0"));
@@ -229,7 +229,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("shows the win message after all opponent ships are sunk", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     for (const coord of ALL_COMPUTER_SHIP_COORDS) {
       await user.click(cellIn(opponentBoard(), coord));
@@ -242,7 +242,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("disables all opponent cells after the player wins", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     for (const coord of ALL_COMPUTER_SHIP_COORDS) {
       await user.click(cellIn(opponentBoard(), coord));
@@ -254,7 +254,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("shows Play again button after the player wins", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     for (const coord of ALL_COMPUTER_SHIP_COORDS) {
       await user.click(cellIn(opponentBoard(), coord));
@@ -271,7 +271,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("resets both boards when Restart is clicked", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     await user.click(cellIn(opponentBoard(), "0,0"));
     await user.click(screen.getByRole("button", { name: "Restart" }));
@@ -284,7 +284,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("cancels the pending AI shot on reset", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame />);
+    render(<BattleshipMultiplayerGame difficulty="easy" />);
 
     await user.click(cellIn(opponentBoard(), "9,9")); // miss — AI timer starts
     await user.click(screen.getByRole("button", { name: "Restart" }));

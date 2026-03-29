@@ -27,8 +27,12 @@ export function rawToKey([col, row]: RawCoordinate): CoordinateKey {
 }
 
 /** Returns true if the coordinate falls within the valid board bounds. */
-export function isInBounds(col: number, row: number): boolean {
-  return col >= 0 && col < BOARD_SIZE && row >= 0 && row < BOARD_SIZE;
+export function isInBounds(
+  col: number,
+  row: number,
+  boardSize: number = BOARD_SIZE,
+): boolean {
+  return col >= 0 && col < boardSize && row >= 0 && row < boardSize;
 }
 
 /**
@@ -50,10 +54,10 @@ export function deriveOrientation(
  * Useful for rendering the full grid without coupling board logic
  * to React render loops.
  */
-export function allBoardKeys(): CoordinateKey[] {
+export function allBoardKeys(boardSize: number = BOARD_SIZE): CoordinateKey[] {
   const keys: CoordinateKey[] = [];
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
+  for (let row = 0; row < boardSize; row++) {
+    for (let col = 0; col < boardSize; col++) {
       keys.push(toKey(col, row));
     }
   }

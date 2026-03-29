@@ -58,15 +58,15 @@ const validConfig: RawGameConfig = {
 
 describe("parseLayout — valid config", () => {
   it("parses without throwing", () => {
-    expect(() => parseLayout(validConfig)).not.toThrow();
+    expect(() => parseLayout(validConfig, 10)).not.toThrow();
   });
 
   it("returns one Ship per layout entry", () => {
-    expect(parseLayout(validConfig)).toHaveLength(5);
+    expect(parseLayout(validConfig, 10)).toHaveLength(5);
   });
 
   it("maps coordinates correctly", () => {
-    const ships = parseLayout(validConfig);
+    const ships = parseLayout(validConfig, 10);
     const destroyer = ships.find((s) => s.id === "destroyer");
 
     expect(destroyer).toBeDefined();
@@ -76,7 +76,7 @@ describe("parseLayout — valid config", () => {
   });
 
   it("derives vertical orientation for the battleship", () => {
-    const ships = parseLayout(validConfig);
+    const ships = parseLayout(validConfig, 10);
     const battleship = ships.find((s) => s.id === "battleship");
 
     expect(battleship).toBeDefined();

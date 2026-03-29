@@ -6,8 +6,12 @@ import {
   ShotResultAnnouncer,
 } from "@/features/battleship/components";
 import { useBattleshipGame } from "@/features/battleship/hooks/useBattleshipGame";
-import type { CoordinateKey } from "@/features/battleship/types";
+import type { Difficulty, CoordinateKey } from "@/features/battleship/types";
 import { fromKey } from "@/features/battleship/utils/coordinates";
+
+interface BattleshipGameProps {
+  difficulty: Difficulty;
+}
 
 /**
  * Wires the game hook to the presentational layer.
@@ -16,7 +20,7 @@ import { fromKey } from "@/features/battleship/utils/coordinates";
  * it receives plain props and emits callbacks — no child is aware the hook
  * exists.
  */
-export function BattleshipGame() {
+export function BattleshipGame({ difficulty }: BattleshipGameProps) {
   const {
     ships,
     shots,
@@ -24,9 +28,11 @@ export function BattleshipGame() {
     isGameOver,
     lastResult,
     shipHitCounts,
+    boardSize,
+    columnLabels,
     fireShot,
     resetGame,
-  } = useBattleshipGame();
+  } = useBattleshipGame(difficulty);
 
   function handleFire(coord: CoordinateKey) {
     const { col, row } = fromKey(coord);
@@ -54,8 +60,14 @@ export function BattleshipGame() {
         fleet aligned to the top of the board. On smaller screens they stack
         vertically, with the fleet centered below the board.
       */}
-      <div className="flex flex-col items-center gap-4 sm:gap-6 lg:flex-row lg:items-start lg:gap-8">
-        <Board shots={shots} onFire={handleFire} isGameOver={isGameOver} />
+      <div className="w-full flex flex-col items-center gap-4 sm:gap-6 lg:flex-row lg:items-start lg:gap-8">
+        <Board
+          boardSize={boardSize}
+          columnLabels={columnLabels}
+          shots={shots}
+          onFire={handleFire}
+          isGameOver={isGameOver}
+        />
 
         <div className="w-full max-w-xs lg:w-48 lg:shrink-0">
           <ShipStatusList

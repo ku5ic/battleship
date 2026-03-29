@@ -10,7 +10,13 @@ describe("Cell", () => {
 
   it("renders as a button element", () => {
     render(
-      <Cell coord="0,0" status="untouched" onFire={vi.fn()} tabIndex={0} />,
+      <Cell
+        coord="0,0"
+        columnLabel="A"
+        status="untouched"
+        onFire={vi.fn()}
+        tabIndex={0}
+      />,
     );
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
@@ -18,14 +24,26 @@ describe("Cell", () => {
   it("includes column label and row number in the accessible name", () => {
     // col=0 → A, row=0 → 1
     render(
-      <Cell coord="0,0" status="untouched" onFire={vi.fn()} tabIndex={0} />,
+      <Cell
+        coord="0,0"
+        columnLabel="A"
+        status="untouched"
+        onFire={vi.fn()}
+        tabIndex={0}
+      />,
     );
     expect(screen.getByRole("button", { name: /A1/i })).toBeInTheDocument();
   });
 
   it("encodes 'not fired' state in the accessible name for untouched cells", () => {
     render(
-      <Cell coord="0,0" status="untouched" onFire={vi.fn()} tabIndex={0} />,
+      <Cell
+        coord="0,0"
+        columnLabel="A"
+        status="untouched"
+        onFire={vi.fn()}
+        tabIndex={0}
+      />,
     );
     expect(screen.getByRole("button")).toHaveAccessibleName(
       "A1, not fired. Press Space to fire",
@@ -34,19 +52,25 @@ describe("Cell", () => {
 
   it("encodes 'hit' in the accessible name for a hit cell", () => {
     // col=2 → C, row=3 → 4
-    render(<Cell coord="2,3" status="hit" onFire={vi.fn()} />);
+    render(<Cell coord="2,3" columnLabel="C" status="hit" onFire={vi.fn()} />);
     expect(screen.getByRole("button")).toHaveAccessibleName("C4, hit");
   });
 
   it("encodes 'miss' in the accessible name for a miss cell", () => {
     // col=9 → J, row=9 → 10
-    render(<Cell coord="9,9" status="miss" onFire={vi.fn()} />);
+    render(<Cell coord="9,9" columnLabel="J" status="miss" onFire={vi.fn()} />);
     expect(screen.getByRole("button")).toHaveAccessibleName("J10, miss");
   });
 
   it("appends a fire hint to the accessible name for fireable cells only", () => {
     render(
-      <Cell coord="0,0" status="untouched" onFire={vi.fn()} tabIndex={0} />,
+      <Cell
+        coord="0,0"
+        columnLabel="A"
+        status="untouched"
+        onFire={vi.fn()}
+        tabIndex={0}
+      />,
     );
     expect(screen.getByRole("button")).toHaveAccessibleName(
       /Press Space to fire/i,
@@ -54,7 +78,7 @@ describe("Cell", () => {
   });
 
   it("omits the fire hint from fired cells", () => {
-    render(<Cell coord="0,0" status="hit" onFire={vi.fn()} />);
+    render(<Cell coord="0,0" columnLabel="A" status="hit" onFire={vi.fn()} />);
     expect(screen.getByRole("button")).not.toHaveAccessibleName(/Press Space/i);
   });
 
@@ -64,18 +88,24 @@ describe("Cell", () => {
 
   it("is not disabled for an untouched cell", () => {
     render(
-      <Cell coord="0,0" status="untouched" onFire={vi.fn()} tabIndex={0} />,
+      <Cell
+        coord="0,0"
+        columnLabel="A"
+        status="untouched"
+        onFire={vi.fn()}
+        tabIndex={0}
+      />,
     );
     expect(screen.getByRole("button")).not.toBeDisabled();
   });
 
   it("is disabled when status is hit", () => {
-    render(<Cell coord="0,0" status="hit" onFire={vi.fn()} />);
+    render(<Cell coord="0,0" columnLabel="A" status="hit" onFire={vi.fn()} />);
     expect(screen.getByRole("button")).toBeDisabled();
   });
 
   it("is disabled when status is miss", () => {
-    render(<Cell coord="0,0" status="miss" onFire={vi.fn()} />);
+    render(<Cell coord="0,0" columnLabel="A" status="miss" onFire={vi.fn()} />);
     expect(screen.getByRole("button")).toBeDisabled();
   });
 
@@ -83,6 +113,7 @@ describe("Cell", () => {
     render(
       <Cell
         coord="0,0"
+        columnLabel="A"
         status="untouched"
         onFire={vi.fn()}
         disabled
@@ -100,7 +131,13 @@ describe("Cell", () => {
     const user = userEvent.setup();
     const onFire = vi.fn();
     render(
-      <Cell coord="3,5" status="untouched" onFire={onFire} tabIndex={0} />,
+      <Cell
+        coord="3,5"
+        columnLabel="D"
+        status="untouched"
+        onFire={onFire}
+        tabIndex={0}
+      />,
     );
     await user.click(screen.getByRole("button"));
     expect(onFire).toHaveBeenCalledOnce();
@@ -110,7 +147,7 @@ describe("Cell", () => {
   it("does not call onFire when the cell has already been hit", async () => {
     const user = userEvent.setup();
     const onFire = vi.fn();
-    render(<Cell coord="3,5" status="hit" onFire={onFire} />);
+    render(<Cell coord="3,5" columnLabel="D" status="hit" onFire={onFire} />);
     await user.click(screen.getByRole("button"));
     expect(onFire).not.toHaveBeenCalled();
   });
@@ -118,15 +155,112 @@ describe("Cell", () => {
   it("does not call onFire when the cell has already been missed", async () => {
     const user = userEvent.setup();
     const onFire = vi.fn();
-    render(<Cell coord="3,5" status="miss" onFire={onFire} />);
+    render(<Cell coord="3,5" columnLabel="D" status="miss" onFire={onFire} />);
     await user.click(screen.getByRole("button"));
     expect(onFire).not.toHaveBeenCalled();
   });
 
   it("stores the coordinate in data-coord for keyboard navigation lookups", () => {
     render(
-      <Cell coord="4,7" status="untouched" onFire={vi.fn()} tabIndex={0} />,
+      <Cell
+        coord="4,7"
+        columnLabel="E"
+        status="untouched"
+        onFire={vi.fn()}
+        tabIndex={0}
+      />,
     );
     expect(screen.getByRole("button")).toHaveAttribute("data-coord", "4,7");
+  });
+
+  // ---------------------------------------------------------------------------
+  // Scale on hover/focus
+  // ---------------------------------------------------------------------------
+
+  it("applies scale class to an unfired enabled cell", () => {
+    render(
+      <Cell
+        coord="0,0"
+        columnLabel="A"
+        status="untouched"
+        onFire={vi.fn()}
+        tabIndex={0}
+      />,
+    );
+    expect(screen.getByRole("button").className).toContain("hover:scale-125");
+  });
+
+  it("does not apply scale class to a hit cell", () => {
+    render(<Cell coord="0,0" columnLabel="A" status="hit" onFire={vi.fn()} />);
+    expect(screen.getByRole("button").className).not.toContain(
+      "hover:scale-125",
+    );
+  });
+
+  it("does not apply scale class to a miss cell", () => {
+    render(<Cell coord="0,0" columnLabel="A" status="miss" onFire={vi.fn()} />);
+    expect(screen.getByRole("button").className).not.toContain(
+      "hover:scale-125",
+    );
+  });
+
+  it("does not apply scale class to a disabled unfired cell", () => {
+    render(
+      <Cell
+        coord="0,0"
+        columnLabel="A"
+        status="untouched"
+        onFire={vi.fn()}
+        disabled
+        tabIndex={0}
+      />,
+    );
+    expect(screen.getByRole("button").className).not.toContain(
+      "hover:scale-125",
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Coordinate tooltip
+  // ---------------------------------------------------------------------------
+
+  it("renders a tooltip span for an untouched enabled cell", () => {
+    render(
+      <Cell
+        coord="0,0"
+        columnLabel="A"
+        status="untouched"
+        onFire={vi.fn()}
+        tabIndex={0}
+      />,
+    );
+    const tooltip = screen.getByText("A1");
+    expect(tooltip).toBeInTheDocument();
+    expect(tooltip.tagName).toBe("SPAN");
+    expect(tooltip).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("tooltip is hidden by default (opacity-0)", () => {
+    render(
+      <Cell
+        coord="2,4"
+        columnLabel="C"
+        status="untouched"
+        onFire={vi.fn()}
+        tabIndex={0}
+      />,
+    );
+    const tooltip = screen.getByText("C5");
+    expect(tooltip.className).toContain("opacity-0");
+  });
+
+  it("does not render a tooltip for a hit cell", () => {
+    render(<Cell coord="0,0" columnLabel="A" status="hit" onFire={vi.fn()} />);
+    expect(screen.queryByText("A1")).not.toBeInTheDocument();
+  });
+
+  it("does not render a tooltip for a miss cell", () => {
+    render(<Cell coord="0,0" columnLabel="A" status="miss" onFire={vi.fn()} />);
+    expect(screen.queryByText("A1")).not.toBeInTheDocument();
   });
 });

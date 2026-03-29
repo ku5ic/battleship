@@ -24,7 +24,7 @@ src/
   features/
     battleship/
       components/               # Presentational feature components, props-in/callbacks-out
-      constants/                # BOARD_SIZE, column labels, ship display names
+      constants/                # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
       data/                     # config.ts (raw JSON), layout.ts (parseLayout), index.ts
       hooks/                    # useBattleshipGame, useBattleshipSessionGame
       services/                 # Pure engine and AI functions — no React
@@ -73,7 +73,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 - `useReducer` is preferred over multiple `useState` calls when transitions have guard logic or need to be atomic.
 - Reducers must stay synchronous. Async behaviour (AI timing, network) belongs in `useEffect` — the effect dispatches an action carrying a pre-resolved value.
 - Derive values with `useMemo`. Do not persist what can be derived.
-- Module-scope constants (position indexes, ship arrays) are computed once, not inside the hook body.
+- When values depend on a stable prop (e.g. `boardSize` from `difficulty`), compute them inside the hook via `useMemo`. Module-scope constants are only appropriate when the value is truly static.
 - Hooks expose typed, view-ready data. They do not expose raw state slices.
 
 ### `components/board/` and `components/game/`

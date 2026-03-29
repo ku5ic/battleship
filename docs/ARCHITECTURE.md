@@ -14,18 +14,18 @@ The codebase supports two game modes — single-player and vs-computer — witho
 
 ```
 src/
-  app/                        # App entry point and mode toggle
+  app/                        # App entry point, mode toggle, difficulty selector
   components/
     board/                    # Board and Cell — generic grid rendering (shared)
     game/                     # BattleshipGame, BattleshipMultiplayerGame
   features/
     battleship/
       components/             # Feature-specific presentational components
-      constants/              # BOARD_SIZE, labels, display names
+      constants/              # BOARD_SIZE, DIFFICULTY_CONFIG, labels, display names
       data/                   # Raw config and parseLayout()
       hooks/                  # useBattleshipGame, useBattleshipSessionGame
       services/               # Pure engine: resolveShot, applyShotToBoard, AI helper
-      types/                  # All domain types
+      types/                  # All domain types (includes Difficulty, DifficultyConfig)
       utils/                  # Coordinate utilities
   lib/                        # Shared utilities (cn)
   test/                       # Mirrors src/ structure
@@ -53,31 +53,41 @@ Defines the complete domain vocabulary. Every meaningful concept has an explicit
 - `PlayerId` — `"player" | "computer"`, used to identify board ownership and turn state
 - `SessionBoards` — the two-board structure `{ player: BoardState; computer: BoardState }`
 - `SessionState` — the top-level shape owned by the session hook
+- `Difficulty` — `"easy" | "moderate" | "hard"`
+- `DifficultyConfig` — `{ boardSize: number; columnLabels: readonly string[]; label: string }`
 
 Nothing uses `any`. Raw tuples are kept in the data layer only and do not escape into the rest of the app.
 
+### `constants/`
+
+Exports `BOARD_SIZE` (10, used as the default in coordinate utilities), `COLUMN_LABELS` (A–J, the default label set), `DIFFICULTY_CONFIG` (the canonical map from `Difficulty` to `DifficultyConfig`), `SHIP_DISPLAY_NAMES`, and `SHOT_OUTCOME_LABELS`.
+
+`DIFFICULTY_CONFIG` is typed with `satisfies Record<Difficulty, DifficultyConfig>` to preserve literal inference. Both hooks read `boardSize` and `columnLabels` from this map.
+
 ### `data/`
 
-Two files. `config.ts` holds the raw ship layout JSON, typed as `RawGameConfig`. `layout.ts` exports `parseLayout()`, which converts that config into typed `Ship[]` and validates it eagerly:
+Two files. `config.ts` holds the raw ship layout JSON, typed as `RawGameConfig`. `layout.ts` exports `parseLayout(config, boardSize)`, which converts that config into typed `Ship[]` and validates it eagerly:
 
-- positions are within bounds
+- positions are within bounds (checked against the given `boardSize`)
 - position count matches declared ship size
 - no two ships share a coordinate
 - positions form a straight, contiguous horizontal or vertical line
 
-`parseLayout` throws immediately on any violation. This is intentional — the layout is a static input and any error is a programming mistake, not a runtime condition to handle gracefully. The parsed result is exported from `data/index.ts` as the `SHIPS` constant, computed once at module load.
+`parseLayout` throws immediately on any violation. This is intentional — the layout is a static input and any error is a programming mistake, not a runtime condition to handle gracefully.
 
-Both boards in the session hook share the same fleet for now. The separation between `PLAYER_SHIPS` and `COMPUTER_SHIPS` constants at module scope makes this easy to change if distinct layouts are ever needed.
+`data/index.ts` exports a `SHIPS` constant parsed at board size 10 — this serves as the single-player default. Hooks call `parseLayout` directly with the active board size derived from `DIFFICULTY_CONFIG`, so `SHIPS` is not the source of truth when difficulty is in play.
 
 ### `utils/coordinates.ts`
 
 All coordinate manipulation lives here. `toKey`, `fromKey`, `rawToKey`, `isInBounds`, `deriveOrientation`, and `allBoardKeys` are all pure functions. The `toKey` function is the single point where `"col,row"` strings are produced — nothing else in the codebase constructs keys by hand.
 
+`isInBounds` and `allBoardKeys` accept a `boardSize` parameter (defaulting to `BOARD_SIZE`) to support variable grid sizes.
+
 ### `services/engine.ts`
 
 The core domain logic. All functions are pure.
 
-**`buildPositionIndex(ships)`** — builds a `Map<CoordinateKey, Ship>` for O(1) coordinate-to-ship lookups. Computed once per board at module scope.
+**`buildPositionIndex(ships)`** — builds a `Map<CoordinateKey, Ship>` for O(1) coordinate-to-ship lookups. Computed inside each hook via `useMemo` because the ship set depends on the active board size.
 
 **`resolveShot(coordinate, shots, positionIndex)`** — resolves a single shot attempt and returns a `ShotResult`. Priority order: already-fired → sunk → hit → miss. Never mutates anything.
 
@@ -91,43 +101,51 @@ The core domain logic. All functions are pure.
 
 ### `services/ai.ts`
 
-A single pure function: `chooseRandomUnfiredCoordinate(shotsReceived)`. Filters all 100 board keys against the shots map and returns a random unfired coordinate, or `null` if every cell has been fired at. It has no side effects and no timing logic — those concerns belong in the hook.
+A single pure function: `chooseRandomUnfiredCoordinate(shotsReceived, boardSize)`. Filters `allBoardKeys(boardSize)` against the shots map and returns a random unfired coordinate, or `null` if every cell has been fired at. It has no side effects and no timing logic — those concerns belong in the hook.
 
 ### `hooks/useBattleshipGame.ts`
 
-The single-player hook. Uses `useReducer` with `FIRE` and `RESET` actions. Only two values are persisted: `shots` and `lastResult`. `sunkShipIds` and `isGameOver` are derived via `useMemo`. `SHIPS` and `POSITION_INDEX` are computed once at module scope.
+The single-player hook. Accepts a `difficulty` parameter (defaults to `"easy"`). Reads `boardSize` and `columnLabels` from `DIFFICULTY_CONFIG[difficulty]`. Ships and the position index are derived inside the hook via `useMemo` from `parseLayout(RAW_GAME_CONFIG, boardSize)` — they depend on board size, so they cannot be module-scope constants.
+
+Uses `useReducer` with `FIRE` and `RESET` actions. Only two values are persisted: `shots` and `lastResult`. `sunkShipIds` and `isGameOver` are derived via `useMemo`.
 
 ### `hooks/useBattleshipSessionGame.ts`
 
-The session hook for vs-computer mode. Uses `useReducer` with `PLAYER_FIRE`, `COMPUTER_FIRE`, and `RESET` actions. The reducer is strictly synchronous — it receives a coordinate, calls `applyShotToBoard`, and derives the next `activeTurn`, `winner`, and `isAiThinking` from the result. No async logic enters the reducer.
+The session hook for vs-computer mode. Accepts a `difficulty` parameter (defaults to `"easy"`). Ships and both position indexes are derived inside the hook via `useMemo` from `parseLayout(RAW_GAME_CONFIG, boardSize)`. Both players share the same fleet layout; the `useMemo` is the fork point when distinct layouts per player are introduced.
 
-AI timing is handled entirely in a `useEffect` that watches `activeTurn`, `winner`, and the player's shot map. When it is the computer's turn, it calls `chooseRandomUnfiredCoordinate`, schedules a `setTimeout` with `AI_SHOT_DELAY_MS`, and dispatches `COMPUTER_FIRE` when it fires. The effect cleanup cancels the timeout — this correctly handles reset mid-delay and component unmount.
+Uses `useReducer` with `PLAYER_FIRE`, `COMPUTER_FIRE`, and `RESET` actions. The reducer is strictly synchronous — it receives a coordinate, calls `applyShotToBoard`, and derives the next `activeTurn`, `winner`, and `isAiThinking` from the result. No async logic enters the reducer.
 
-`PLAYER_POSITION_INDEX` and `COMPUTER_POSITION_INDEX` are both built from the same `SHIPS` constant at module scope. They are separate constants to make the intent explicit and to keep the hook ready for distinct layouts.
+AI timing is handled entirely in a `useEffect` that watches `activeTurn`, `winner`, and the player's shot map. When it is the computer's turn, it calls `chooseRandomUnfiredCoordinate(shots, boardSize)`, schedules a `setTimeout` with `AI_SHOT_DELAY_MS`, and dispatches `COMPUTER_FIRE` when it fires. The effect cleanup cancels the timeout — this correctly handles reset mid-delay and component unmount.
 
-The public interface exposes `board`, `activeTurn`, `winner`, `isAiThinking`, `playerLastResult`, `computerLastResult`, `playerFireShot`, and `reset`. Components receive these as plain props.
+The public interface exposes `board`, `activeTurn`, `winner`, `isAiThinking`, `boardSize`, `columnLabels`, `playerLastResult`, `computerLastResult`, `playerShipHitCounts`, `computerShipHitCounts`, `playerFireShot`, and `reset`. Components receive these as plain props.
 
 ### `components/game/BattleshipGame.tsx`
 
-Wires `useBattleshipGame` to the presentational layer. Single board, single `ShotResultAnnouncer`, single `GameStatus`. The only component that calls `useBattleshipGame`.
+Wires `useBattleshipGame` to the presentational layer. Accepts a `difficulty` prop and passes it to the hook. Single board, single `ShotResultAnnouncer`, single `GameStatus`. The only component that calls `useBattleshipGame`.
 
 ### `components/game/BattleshipMultiplayerGame.tsx`
 
-Wires `useBattleshipSessionGame` to the presentational layer. Renders two `Board` instances — the player's board in read-only mode, the opponent's board in interactive mode (locked when it is not the player's turn). Two `ShotResultAnnouncer` instances — one per board — so player and computer shot events do not clobber each other. Uses `GameStatusMultiplayer` for session-level turn and outcome messaging.
+Wires `useBattleshipSessionGame` to the presentational layer. Accepts a `difficulty` prop and passes it to the hook. Renders two `Board` instances — the player's board in read-only mode, the opponent's board in interactive mode (locked when it is not the player's turn). Two `ShotResultAnnouncer` instances — one per board — so player and computer shot events do not clobber each other. Uses `GameStatusMultiplayer` for session-level turn and outcome messaging.
+
+Layout is difficulty-responsive: boards sit side-by-side at `lg` breakpoints for Easy difficulty only. Moderate and Hard boards always stack vertically because the wider grids cannot share a row without sub-pixel cells. Uses `cn()` for conditional class composition.
 
 ### `app/App.tsx`
 
-Renders a mode toggle (Single player / vs Computer) using `aria-pressed` buttons. Switching mode unmounts the current game and mounts the other, resetting state without any explicit reset call.
+Renders a mode toggle (Single player / vs Computer) using `aria-pressed` buttons and a difficulty selector (Easy / Moderate / Hard) using `aria-pressed` buttons inside a `role="group"` with `aria-label="Difficulty"`. Switching mode or difficulty unmounts the current game and mounts the other via a `key` prop (`${mode}-${difficulty}`), resetting state without any explicit reset call.
 
 ### `components/board/Board.tsx`
 
-Renders the 10×10 grid as a `role="grid"`. Shared between both game modes. Accepts an optional `isReadOnly` prop — when true, all cells receive `disabled={true}` and `aria-readonly` is set on the grid. Used for the player's own board in vs-computer mode where cells show incoming shots but are not fireable.
+Renders the game board as a `role="grid"` with dynamic column count. Accepts `boardSize` and `columnLabels` as props. Uses CSS grid with `gridTemplateColumns` set via inline style — Tailwind cannot generate grid-template-columns for arbitrary runtime values, so inline style is the justified exception. The first column (1.5rem) holds the row number label; the remaining columns are equal-width cells.
+
+Shared between both game modes. Accepts an optional `isReadOnly` prop — when true, all cells receive `disabled={true}` and `aria-readonly` is set on the grid. Used for the player's own board in vs-computer mode where cells show incoming shots but are not fireable.
 
 Manages keyboard navigation via arrow keys and roving tabindex. Focus advances to the next unfired cell after a shot, deferred via `requestAnimationFrame` to avoid a race with the disabled state flush.
 
 ### `components/board/Cell.tsx`
 
-A single board cell rendered as a `<button>`. Disabled when fired or when the `disabled` prop is passed. Builds its own accessible label: e.g. `"C4, hit"` or `"A1, not fired. Press Space to fire"`. Visual state is communicated through both color and iconography.
+A single board cell rendered as a `<button>`. Accepts a `columnLabel` prop and builds its own accessible label from it directly — no import of `COLUMN_LABELS`. Disabled when fired or when the `disabled` prop is passed. Accessible label examples: `"C4, hit"` or `"A1, not fired. Press Space to fire"`. Visual state is communicated through both color and iconography.
+
+Fireable cells display a coordinate tooltip on hover and focus. The tooltip is `aria-hidden` (the accessible name already encodes the position) and uses `group-hover`/`group-focus-visible` for visibility. Cells use `aspect-square` to stay square at all breakpoints; touch targets are met by `scale-125` on hover/focus rather than minimum height.
 
 ### `features/battleship/components/`
 
@@ -138,6 +156,55 @@ Five focused presentational components:
 - **`GameStatusMultiplayer`** — session-level turn state and outcome for vs-computer mode. Renders `"Your turn — select a cell to fire."`, `"Computer is thinking…"`, `"You win! All enemy ships sunk."`, or `"Defeated. All your ships were sunk."` depending on `activeTurn`, `isAiThinking`, and `winner`
 - **`ShipStatusList`** — renders the fleet panel, deriving hit counts from the shots map
 - **`ShipStatusItem`** — renders one ship row with pip indicators and a sunk state
+
+---
+
+## Difficulty System
+
+The `Difficulty` type (`"easy" | "moderate" | "hard"`) drives board size through a single configuration constant:
+
+```ts
+DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig>
+```
+
+Each entry defines `boardSize`, `columnLabels`, and a display `label`. The flow:
+
+1. `App.tsx` holds `difficulty` in state and passes it as a prop to the active game component.
+2. The game component passes `difficulty` to its hook.
+3. The hook reads `boardSize` and `columnLabels` from `DIFFICULTY_CONFIG[difficulty]`.
+4. The hook calls `parseLayout(RAW_GAME_CONFIG, boardSize)` inside `useMemo` to produce ships and position indexes. These are hook-scope values, not module-scope constants, because they depend on the active board size.
+5. The hook passes `boardSize` and `columnLabels` through its return value.
+6. The wiring component passes them to `Board` as props.
+
+**Why key-based remount instead of a reset action:** Changing difficulty requires new ships, new position indexes, and a fresh state. A reset action would need to handle all of these atomically. The `key` prop approach (`key={${mode}-${difficulty}}`) is simpler — React unmounts the old tree and mounts a fresh one, so each hook instance runs with a single stable board size for its entire lifetime.
+
+**Why position indexes moved from module scope to hook scope:** When board size was fixed at 10, ships and position indexes could be computed once at module load. With variable board sizes, they depend on runtime state (`difficulty`), so they must be computed inside the hook. `useMemo([boardSize])` ensures they are stable within a mount and recomputed only when difficulty changes (which triggers a remount anyway).
+
+---
+
+## Responsive Layout
+
+### Board grid
+
+`Board` uses CSS grid with a dynamic `gridTemplateColumns` computed at render time:
+
+```ts
+`1.5rem repeat(${boardSize}, 1fr)`
+```
+
+This is set via inline style — the one justified exception to the no-inline-style rule. Tailwind's `grid-cols-*` utilities only support static values; a runtime board size requires a computed template.
+
+Cells use `aspect-square` to maintain square proportions at all breakpoints. Touch targets are met by `scale-125` on hover/focus rather than by minimum height — this avoids overflow on dense grids (15×15, 20×20) while still meeting touch target requirements.
+
+### Multiplayer layout
+
+In vs-computer mode, the two boards are laid out with flexbox:
+
+- **Default (all difficulties):** `flex-col items-center` — boards stack vertically, centered.
+- **Easy at `lg`:** `lg:flex-row lg:justify-center lg:items-start` — boards sit side-by-side with `flex-1` so they share width equally.
+- **Moderate and Hard:** Always stacked. The wider grids cannot share a row without sub-pixel cells and unreadable labels.
+
+The difficulty gate is applied via `cn()` conditional class composition, not separate component trees.
 
 ---
 
@@ -170,12 +237,12 @@ interface SessionState {
 
 ### What is derived (single-player)
 
-| Derived value      | Derived from               |
-| ------------------ | -------------------------- |
-| `sunkShipIds`      | `shots` + `SHIPS`          |
-| `isGameOver`       | `sunkShipIds` + `SHIPS`    |
-| Per-ship hit count | `shots` + ship coordinates |
-| Cell visual state  | `shots.get(coord)`         |
+| Derived value      | Derived from                          |
+| ------------------ | ------------------------------------- |
+| `sunkShipIds`      | `shots` + ships (from `useMemo`)      |
+| `isGameOver`       | `sunkShipIds` + ships (from `useMemo`)|
+| Per-ship hit count | `shots` + ship coordinates            |
+| Cell visual state  | `shots.get(coord)`                    |
 
 ### Why the reducer stays synchronous
 
@@ -200,13 +267,15 @@ Raw tuples (`RawCoordinate`) exist only at the config boundary and are converted
 WCAG 2.2 AA compliance was treated as a first-class requirement, not a retrofit.
 
 - Board cells are `<button>` elements with `disabled` state. No div click handlers.
-- Each cell's accessible name encodes column letter, row number, and current status. Fireable cells append a brief activation hint.
+- Each cell's accessible name encodes column letter, row number, and current status. The column label is passed to `Cell` as a prop, so accessible names are correct at all board sizes. Fireable cells append a brief activation hint.
+- Fireable cells display a coordinate tooltip on hover and focus. The tooltip is `aria-hidden` — the accessible name already encodes the position.
 - The grid uses `role="grid"` with `aria-rowcount`, `aria-colcount`, and `aria-readonly`. Keyboard navigation is fully implemented via arrow keys and roving tabindex.
 - Two `ShotResultAnnouncer` instances in vs-computer mode — one per board — prevent concurrent shot events from clobbering each other in the accessibility tree.
 - `GameStatusMultiplayer` uses `role="status"` to announce stable session-state transitions (turn changes, victory, defeat) as a persistent update rather than transient events.
+- The difficulty selector uses `aria-pressed` toggle buttons inside a `role="group"` with `aria-label="Difficulty"`.
 - Hit and miss states are communicated through both color and distinct icons. Color is never the sole differentiator.
 - Focus rings use high-contrast yellow visible against the dark board at any cell state.
-- Touch targets meet minimum size requirements at all breakpoints.
+- Touch targets meet minimum size requirements at all breakpoints — cells use `aspect-square` with `scale-125` on hover/focus.
 
 ---
 
@@ -232,6 +301,6 @@ Tests are prioritized by the cost of a regression.
 
 **Global state library.** Not needed at this scope. Both hooks are self-contained.
 
-**Dynamic ship layout.** The config is static, parsed once, and treated as read-only. If layouts were server-provided, `parseLayout` and the module-scope initialization would be the only two places to change.
+**Dynamic ship layout per difficulty.** Difficulty introduces variable board sizes, but ship layouts are still static — the same raw config is parsed at each board size. If layouts were difficulty-specific, only the `data/` layer and the `useMemo` call in each hook would change.
 
 **Distinct AI strategy.** The computer fires randomly. A smarter AI (probability targeting, hunt mode) would only touch `services/ai.ts` — the hook, reducer, and engine are unaffected.
