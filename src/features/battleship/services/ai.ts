@@ -1,4 +1,5 @@
 import { allBoardKeys } from "@/features/battleship/utils/coordinates";
+import { BOARD_SIZE } from "@/features/battleship/constants";
 import type { CellStatus, CoordinateKey } from "@/features/battleship/types";
 
 /**
@@ -7,8 +8,11 @@ import type { CellStatus, CoordinateKey } from "@/features/battleship/types";
  */
 export function chooseRandomUnfiredCoordinate(
   shotsReceived: ReadonlyMap<CoordinateKey, CellStatus>,
+  boardSize: number = BOARD_SIZE,
 ): CoordinateKey | null {
-  const unfired = allBoardKeys().filter((key) => !shotsReceived.has(key));
+  const unfired = allBoardKeys(boardSize).filter(
+    (key) => !shotsReceived.has(key),
+  );
   if (unfired.length === 0) return null;
   return unfired[Math.floor(Math.random() * unfired.length)] ?? null;
 }

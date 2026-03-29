@@ -21,7 +21,7 @@ import type {
  *
  * Throws on any violation — runs once at startup so failures surface immediately.
  */
-export function parseLayout(config: RawGameConfig): Ship[] {
+export function parseLayout(config: RawGameConfig, boardSize: number): Ship[] {
   const occupied = new Set<CoordinateKey>();
   const ships: Ship[] = [];
 
@@ -32,7 +32,7 @@ export function parseLayout(config: RawGameConfig): Ship[] {
 
     const coordinates = entry.positions.map((pos) => {
       const [col, row] = pos;
-      if (!isInBounds(col, row)) {
+      if (!isInBounds(col, row, boardSize)) {
         throw new Error(
           `Ship "${entry.ship}" has out-of-bounds position [${String(col)}, ${String(row)}].`,
         );
