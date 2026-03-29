@@ -6,16 +6,22 @@ import {
   ShotResultAnnouncer,
 } from "@/features/battleship/components";
 import { useBattleshipSessionGame } from "@/features/battleship/hooks/useBattleshipSessionGame";
-import type { CoordinateKey } from "@/features/battleship/types";
+import type { Difficulty, CoordinateKey } from "@/features/battleship/types";
+
+interface BattleshipMultiplayerGameProps {
+  difficulty: Difficulty;
+}
 
 /**
- * Wires the game hook to the presentational layer.
+ * Wires the session hook to the presentational layer.
  *
- * This is the only component that calls useBattleshipGame. Everything below
- * it receives plain props and emits callbacks — no child is aware the hook
- * exists.
+ * This is the only component that calls useBattleshipSessionGame. Everything
+ * below it receives plain props and emits callbacks — no child is aware the
+ * hook exists.
  */
-export function BattleshipMultiplayerGame() {
+export function BattleshipMultiplayerGame({
+  difficulty,
+}: BattleshipMultiplayerGameProps) {
   const {
     board,
     activeTurn,
@@ -25,9 +31,11 @@ export function BattleshipMultiplayerGame() {
     computerLastResult,
     playerShipHitCounts,
     computerShipHitCounts,
+    boardSize,
+    columnLabels,
     playerFireShot,
     reset,
-  } = useBattleshipSessionGame();
+  } = useBattleshipSessionGame(difficulty);
 
   const sessionOver = winner !== null;
 
@@ -56,6 +64,8 @@ export function BattleshipMultiplayerGame() {
             Your fleet
           </Text>
           <Board
+            boardSize={boardSize}
+            columnLabels={columnLabels}
             shots={board.player.shots}
             isGameOver={board.player.isGameOver}
             isReadOnly
@@ -75,6 +85,8 @@ export function BattleshipMultiplayerGame() {
             Enemy fleet
           </Text>
           <Board
+            boardSize={boardSize}
+            columnLabels={columnLabels}
             shots={board.computer.shots}
             onFire={(coord: CoordinateKey) => {
               playerFireShot(coord);

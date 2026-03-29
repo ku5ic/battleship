@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
-import { BOARD_SIZE, COLUMN_LABELS } from "@/features/battleship/constants";
 import type { CellStatus, CoordinateKey } from "@/features/battleship/types";
 import {
   allBoardKeys,
@@ -10,6 +9,8 @@ import {
 import { Cell } from "@/components/board/Cell";
 
 interface BoardProps {
+  boardSize: number;
+  columnLabels: readonly string[];
   shots: ReadonlyMap<CoordinateKey, CellStatus>;
   onFire?: (coord: CoordinateKey) => void;
   isGameOver: boolean;
@@ -24,11 +25,11 @@ const ARROW_DELTAS: Partial<Record<string, [number, number]>> = {
 };
 
 /**
- * Renders the 10×10 game board with column (A–J) and row (1–10) labels.
+ * Renders the game board with column and row labels sized by boardSize.
  *
  * Keyboard navigation uses a roving tabindex pattern: only the active cell
  * sits in the tab sequence. Arrow keys move focus within the grid without
- * forcing users to tab through all 100 cells.
+ * forcing users to tab through all cells.
  *
  * Each cell button is wrapped in role="gridcell" so the grid → row → gridcell
  * ownership chain is spec-compliant. The button retains its implicit role.
@@ -37,7 +38,14 @@ const ARROW_DELTAS: Partial<Record<string, [number, number]>> = {
  * very narrow viewports (≥ 320px) the grid scrolls horizontally rather than
  * breaking the page layout.
  */
-export function Board({ shots, onFire, isGameOver, isReadOnly }: BoardProps) {
+export function Board({
+  boardSize,
+  columnLabels,
+  shots,
+  onFire,
+  isGameOver,
+  isReadOnly,
+}: BoardProps) {
   const [focusedCoord, setFocusedCoord] = useState<CoordinateKey>("0,0");
   const boardRef = useRef<HTMLDivElement>(null);
 
@@ -53,8 +61,8 @@ export function Board({ shots, onFire, isGameOver, isReadOnly }: BoardProps) {
 
     const { col, row } = fromKey(raw as CoordinateKey);
     const [dc, dr] = delta;
-    const nextCol = Math.min(BOARD_SIZE - 1, Math.max(0, col + dc));
-    const nextRow = Math.min(BOARD_SIZE - 1, Math.max(0, row + dr));
+    const nextCol = Math.min(boardSize - 1, Math.max(0, col + dc));
+    const nextRow = Math.min(boardSize - 1, Math.max(0, row + dr));
     const nextCoord = toKey(nextCol, nextRow);
 
     setFocusedCoord(nextCoord);
@@ -63,9 +71,9 @@ export function Board({ shots, onFire, isGameOver, isReadOnly }: BoardProps) {
       ?.focus();
   }
 
-  // ALL_KEYS is stable — allBoardKeys() is pure and always returns the same
-  // 100 keys, so memoising with [] avoids recreating the array on every render.
-  const ALL_KEYS = useMemo(() => allBoardKeys(), []);
+  // ALL_KEYS depends on boardSize. In practice boardSize is stable for the
+  // hook's lifetime; the component is remounted via key when difficulty changes.
+  const ALL_KEYS = useMemo(() => allBoardKeys(boardSize), [boardSize]);
 
   /**
    * Fires the shot then immediately advances keyboard focus to the next unfired
@@ -94,7 +102,7 @@ export function Board({ shots, onFire, isGameOver, isReadOnly }: BoardProps) {
     });
   }
 
-  const rows = groupByRow(ALL_KEYS);
+  const rows = groupByRow(ALL_KEYS, boardSize);
 
   return (
     // Horizontal scroll container — keeps the board usable on narrow screens
@@ -105,8 +113,8 @@ export function Board({ shots, onFire, isGameOver, isReadOnly }: BoardProps) {
         ref={boardRef}
         role="grid"
         aria-label="Battleship board. Use arrow keys to navigate, Space or Enter to fire."
-        aria-rowcount={BOARD_SIZE}
-        aria-colcount={BOARD_SIZE}
+        aria-rowcount={boardSize}
+        aria-colcount={boardSize}
         aria-readonly={isGameOver}
         onKeyDown={handleKeyDown}
         className="inline-block select-none"
@@ -114,7 +122,7 @@ export function Board({ shots, onFire, isGameOver, isReadOnly }: BoardProps) {
       >
         {/* Column headers — decorative; cell aria-labels encode position */}
         <div role="row" className="flex pl-6 sm:pl-8 mb-0.5" aria-hidden="true">
-          {COLUMN_LABELS.map((label) => (
+          {columnLabels.map((label) => (
             <div
               key={label}
               className={cn(
@@ -163,10 +171,13 @@ export function Board({ shots, onFire, isGameOver, isReadOnly }: BoardProps) {
   );
 }
 
-function groupByRow(keys: CoordinateKey[]): CoordinateKey[][] {
+function groupByRow(
+  keys: CoordinateKey[],
+  boardSize: number,
+): CoordinateKey[][] {
   const rows: CoordinateKey[][] = [];
-  for (let r = 0; r < BOARD_SIZE; r++) {
-    rows.push(keys.slice(r * BOARD_SIZE, (r + 1) * BOARD_SIZE));
+  for (let r = 0; r < boardSize; r++) {
+    rows.push(keys.slice(r * boardSize, (r + 1) * boardSize));
   }
   return rows;
 }
