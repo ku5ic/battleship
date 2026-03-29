@@ -10,8 +10,13 @@ import { useBattleshipGame } from "@/features/battleship/hooks/useBattleshipGame
 //   carrier:    [2,9] [3,9] [4,9] [5,9] [6,9]
 
 describe("useBattleshipGame", () => {
+  it("initialises boardSize from difficulty", () => {
+    const { result } = renderHook(() => useBattleshipGame("moderate"));
+    expect(result.current.boardSize).toBe(15);
+  });
+
   it("starts with an empty board and no result", () => {
-    const { result } = renderHook(() => useBattleshipGame());
+    const { result } = renderHook(() => useBattleshipGame("easy"));
     expect(result.current.shots.size).toBe(0);
     expect(result.current.lastResult).toBeNull();
     expect(result.current.isGameOver).toBe(false);
@@ -19,12 +24,12 @@ describe("useBattleshipGame", () => {
   });
 
   it("exposes all five ships", () => {
-    const { result } = renderHook(() => useBattleshipGame());
+    const { result } = renderHook(() => useBattleshipGame("easy"));
     expect(result.current.ships).toHaveLength(5);
   });
 
   it("records a miss on an empty cell", () => {
-    const { result } = renderHook(() => useBattleshipGame());
+    const { result } = renderHook(() => useBattleshipGame("easy"));
 
     act(() => {
       result.current.fireShot(9, 9);
@@ -35,7 +40,7 @@ describe("useBattleshipGame", () => {
   });
 
   it("records a hit on an occupied cell", () => {
-    const { result } = renderHook(() => useBattleshipGame());
+    const { result } = renderHook(() => useBattleshipGame("easy"));
 
     act(() => {
       result.current.fireShot(0, 0);
@@ -47,7 +52,7 @@ describe("useBattleshipGame", () => {
   });
 
   it("sinks a ship after all its cells are hit", () => {
-    const { result } = renderHook(() => useBattleshipGame());
+    const { result } = renderHook(() => useBattleshipGame("easy"));
 
     act(() => {
       result.current.fireShot(0, 0);
@@ -62,7 +67,7 @@ describe("useBattleshipGame", () => {
   });
 
   it("surfaces already-fired without adding a duplicate entry to shots", () => {
-    const { result } = renderHook(() => useBattleshipGame());
+    const { result } = renderHook(() => useBattleshipGame("easy"));
 
     act(() => {
       result.current.fireShot(0, 0);
@@ -78,7 +83,7 @@ describe("useBattleshipGame", () => {
   });
 
   it("does not fire after the game is over", () => {
-    const { result } = renderHook(() => useBattleshipGame());
+    const { result } = renderHook(() => useBattleshipGame("easy"));
 
     const allPositions: [number, number][] = [
       [2, 9],
@@ -117,7 +122,7 @@ describe("useBattleshipGame", () => {
   });
 
   it("resets all state cleanly", () => {
-    const { result } = renderHook(() => useBattleshipGame());
+    const { result } = renderHook(() => useBattleshipGame("easy"));
 
     act(() => {
       result.current.fireShot(0, 0);
