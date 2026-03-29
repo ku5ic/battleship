@@ -35,19 +35,31 @@ describe("rawToKey", () => {
 
 describe("isInBounds", () => {
   it("accepts valid board positions", () => {
-    expect(isInBounds(0, 0)).toBe(true);
-    expect(isInBounds(9, 9)).toBe(true);
-    expect(isInBounds(5, 5)).toBe(true);
+    expect(isInBounds(0, 0, 10)).toBe(true);
+    expect(isInBounds(9, 9, 10)).toBe(true);
+    expect(isInBounds(5, 5, 10)).toBe(true);
   });
 
   it("rejects negative values", () => {
-    expect(isInBounds(-1, 0)).toBe(false);
-    expect(isInBounds(0, -1)).toBe(false);
+    expect(isInBounds(-1, 0, 10)).toBe(false);
+    expect(isInBounds(0, -1, 10)).toBe(false);
   });
 
-  it("rejects values >= BOARD_SIZE", () => {
-    expect(isInBounds(10, 0)).toBe(false);
-    expect(isInBounds(0, 10)).toBe(false);
+  it("rejects values >= boardSize", () => {
+    expect(isInBounds(10, 0, 10)).toBe(false);
+    expect(isInBounds(0, 10, 10)).toBe(false);
+  });
+
+  it("respects boardSize 15 boundaries", () => {
+    expect(isInBounds(14, 14, 15)).toBe(true);
+    expect(isInBounds(15, 0, 15)).toBe(false);
+    expect(isInBounds(0, 15, 15)).toBe(false);
+  });
+
+  it("respects boardSize 20 boundaries", () => {
+    expect(isInBounds(19, 19, 20)).toBe(true);
+    expect(isInBounds(20, 0, 20)).toBe(false);
+    expect(isInBounds(0, 20, 20)).toBe(false);
   });
 });
 
@@ -69,20 +81,28 @@ describe("deriveOrientation", () => {
 
 describe("allBoardKeys", () => {
   it("returns 100 keys for a 10x10 board", () => {
-    expect(allBoardKeys()).toHaveLength(100);
+    expect(allBoardKeys(10)).toHaveLength(100);
   });
 
   it("starts at 0,0 and ends at 9,9", () => {
-    const keys = allBoardKeys();
+    const keys = allBoardKeys(10);
     expect(keys[0]).toBe("0,0");
     expect(keys[99]).toBe("9,9");
   });
 
   it("iterates row-major (row increments before col)", () => {
-    const keys = allBoardKeys();
+    const keys = allBoardKeys(10);
     // row 0: col 0–9, row 1: col 0–9 ...
     expect(keys[0]).toBe("0,0");
     expect(keys[1]).toBe("1,0");
     expect(keys[10]).toBe("0,1");
+  });
+
+  it("returns 225 keys for a 15x15 board", () => {
+    expect(allBoardKeys(15)).toHaveLength(225);
+  });
+
+  it("returns 400 keys for a 20x20 board", () => {
+    expect(allBoardKeys(20)).toHaveLength(400);
   });
 });
