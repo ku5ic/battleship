@@ -1,5 +1,6 @@
 import { Board } from "@/components/board";
 import { Button, Stack, Text } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import {
   GameStatusMultiplayer,
   ShipStatusList,
@@ -57,9 +58,23 @@ export function BattleshipMultiplayerGame({
       />
 
       {/* Boards */}
-      <div className="flex flex-col items-start gap-8 lg:flex-row">
+      {/* Side-by-side only at easy — moderate and hard grids are too wide
+           to share a row without sub-pixel cells and unreadable labels. */}
+      <div
+        className={cn(
+          "w-full flex flex-col items-center gap-8",
+          difficulty === "easy" &&
+            "lg:flex-row lg:justify-center lg:items-start",
+        )}
+      >
         {/* Player board — read-only, shows what the computer fired at */}
-        <section aria-label="Your board">
+        <section
+          aria-label="Your board"
+          className={cn(
+            "w-full",
+            difficulty === "easy" && "lg:w-auto lg:flex-1",
+          )}
+        >
           <Text as="h2" variant="label" className="mb-2">
             Your fleet
           </Text>
@@ -80,7 +95,13 @@ export function BattleshipMultiplayerGame({
         </section>
 
         {/* Opponent board — interactive, player fires here */}
-        <section aria-label="Opponent's board">
+        <section
+          aria-label="Opponent's board"
+          className={cn(
+            "w-full",
+            difficulty === "easy" && "lg:w-auto lg:flex-1",
+          )}
+        >
           <Text as="h2" variant="label" className="mb-2">
             Enemy fleet
           </Text>

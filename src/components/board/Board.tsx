@@ -168,6 +168,7 @@ export function Board({
             <div key={coord} role="gridcell" aria-colindex={colIndex + 1}>
               <Cell
                 coord={coord}
+                columnLabel={columnLabels[colIndex]}
                 status={shots.get(coord) ?? "untouched"}
                 onFire={handleCellFire}
                 disabled={isGameOver || isReadOnly}

@@ -60,7 +60,7 @@ export function BattleshipGame({ difficulty }: BattleshipGameProps) {
         fleet aligned to the top of the board. On smaller screens they stack
         vertically, with the fleet centered below the board.
       */}
-      <div className="flex flex-col items-center gap-4 sm:gap-6 lg:flex-row lg:items-start lg:gap-8">
+      <div className="w-full flex flex-col items-center gap-4 sm:gap-6 lg:flex-row lg:items-start lg:gap-8">
         <Board
           boardSize={boardSize}
           columnLabels={columnLabels}
