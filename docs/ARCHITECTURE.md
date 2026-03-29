@@ -75,7 +75,7 @@ Two files. `config.ts` holds the raw ship layout JSON, typed as `RawGameConfig`.
 
 `parseLayout` throws immediately on any violation. This is intentional — the layout is a static input and any error is a programming mistake, not a runtime condition to handle gracefully.
 
-`data/index.ts` exports a `SHIPS` constant parsed at board size 10 — this serves as the single-player default. Hooks call `parseLayout` directly with the active board size derived from `DIFFICULTY_CONFIG`, so `SHIPS` is not the source of truth when difficulty is in play.
+`data/index.ts` exports a `SHIPS` constant parsed at board size 10. Neither hook uses `SHIPS` — both call `generateRandomLayout` directly with the active board size derived from `DIFFICULTY_CONFIG`. `SHIPS` is retained for test fixtures and any future static-layout consumer.
 
 ### `utils/coordinates.ts`
 
@@ -98,6 +98,10 @@ The core domain logic. All functions are pure.
 **`isGameOver(ships, sunkShipIds)`** — pure predicate. Guards against an empty fleet.
 
 **`outcomeToStatus(outcome)`** — maps `ShotOutcome` to `CellStatus`.
+
+### `services/ai.ts`
+
+**`services/placement.ts`** — `generateRandomLayout(config, boardSize): Ship[]`. Produces a valid random fleet layout largest-first. Pure function, no React dependency. The single site where procedural placement logic lives.
 
 ### `services/ai.ts`
 
@@ -301,6 +305,6 @@ Tests are prioritized by the cost of a regression.
 
 **Global state library.** Not needed at this scope. Both hooks are self-contained.
 
-**Dynamic ship layout per difficulty.** Difficulty introduces variable board sizes, but ship layouts are still static — the same raw config is parsed at each board size. If layouts were difficulty-specific, only the `data/` layer and the `useMemo` call in each hook would change.
+Ship layouts are randomized on every mount via `generateRandomLayout` in `services/placement.ts`. The function reads `config.shipTypes` for fleet composition and ignores `config.layout`. Difficulty controls board size only; fleet composition is fixed by the config. The session hook calls `generateRandomLayout` independently for each player inside a single `useMemo([boardSize])` — `playerShips` and `computerShips` are always distinct.
 
 **Distinct AI strategy.** The computer fires randomly. A smarter AI (probability targeting, hunt mode) would only touch `services/ai.ts` — the hook, reducer, and engine are unaffected.

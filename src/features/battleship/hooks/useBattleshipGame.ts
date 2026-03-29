@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useReducer } from "react";
-import { parseLayout } from "@/features/battleship/data/layout";
+import { generateRandomLayout } from "@/features/battleship/services/placement";
 import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
 import {
   buildPositionIndex,
@@ -65,8 +65,8 @@ export function useBattleshipGame(
   // Ships and their position index are stable for this hook's lifetime —
   // difficulty changes are handled by remounting the hook via key prop.
   const { ships, positionIndex } = useMemo(() => {
-    const parsed = parseLayout(RAW_GAME_CONFIG, boardSize);
-    return { ships: parsed, positionIndex: buildPositionIndex(parsed) };
+    const generated = generateRandomLayout(RAW_GAME_CONFIG, boardSize);
+    return { ships: generated, positionIndex: buildPositionIndex(generated) };
   }, [boardSize]);
 
   // The reducer is defined here to close over positionIndex. Because positionIndex
