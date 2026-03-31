@@ -14,7 +14,7 @@ The domain layer contains no React imports. Game rules are plain TypeScript func
 src/
   app/                        # App entry point — mode toggle only
   components/
-    board/                    # Board and Cell — generic grid rendering, no domain knowledge
+    board/                    # Board, Cell, useBoardNavigation — generic grid rendering + keyboard navigation, no domain knowledge
     game/                     # BattleshipGame, BattleshipMultiplayerGame — wiring only
   features/
     battleship/
@@ -51,6 +51,14 @@ Pure functions only. `toKey(col, row)` is the single production site for `Coordi
 
 Pure functions only — no React imports, no hooks. Own all rule evaluation: hit detection, miss detection, sunk logic, game-over logic, AI coordinate selection. Independently unit-testable. A regression here means a game rule is broken.
 
+Key engine functions:
+
+- `resolveShot(coord, positionIndex, shots)` — determines the outcome of a single shot
+- `isShipSunk(ship, shots)` — checks whether all of a ship's coordinates have been hit
+- `isGameOver(ships, sunkShipIds)` — checks whether every ship in the fleet is sunk
+- `computeShipHitCounts(ships, shots)` — returns a map of ship id to hit count
+- `nextUnfiredCoordinate(allKeys, shots, fromIndex)` — returns the next unfired coordinate in row-major order after `fromIndex`, wrapping around; returns `null` if all coordinates are fired
+
 ### `hooks/`
 
 State orchestration. Connect the domain layer to React's rendering model. Expose typed, view-ready data — not raw state slices. Two hooks exist: `useBattleshipGame` for single-player, `useBattleshipSessionGame` for vs-computer. Neither calls the other.
@@ -59,22 +67,27 @@ State orchestration. Connect the domain layer to React's rendering model. Expose
 
 Receive props, render UI, emit typed callbacks. No game rules, no domain calculations, no direct hook calls. The sole exception is the wiring layer (`BattleshipGame`, `BattleshipMultiplayerGame`) — these are the only components that call hooks, and they contain no logic of their own.
 
+`Board` delegates keyboard navigation and focus management to a co-located `useBoardNavigation` hook (`src/components/board/useBoardNavigation.ts`). The hook owns `focusedCoord` state, `boardRef`, arrow key navigation, and post-fire focus advancement. It calls `nextUnfiredCoordinate` from engine.ts to determine where to move focus after a shot. `Board` itself is otherwise purely presentational.
+
 ---
 
 ## State Design
 
 **What is persisted** — only what cannot be derived from other persisted state plus constants:
 
-- `shots: Map<CoordinateKey, ShotResult>` — the record of every shot fired
+- `shots: Map<CoordinateKey, CellStatus>` — the record of every shot fired
 - `lastResult: ShotResult | null` — drives `aria-live` announcements
-- Session additionally: `activeTurn`, `winner`, `isAiThinking`, and the opponent's `shots` map
+- Session additionally persists: `playerShots`, `computerShots`, `playerLastResult`, `computerLastResult`, and `activeTurn`
 
 **What is derived via `useMemo`**:
 
 - Whether a specific cell is hit or missed (lookup in the shots map)
-- Whether a ship is sunk (all its cells are in the shots map as hits)
-- Whether the game is over (all ship IDs are in the sunk set)
+- Whether a ship is sunk (all its cells are in the shots map as hits) — via `isShipSunk` from engine
+- Whether the game is over (all ship IDs are in the sunk set) — via `isGameOver` from engine
+- Session: `winner`, `isAiThinking`, `sunkShipIds` (per board), `shipHitCounts` (per board)
 - Status labels and counts
+
+The session hook uses a private `SessionReducerState` (not exported, not in `types/index.ts`). `BoardState` objects are assembled in the hook's return value from persisted state and derived values — they are not stored in the reducer.
 
 **Why this shape.** The alternative is to persist derived values — maintain a `sunkShipIds` set by updating it on every shot. That creates a second source of truth that must be kept consistent. If it ever diverges from the shots map, the UI is wrong. Deriving from the shots map is always consistent by construction.
 
@@ -86,7 +99,7 @@ Firing a shot must update two values atomically: the shots map and the last resu
 
 `useReducer` eliminates this: a single dispatch produces a single new state object. The component never sees an intermediate.
 
-The reducer itself is synchronous and contains no rule logic. Rule evaluation happens in pure service functions; the reducer applies the result. This keeps the reducer simple and keeps rules testable in isolation.
+The reducer delegates rule evaluation to pure service functions — it calls `isShipSunk` and `isGameOver` from engine.ts as guards rather than implementing the checks inline. This keeps rules testable in isolation and the reducer focused on state transitions.
 
 **Alternative considered:** `useState` with a combined object (`{ shots, lastResult }`). This would enforce atomicity but at the cost of clarity — setter calls become object spreads, and the transition logic would live inline in event handlers rather than in an explicit reducer case. `useReducer` makes the transition logic explicit and locatable.
 
@@ -116,9 +129,9 @@ Three representations exist for different layers:
 
 ## Two Game Modes Without Shared State
 
-Single-player and vs-computer share no state. Each mode has its own hook. `useBattleshipSessionGame` composes two `BoardState` instances — one per player — inside a single `SessionState`. The session reducer handles `PLAYER_FIRE`, `COMPUTER_FIRE`, and `RESET` as independent cases.
+Single-player and vs-computer share no state. Each mode has its own hook. `useBattleshipSessionGame` uses a flat reducer state (`playerShots`, `computerShots`, `playerLastResult`, `computerLastResult`, `activeTurn`) and assembles `BoardState` objects in the return value for each player.
 
-`Board` and `Cell` are shared rendering primitives — they know nothing about game mode. The `isReadOnly` prop on `Board` prevents interaction with the player's own board in vs-computer mode (you observe it; you do not fire at it).
+`Board` and `Cell` are shared rendering primitives — they know nothing about game mode. The `disabled` prop on `Board` prevents interaction: the player's own board passes `disabled` (always true, since you observe it but do not fire at it); the opponent's board passes `disabled={activeTurn !== "player" || winner !== null}`.
 
 Adding a third mode would require a new hook and a new wiring component. No existing code would need to change.
 

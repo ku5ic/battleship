@@ -12,7 +12,7 @@ This is not a tutorial project or a boilerplate. Every decision here has a speci
 
 **Pure domain logic.** Game rules — hit detection, sunk ship resolution, turn management, game-over detection — live in plain TypeScript functions with no React dependency. They are independently unit-testable and have no awareness of how they are rendered.
 
-**Derived state over persisted state.** The hook persists only what cannot be computed: shots fired and the last shot result. Everything else — whether a cell is hit or missed, whether a ship is sunk, whether the game is over — is derived via `useMemo`. There is no duplicated source of truth.
+**Derived state over persisted state.** Each hook persists only what cannot be computed: the shots map and last shot result (single-player adds nothing else; the session hook adds per-player shots, per-player results, and the active turn). Everything else — whether a cell is hit or missed, whether a ship is sunk, whether the game is over, who the winner is — is derived via `useMemo`. There is no duplicated source of truth.
 
 **`useReducer` for atomic transitions.** Firing a shot updates the shots map and the last result in a single dispatch. Two separate `useState` calls would make an inconsistent intermediate state possible. The reducer is synchronous; the AI timing side effect lives in a `useEffect` that dispatches a pre-resolved action.
 
