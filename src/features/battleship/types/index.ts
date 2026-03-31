@@ -110,6 +110,20 @@ export type HeaderGameStatus =
 
 export type Difficulty = "easy" | "moderate" | "hard";
 
+/** Cell visual state during the placement phase. Distinct from CellStatus
+ * which encodes shot outcomes during gameplay. */
+export type PlacementCellStatus =
+  | "empty"
+  | "occupied"
+  | "preview-valid"
+  | "preview-invalid";
+
+/** The ship the player has selected but not yet placed on the board. */
+export interface PendingShip {
+  type: ShipType;
+  orientation: Orientation;
+}
+
 export interface DifficultyConfig {
   boardSize: number;
   columnLabels: readonly string[];

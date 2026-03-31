@@ -5,25 +5,40 @@ import { Button, Text } from "@/components/ui";
 import {
   GameStatus,
   GameStatusMultiplayer,
+  PlacementScreen,
 } from "@/features/battleship/components";
-import type { Difficulty, HeaderGameStatus } from "@/features/battleship/types";
+import type {
+  Difficulty,
+  HeaderGameStatus,
+  Ship,
+} from "@/features/battleship/types";
 
 type Mode = "single" | "multiplayer";
+type MultiplayerPhase = "placement" | "session";
 
 export function App() {
   const [mode, setMode] = useState<Mode>("single");
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [headerGameStatus, setHeaderGameStatus] =
     useState<HeaderGameStatus | null>(null);
+  const [multiplayerPhase, setMultiplayerPhase] =
+    useState<MultiplayerPhase>("placement");
+  const [confirmedPlayerShips, setConfirmedPlayerShips] = useState<
+    Ship[] | null
+  >(null);
 
   const handleModeChange = useCallback((newMode: Mode) => {
     setMode(newMode);
     setHeaderGameStatus(null);
+    setMultiplayerPhase("placement");
+    setConfirmedPlayerShips(null);
   }, []);
 
   const handleDifficultyChange = useCallback((newDifficulty: Difficulty) => {
     setDifficulty(newDifficulty);
     setHeaderGameStatus(null);
+    setMultiplayerPhase("placement");
+    setConfirmedPlayerShips(null);
   }, []);
 
   const handleSingleStatusChange = useCallback(
@@ -134,16 +149,31 @@ export function App() {
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-start pt-6 pb-8 px-2 sm:px-4">
-        {mode === "single" ? (
+        {mode === "single" && (
           <BattleshipGame
             key={`${mode}-${difficulty}`}
             difficulty={difficulty}
             onStatusChange={handleSingleStatusChange}
           />
-        ) : (
+        )}
+        {mode === "multiplayer" && multiplayerPhase === "placement" && (
+          <PlacementScreen
+            difficulty={difficulty}
+            onConfirm={(ships) => {
+              setConfirmedPlayerShips(ships);
+              setMultiplayerPhase("session");
+            }}
+            onRandomise={() => {
+              setConfirmedPlayerShips(null);
+              setMultiplayerPhase("session");
+            }}
+          />
+        )}
+        {mode === "multiplayer" && multiplayerPhase === "session" && (
           <BattleshipMultiplayerGame
             key={`${mode}-${difficulty}`}
             difficulty={difficulty}
+            playerShips={confirmedPlayerShips ?? undefined}
             onStatusChange={handleSessionStatusChange}
           />
         )}

@@ -328,4 +328,67 @@ describe("BattleshipMultiplayerGame", () => {
       },
     ]);
   });
+
+  // ---------------------------------------------------------------------------
+  // playerShips prop
+  // ---------------------------------------------------------------------------
+
+  it("uses provided playerShips on the player board", async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    // Custom layout: single destroyer at 9,8 — exactly where the AI fires
+    const customPlayerShips = [
+      {
+        id: "carrier" as const,
+        size: 5,
+        coordinates: ["0,0", "1,0", "2,0", "3,0", "4,0"] as const,
+        orientation: "horizontal" as const,
+      },
+      {
+        id: "battleship" as const,
+        size: 4,
+        coordinates: ["0,1", "1,1", "2,1", "3,1"] as const,
+        orientation: "horizontal" as const,
+      },
+      {
+        id: "cruiser" as const,
+        size: 3,
+        coordinates: ["0,2", "1,2", "2,2"] as const,
+        orientation: "horizontal" as const,
+      },
+      {
+        id: "submarine" as const,
+        size: 3,
+        coordinates: ["0,3", "1,3", "2,3"] as const,
+        orientation: "horizontal" as const,
+      },
+      {
+        id: "destroyer" as const,
+        size: 2,
+        coordinates: ["9,8", "9,9"] as const,
+        orientation: "vertical" as const,
+      },
+    ];
+
+    render(
+      <BattleshipMultiplayerGame
+        difficulty="easy"
+        playerShips={customPlayerShips}
+        onStatusChange={vi.fn()}
+      />,
+    );
+
+    // Fire a miss to trigger the AI turn
+    await user.click(cellIn(opponentBoard(), "9,9"));
+
+    // Advance past AI delay
+    act(() => {
+      vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
+    });
+
+    // The AI fires at "9,8" (our mocked AI target), which is a destroyer
+    // coordinate in our custom layout — should register as a hit
+    const cell = cellIn(yourBoard(), "9,8");
+    expect(cell).toBeDisabled();
+  });
 });

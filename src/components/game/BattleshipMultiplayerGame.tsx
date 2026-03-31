@@ -11,10 +11,12 @@ import type {
   CoordinateKey,
   Difficulty,
   HeaderGameStatus,
+  Ship,
 } from "@/features/battleship/types";
 
 interface BattleshipMultiplayerGameProps {
   difficulty: Difficulty;
+  playerShips?: Ship[];
   onStatusChange: (status: HeaderGameStatus & { mode: "session" }) => void;
 }
 
@@ -27,6 +29,7 @@ interface BattleshipMultiplayerGameProps {
  */
 export function BattleshipMultiplayerGame({
   difficulty,
+  playerShips,
   onStatusChange,
 }: BattleshipMultiplayerGameProps) {
   const {
@@ -42,7 +45,7 @@ export function BattleshipMultiplayerGame({
     columnLabels,
     playerFireShot,
     reset,
-  } = useBattleshipSessionGame(difficulty);
+  } = useBattleshipSessionGame(difficulty, playerShips);
 
   const sessionOver = winner !== null;
 

@@ -6,7 +6,7 @@ import type {
   Ship,
   ShipType,
 } from "@/features/battleship/types";
-import { toKey } from "@/features/battleship/utils/coordinates";
+import { fromKey, toKey } from "@/features/battleship/utils/coordinates";
 
 const MAX_ATTEMPTS = 100;
 
@@ -115,4 +115,28 @@ function hasOverlap(
   occupied: ReadonlySet<CoordinateKey>,
 ): boolean {
   return coordinates.some((key) => occupied.has(key));
+}
+
+/**
+ * Returns the coordinate keys a ship would occupy starting at anchor,
+ * or null if any cell falls outside [0, boardSize).
+ * Does not check overlaps — that is the caller's responsibility.
+ */
+export function computeShipPreview(
+  anchor: CoordinateKey,
+  size: number,
+  orientation: Orientation,
+  boardSize: number,
+): CoordinateKey[] | null {
+  const { col, row } = fromKey(anchor);
+  const coords: CoordinateKey[] = [];
+
+  for (let i = 0; i < size; i++) {
+    const c = orientation === "horizontal" ? col + i : col;
+    const r = orientation === "vertical" ? row + i : row;
+    if (c < 0 || c >= boardSize || r < 0 || r >= boardSize) return null;
+    coords.push(toKey(c, r));
+  }
+
+  return coords;
 }

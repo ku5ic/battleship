@@ -7,6 +7,7 @@ import type {
   Difficulty,
   PlayerId,
   SessionBoards,
+  Ship,
   ShipType,
   ShotResult,
 } from "@/features/battleship/types";
@@ -103,6 +104,7 @@ export interface UseBattleshipSessionReturn {
  */
 export function useBattleshipSessionGame(
   difficulty: Difficulty = "easy",
+  playerShipsOverride?: Ship[],
 ): UseBattleshipSessionReturn {
   const { boardSize, columnLabels } = DIFFICULTY_CONFIG[difficulty];
 
@@ -114,7 +116,8 @@ export function useBattleshipSessionGame(
     playerPositionIndex,
     computerPositionIndex,
   } = useMemo(() => {
-    const pShips = generateRandomLayout(RAW_GAME_CONFIG, boardSize);
+    const pShips =
+      playerShipsOverride ?? generateRandomLayout(RAW_GAME_CONFIG, boardSize);
     const cShips = generateRandomLayout(RAW_GAME_CONFIG, boardSize);
     return {
       playerShips: pShips,
@@ -122,7 +125,7 @@ export function useBattleshipSessionGame(
       playerPositionIndex: buildPositionIndex(pShips),
       computerPositionIndex: buildPositionIndex(cShips),
     };
-  }, [boardSize]);
+  }, [boardSize, playerShipsOverride]);
 
   // The reducer is defined here to close over the position indexes. Both are
   // from useMemo([boardSize]) and never change within a mount, so the closure
