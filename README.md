@@ -1,6 +1,6 @@
 # Battleship
 
-A Battleship game with a React frontend and a standalone CLI, built in TypeScript. The primary purpose of this project is to demonstrate how I approach frontend architecture: where logic lives, how state is shaped, how the UI layer stays thin, and how accessibility is treated as a first-class constraint rather than an afterthought.
+A Battleship game built in React and TypeScript — not as an end in itself, but as a vehicle for demonstrating how I think about frontend architecture. The interesting part is not the game. It is where the logic lives, how state is shaped, how layer boundaries are enforced, and how accessibility is treated as a constraint from day one rather than retrofitted later.
 
 **[Play it live →](https://ku5ic.github.io/battleship/)**
 
@@ -8,17 +8,69 @@ A Battleship game with a React frontend and a standalone CLI, built in TypeScrip
 
 ## What this demonstrates
 
-This is not a tutorial project or a boilerplate. Every decision here has a specific reason behind it, and the architecture is designed to be readable and defensible in a code review.
+Five claims. Each is verifiable by opening the referenced files.
 
-**Pure domain logic.** Game rules — hit detection, sunk ship resolution, turn management, game-over detection — live in plain TypeScript functions with no React dependency. They are independently unit-testable and have no awareness of how they are rendered.
+**1. Domain logic is fully decoupled from React.**
+Game rules — hit detection, sunk ship resolution, turn management, game-over detection — live in pure TypeScript functions under `engine/` and `services/`. They have no React imports. The same engine reducers power both the browser UI and a standalone CLI runner (`src/cli/`) with zero modifications. The CLI is not a demo — it is proof that the layer boundaries are real.
 
-**Derived state over persisted state.** Each hook persists only what cannot be computed: the shots map and last shot result (single-player adds nothing else; the vs-computer hook adds per-player shots, per-player results, and the active turn). Everything else — whether a cell is hit or missed, whether a ship is sunk, whether the game is over, who the winner is — is derived via `useMemo`. There is no duplicated source of truth.
+**2. State is minimal and derived, not duplicated.**
+Each game hook persists only what cannot be computed: the shots map, the last shot result, and (in vs-computer mode) the active turn. Everything else — whether a cell is hit, whether a ship is sunk, whether the game is over, who won — is derived via `useMemo`. There is one source of truth per fact. Open any hook in `hooks/` and look for `useState` calls: you will find two or three, not ten.
 
-**`useReducer` for atomic transitions.** Firing a shot updates the shots map and the last result in a single dispatch. Two separate `useState` calls would make an inconsistent intermediate state possible. The reducer is synchronous; the AI timing side effect lives in a `useEffect` that dispatches a pre-resolved action.
+**3. Atomic state transitions prevent inconsistent renders.**
+Firing a shot updates the shots map and the last result in a single `useReducer` dispatch. Two separate `useState` calls would create a frame where the shot count and the result disagree. The reducer is synchronous and pure — `(state, action) => state` — with side effects (AI delay, focus management) handled outside the reducer in `useEffect`.
 
-**Accessibility as a constraint, not a feature.** All interactive cells are `<button>` elements with computed accessible names encoding column, row, and current state. Keyboard navigation uses roving tabindex. Shot results are announced via `aria-live` regions. Color is never the sole indicator of state. The implementation targets WCAG 2.2 AA.
+**4. Accessibility meets WCAG 2.2 AA, verified in implementation.**
+All interactive cells are `<button>` elements with computed accessible names encoding column, row, and current state. Keyboard navigation uses roving tabindex with `requestAnimationFrame`-deferred focus advancement after a shot. Shot results are announced via `aria-live` regions with separate announcer instances to prevent concurrent events from clobbering each other. Color is never the sole indicator of state — hit and miss have distinct icons. Touch targets and contrast meet AA at all breakpoints including 320 px width.
 
-**Tested at the right layer.** Domain logic has thorough unit test coverage because a regression there means a rule is broken. Hook tests use `renderHook` with deterministic AI mocks and exported timing constants rather than fake timers. Component tests use `data-coord` attributes for unambiguous cell targeting.
+**5. Tests target the layer where a regression would hurt.**
+Domain functions have thorough unit coverage — a failure there means a game rule is broken. Hook tests use `renderHook` with deterministic AI mocks and exported timing constants overridden to `0` (no fake timers, which conflict with `userEvent`). Component tests target cells by `data-coord` attribute to avoid ambiguity with row-10 variants. The test directory mirrors `src/` one-to-one.
+
+---
+
+## Architecture
+
+React is a thin rendering shell around a pure domain layer. Components render state and emit intent. Hooks wire engine reducers to the view via `useReducer`. The engine layer owns state transitions as pure `(state, action) => state` functions. Services own the rules. Both the React frontend and the CLI consume the same engine and service layers — the engine has no knowledge of either consumer.
+
+Full reasoning — including what is persisted vs derived, why `useReducer` was chosen, what the layer boundaries enforce, and what would change with more time — is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+### Folder structure
+
+```
+src/
+  app/                        # Entry point — mode toggle, sticky header, status slot
+  cli/                        # Terminal runner — drives engine directly, no React
+  components/
+    board/                    # Board and Cell — generic grid rendering, keyboard navigation
+    game/                     # Wiring components — hooks called here only
+  features/
+    battleship/
+      components/             # Presentational feature components — props in, callbacks out
+      constants/              # Board size, difficulty config, column labels, ship display names
+      data/                   # Raw config and layout parsing
+      engine/                 # Pure (state, action) => state reducers — no React
+      hooks/                  # useSinglePlayerGame, useVsComputerGame — wiring over engine
+      services/               # Pure rule evaluation and AI coordinate selection
+      types/                  # All domain types — single source of truth
+      utils/                  # Coordinate helpers — toKey, fromKey, and nothing else
+  lib/                        # Shared utilities (cn)
+  test/                       # Mirrors src/ — one test file per source file
+```
+
+Each layer has a single responsibility. `services/` owns rules but not state transitions. `engine/` owns state transitions but not rendering. `hooks/` wire engine to React but contain no reducer logic. `components/` render what hooks prepare but derive nothing from raw state. A function that does not belong in a layer cannot be placed there — the dependency rules enforce this.
+
+---
+
+## Stack
+
+| Layer       | Technology                                                     |
+| ----------- | -------------------------------------------------------------- |
+| UI          | React 19                                                       |
+| Language    | TypeScript — strict mode, `any` forbidden                      |
+| Build       | Vite                                                           |
+| Styling     | Tailwind CSS v4 via `@tailwindcss/vite`                        |
+| Testing     | Vitest + Testing Library                                       |
+| Linting     | ESLint 9 — flat config, `strictTypeChecked`, `jsx-a11y` plugin |
+| Formatting  | Prettier — enforced in CI                                      |
 
 ---
 
@@ -50,50 +102,7 @@ A terminal interface that drives the same engine reducers as the React frontend.
 npm run cli
 ```
 
-The CLI deliberately omits colours, ANSI formatting, game persistence, and the AI shot delay (which is a UI affordance for the browser — in a terminal, results print synchronously). Both modes use randomly generated fleets; there is no placement phase.
-
----
-
-## Stack
-
-- **React 19** — UI rendering
-- **TypeScript** — strict mode, no `any`
-- **Vite** — build and dev server
-- **Tailwind CSS v4** — utility-first styling via `@tailwindcss/vite`
-- **Vitest + Testing Library** — unit and component tests
-- **ESLint 9** — flat config with `tseslint.configs.strictTypeChecked` and `eslint-plugin-jsx-a11y`
-- **Prettier** — formatting enforced in CI
-
----
-
-## Architecture
-
-The core principle is that React is a thin rendering shell around a pure domain layer. Components render state and emit intent. Hooks orchestrate feature-level interaction. An engine layer owns state transitions as pure `(state, action) => state` reducers. Services contain the rules. Both the React frontend and the CLI consume the same engine and service layers.
-
-Full reasoning — including what is persisted vs derived, why `useReducer` was chosen, what the layer boundaries enforce, and what would change with more time — is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
-### Folder structure
-
-```
-src/
-  app/                        # Sticky header (h1, controls, status slot) and mode routing
-  cli/                        # Terminal runner — drives engine directly, no React
-  components/
-    board/                    # Board and Cell — generic grid rendering
-    game/                     # Wiring components — hooks called here only
-  features/
-    battleship/
-      components/             # Presentational feature components
-      constants/              # Board size, difficulty config, labels
-      data/                   # Raw config (RAW_GAME_CONFIG)
-      engine/                 # Pure (state, action) => state reducers — no React
-      hooks/                  # useSinglePlayerGame, useVsComputerGame — wiring over engine/
-      services/               # Pure rule evaluation and AI helper
-      types/                  # All domain types — single source of truth
-      utils/                  # Coordinate utilities
-  lib/                        # Shared utilities (cn)
-  test/                       # Mirrors src/ — one test file per source file
-```
+The CLI omits colours, ANSI formatting, game persistence, and the AI shot delay (a UI affordance for the browser — in a terminal, results print synchronously). Both modes use randomly generated fleets; there is no placement phase.
 
 ---
 
@@ -115,16 +124,16 @@ Dev server starts at `http://localhost:5173`.
 | Script                  | Description                                  |
 | ----------------------- | -------------------------------------------- |
 | `npm run dev`           | Start Vite dev server with HMR               |
-| `npm run build`         | Type-check and produce a production build    |
-| `npm run preview`       | Serve the production build locally           |
-| `npm run test`          | Run the full test suite once                 |
-| `npm run test:watch`    | Run tests in watch mode                      |
-| `npm run test:coverage` | Run tests and emit a coverage report         |
-| `npm run lint`          | ESLint across `src/` — zero warnings allowed |
-| `npm run format`        | Format `src/` with Prettier                  |
-| `npm run format:check`  | Check formatting without writing             |
-| `npm run typecheck`     | Type-check without emitting                  |
-| `npm run cli`           | Play Battleship in the terminal via tsx       |
+| `npm run build`         | Type-check and produce a production build     |
+| `npm run preview`       | Serve the production build locally            |
+| `npm run test`          | Run the full test suite once                  |
+| `npm run test:watch`    | Run tests in watch mode                       |
+| `npm run test:coverage` | Run tests and emit a coverage report          |
+| `npm run lint`          | ESLint across `src/` — zero warnings allowed  |
+| `npm run format`        | Format `src/` with Prettier                   |
+| `npm run format:check`  | Check formatting without writing              |
+| `npm run typecheck`     | Type-check without emitting                   |
+| `npm run cli`           | Play Battleship in the terminal via tsx        |
 
 CI runs `typecheck` → `lint` → `format:check` → `test`. All four must pass on every push.
 
@@ -132,7 +141,7 @@ CI runs `typecheck` → `lint` → `format:check` → `test`. All four must pass
 
 ## Testing
 
-Tests are prioritized by the cost of a regression.
+Tests are prioritised by the cost of a regression.
 
 **Domain layer** — thorough unit coverage. Pure functions with no dependencies. A failure here means a game rule is wrong.
 
@@ -144,20 +153,20 @@ Tests are prioritized by the cost of a regression.
 
 ## Accessibility
 
-The implementation targets WCAG 2.2 AA. Specific choices:
+The implementation targets WCAG 2.2 AA.
 
 - Board cells are `<button>` elements — not `<div>` with click handlers
 - Each cell has a computed accessible name: column letter, row number, current state, and a "Press Space to fire" hint on fireable cells
 - Keyboard navigation uses roving tabindex; focus advances after a shot via `requestAnimationFrame`-deferred imperative focus to avoid a race with the disabled-state flush
 - Shot results are announced via `aria-live="polite"` regions; separate announcer instances prevent concurrent events from clobbering each other; the `key` remount technique handles repeated identical announcements
-- Color is backed by icons — hit and miss have distinct visual indicators beyond color alone
-- Touch targets and contrast meet AA requirements at all breakpoints including 320px width
+- Color is backed by icons — hit and miss have distinct visual indicators beyond colour alone
+- Touch targets and contrast meet AA requirements at all breakpoints including 320 px width
 
 ---
 
 ## AI workflow
 
-This project was built using an opinionated, structured approach to AI-assisted development. AI generated drafts — components, hooks, services, tests — against a detailed specification and a strict set of architectural rules. Every output was reviewed, questioned, and either accepted, corrected, or rejected before anything was committed.
+This project was built using a structured approach to AI-assisted development. AI generated drafts — components, hooks, services, tests — against a detailed specification and a strict set of architectural rules. Every output was reviewed, questioned, and either accepted, corrected, or rejected before being committed.
 
 The workflow is encoded in `.claude/commands/` as a sequence of phases: preflight audit, implementation plan, code generation, verification, and review. No code was written before the plan was approved; no code was committed before the verify step passed. All architectural decisions — what to persist, where logic lives, how layers interact — were made and owned by me.
 
