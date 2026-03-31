@@ -6,8 +6,7 @@ import {
   ShotResultAnnouncer,
 } from "@/features/battleship/components";
 import { useBattleshipGame } from "@/features/battleship/hooks/useBattleshipGame";
-import type { Difficulty, CoordinateKey } from "@/features/battleship/types";
-import { fromKey } from "@/features/battleship/utils/coordinates";
+import type { Difficulty } from "@/features/battleship/types";
 
 interface BattleshipGameProps {
   difficulty: Difficulty;
@@ -31,13 +30,8 @@ export function BattleshipGame({ difficulty }: BattleshipGameProps) {
     boardSize,
     columnLabels,
     fireShot,
-    resetGame,
+    reset,
   } = useBattleshipGame(difficulty);
-
-  function handleFire(coord: CoordinateKey) {
-    const { col, row } = fromKey(coord);
-    fireShot(col, row);
-  }
 
   return (
     <Stack className="w-full max-w-3xl mx-auto">
@@ -65,7 +59,7 @@ export function BattleshipGame({ difficulty }: BattleshipGameProps) {
           boardSize={boardSize}
           columnLabels={columnLabels}
           shots={shots}
-          onFire={handleFire}
+          onFire={fireShot}
           isGameOver={isGameOver}
         />
 
@@ -78,7 +72,7 @@ export function BattleshipGame({ difficulty }: BattleshipGameProps) {
         </div>
       </div>
 
-      {isGameOver && <Button onClick={resetGame}>Play again</Button>}
+      {isGameOver && <Button onClick={reset}>Play again</Button>}
     </Stack>
   );
 }

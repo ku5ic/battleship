@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useBattleshipGame } from "@/features/battleship/hooks/useBattleshipGame";
+import type { CoordinateKey } from "@/features/battleship/types";
 
 // ---------------------------------------------------------------------------
 // Mock placement to return the same deterministic layout used by the
@@ -45,7 +46,7 @@ describe("useBattleshipGame", () => {
     const { result } = renderHook(() => useBattleshipGame("easy"));
 
     act(() => {
-      result.current.fireShot(9, 9);
+      result.current.fireShot("9,9");
     });
 
     expect(result.current.shots.get("9,9")).toBe("miss");
@@ -56,7 +57,7 @@ describe("useBattleshipGame", () => {
     const { result } = renderHook(() => useBattleshipGame("easy"));
 
     act(() => {
-      result.current.fireShot(0, 0);
+      result.current.fireShot("0,0");
     }); // destroyer col=0, row=0
 
     expect(result.current.shots.get("0,0")).toBe("hit");
@@ -68,10 +69,10 @@ describe("useBattleshipGame", () => {
     const { result } = renderHook(() => useBattleshipGame("easy"));
 
     act(() => {
-      result.current.fireShot(0, 0);
+      result.current.fireShot("0,0");
     });
     act(() => {
-      result.current.fireShot(1, 0);
+      result.current.fireShot("1,0");
     });
 
     expect(result.current.lastResult?.outcome).toBe("sunk");
@@ -83,12 +84,12 @@ describe("useBattleshipGame", () => {
     const { result } = renderHook(() => useBattleshipGame("easy"));
 
     act(() => {
-      result.current.fireShot(0, 0);
+      result.current.fireShot("0,0");
     });
     const sizeAfterFirst = result.current.shots.size;
 
     act(() => {
-      result.current.fireShot(0, 0);
+      result.current.fireShot("0,0");
     });
 
     expect(result.current.lastResult?.outcome).toBe("already-fired");
@@ -98,29 +99,29 @@ describe("useBattleshipGame", () => {
   it("does not fire after the game is over", () => {
     const { result } = renderHook(() => useBattleshipGame("easy"));
 
-    const allPositions: [number, number][] = [
-      [2, 9],
-      [3, 9],
-      [4, 9],
-      [5, 9],
-      [6, 9], // carrier
-      [5, 2],
-      [5, 3],
-      [5, 4],
-      [5, 5], // battleship
-      [8, 1],
-      [8, 2],
-      [8, 3], // cruiser
-      [3, 0],
-      [3, 1],
-      [3, 2], // submarine
-      [0, 0],
-      [1, 0], // destroyer
+    const allPositions: CoordinateKey[] = [
+      "2,9",
+      "3,9",
+      "4,9",
+      "5,9",
+      "6,9", // carrier
+      "5,2",
+      "5,3",
+      "5,4",
+      "5,5", // battleship
+      "8,1",
+      "8,2",
+      "8,3", // cruiser
+      "3,0",
+      "3,1",
+      "3,2", // submarine
+      "0,0",
+      "1,0", // destroyer
     ];
 
-    for (const [col, row] of allPositions) {
+    for (const coord of allPositions) {
       act(() => {
-        result.current.fireShot(col, row);
+        result.current.fireShot(coord);
       });
     }
 
@@ -128,7 +129,7 @@ describe("useBattleshipGame", () => {
     const shotsAtGameOver = result.current.shots.size;
 
     act(() => {
-      result.current.fireShot(9, 9);
+      result.current.fireShot("9,9");
     });
 
     expect(result.current.shots.size).toBe(shotsAtGameOver);
@@ -138,10 +139,10 @@ describe("useBattleshipGame", () => {
     const { result } = renderHook(() => useBattleshipGame("easy"));
 
     act(() => {
-      result.current.fireShot(0, 0);
+      result.current.fireShot("0,0");
     });
     act(() => {
-      result.current.resetGame();
+      result.current.reset();
     });
 
     expect(result.current.shots.size).toBe(0);

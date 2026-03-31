@@ -165,13 +165,9 @@ export function useBattleshipSessionGame(
     buildInitialSessionState(),
   );
 
-  const playerFireShot = useCallback(
-    (coordinate: CoordinateKey) => {
-      if (state.activeTurn !== "player" || state.winner !== null) return;
-      dispatch({ type: "PLAYER_FIRE", coordinate });
-    },
-    [state.activeTurn, state.winner],
-  );
+  const playerFireShot = useCallback((coordinate: CoordinateKey) => {
+    dispatch({ type: "PLAYER_FIRE", coordinate });
+  }, []);
 
   const reset = useCallback(() => {
     dispatch({ type: "RESET" });

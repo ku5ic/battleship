@@ -17,7 +17,6 @@ import type {
   ShipType,
   ShotResult,
 } from "@/features/battleship/types";
-import { toKey } from "@/features/battleship/utils/coordinates";
 
 // ---------------------------------------------------------------------------
 // State shape and reducer
@@ -54,8 +53,8 @@ export interface UseBattleshipGameReturn extends GameState {
   boardSize: number;
   columnLabels: readonly string[];
   shipHitCounts: ReadonlyMap<ShipType, number>;
-  fireShot: (col: number, row: number) => void;
-  resetGame: () => void;
+  fireShot: (coordinate: CoordinateKey) => void;
+  reset: () => void;
 }
 
 export function useBattleshipGame(
@@ -70,12 +69,20 @@ export function useBattleshipGame(
     return { ships: generated, positionIndex: buildPositionIndex(generated) };
   }, [boardSize]);
 
-  // The reducer is defined here to close over positionIndex. Because positionIndex
-  // is from useMemo([boardSize]) and never changes within a mount, the closure
-  // is behaviourally identical to a module-scope definition.
+  // The reducer is defined here to close over ships and positionIndex. Because
+  // both are from useMemo([boardSize]) and never change within a mount, the
+  // closure is behaviourally identical to a module-scope definition.
   function reducer(state: State, action: Action): State {
     switch (action.type) {
       case "FIRE": {
+        // Guard: ignore shots after all ships are sunk.
+        if (
+          ships.length > 0 &&
+          ships.every((s) => s.coordinates.every((k) => state.shots.has(k)))
+        ) {
+          return state;
+        }
+
         const result = resolveShot(
           action.coordinate,
           state.shots,
@@ -123,15 +130,11 @@ export function useBattleshipGame(
     [ships, state.shots],
   );
 
-  const fireShot = useCallback(
-    (col: number, row: number): void => {
-      if (gameOver) return;
-      dispatch({ type: "FIRE", coordinate: toKey(col, row) });
-    },
-    [gameOver],
-  );
+  const fireShot = useCallback((coordinate: CoordinateKey): void => {
+    dispatch({ type: "FIRE", coordinate });
+  }, []);
 
-  const resetGame = useCallback((): void => {
+  const reset = useCallback((): void => {
     dispatch({ type: "RESET" });
   }, []);
 
@@ -145,6 +148,6 @@ export function useBattleshipGame(
     columnLabels,
     shipHitCounts,
     fireShot,
-    resetGame,
+    reset,
   };
 }
