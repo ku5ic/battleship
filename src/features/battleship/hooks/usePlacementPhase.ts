@@ -105,7 +105,7 @@ function reducer(
 // Hook
 // ---------------------------------------------------------------------------
 
-export interface UsePlacementReturn {
+export interface UsePlacementPhaseReturn {
   boardSize: number;
   columnLabels: readonly string[];
   placedShips: readonly Ship[];
@@ -123,7 +123,9 @@ export interface UsePlacementReturn {
   confirm: () => Ship[];
 }
 
-export function usePlacement(difficulty: Difficulty): UsePlacementReturn {
+export function usePlacementPhase(
+  difficulty: Difficulty,
+): UsePlacementPhaseReturn {
   const { boardSize, columnLabels } = DIFFICULTY_CONFIG[difficulty];
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 

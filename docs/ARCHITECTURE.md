@@ -15,13 +15,13 @@ src/
   app/                        # Sticky header (h1, controls, status slot) and mode routing
   components/
     board/                    # Board, Cell, useBoardNavigation — generic grid rendering + keyboard navigation, no domain knowledge
-    game/                     # BattleshipGame, BattleshipMultiplayerGame — wiring only
+    game/                     # SinglePlayerGame, VsComputerGame — wiring only
   features/
     battleship/
       components/             # Presentational feature components, props in / callbacks out
       constants/              # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
       data/                   # Raw config and parseLayout()
-      hooks/                  # useBattleshipGame, useBattleshipSessionGame
+      hooks/                  # useSinglePlayerGame, useVsComputerGame
       services/               # Pure engine functions and AI helper
       types/                  # All domain types — single source of truth
       utils/                  # Coordinate utilities
@@ -39,7 +39,7 @@ The `battleship` feature folder owns everything domain-specific. The top-level `
 
 The single source of truth for all domain concepts. No logic, no imports from other layers. Adding a concept to the domain means defining a type here first. `any` is forbidden throughout; `unknown` with a type guard is used when the shape is genuinely unknown.
 
-Key types include `CoordinateKey`, `Ship`, `CellStatus`, `ShotResult`, `GameState`, `BoardState`, `SessionBoards`, `PlayerId`, `Difficulty`, `DifficultyConfig`, and `HeaderGameStatus`. `HeaderGameStatus` is a discriminated union on `mode` (`"single" | "session"`) carrying the props required to render `GameStatus` or `GameStatusMultiplayer` in the App header.
+Key types include `CoordinateKey`, `Ship`, `CellStatus`, `ShotResult`, `GameState`, `BoardState`, `VsComputerBoards`, `PlayerId`, `Difficulty`, `DifficultyConfig`, and `HeaderGameStatus`. `HeaderGameStatus` is a discriminated union on `mode` (`"single" | "vsComputer"`) carrying the props required to render `GameStatus` or `VsComputerGameStatus` in the App header.
 
 ### `data/`
 
@@ -63,17 +63,17 @@ Key engine functions:
 
 ### `hooks/`
 
-State orchestration. Connect the domain layer to React's rendering model. Expose typed, view-ready data — not raw state slices. Two hooks exist: `useBattleshipGame` for single-player, `useBattleshipSessionGame` for vs-computer. Neither calls the other.
+State orchestration. Connect the domain layer to React's rendering model. Expose typed, view-ready data — not raw state slices. Two hooks exist: `useSinglePlayerGame` for single-player, `useVsComputerGame` for vs-computer. Neither calls the other.
 
 ### `components/`
 
-Receive props, render UI, emit typed callbacks. No game rules, no domain calculations, no direct hook calls. The sole exception is the wiring layer (`BattleshipGame`, `BattleshipMultiplayerGame`) — these are the only components that call hooks, and they contain no logic of their own.
+Receive props, render UI, emit typed callbacks. No game rules, no domain calculations, no direct hook calls. The sole exception is the wiring layer (`SinglePlayerGame`, `VsComputerGame`) — these are the only components that call hooks, and they contain no logic of their own.
 
-`BattleshipGame` accepts an `onStatusChange` prop and calls it via `useEffect` when `isGameOver` or `shots.size` changes, reporting `{ mode: "single", isGameOver, shotCount }`. The `<h1>` and `<GameStatus>` are no longer rendered here — they live in the App header.
+`SinglePlayerGame` accepts an `onStatusChange` prop and calls it via `useEffect` when `isGameOver` or `shots.size` changes, reporting `{ mode: "single", isGameOver, shotCount }`. The `<h1>` and `<GameStatus>` are no longer rendered here — they live in the App header.
 
-`BattleshipMultiplayerGame` accepts an `onStatusChange` prop and calls it via `useEffect` when `winner`, `activeTurn`, or `isAiThinking` changes, reporting `{ mode: "session", winner, activeTurn, isAiThinking }`. The `<h1>` and `<GameStatusMultiplayer>` are no longer rendered here — they live in the App header.
+`VsComputerGame` accepts an `onStatusChange` prop and calls it via `useEffect` when `winner`, `activeTurn`, or `isAiThinking` changes, reporting `{ mode: "vsComputer", winner, activeTurn, isAiThinking }`. The `<h1>` and `<VsComputerGameStatus>` are no longer rendered here — they live in the App header.
 
-`GameStatus` and `GameStatusMultiplayer` are presentational components with unchanged props and logic. They are now rendered by `App` in the sticky header rather than by their respective wiring components.
+`GameStatus` and `VsComputerGameStatus` are presentational components with unchanged props and logic. They are now rendered by `App` in the sticky header rather than by their respective wiring components.
 
 `Board` delegates keyboard navigation and focus management to a co-located `useBoardNavigation` hook (`src/components/board/useBoardNavigation.ts`). The hook owns `focusedCoord` state, `boardRef`, arrow key navigation, and post-fire focus advancement. It calls `nextUnfiredCoordinate` from engine.ts to determine where to move focus after a shot. `Board` itself is otherwise purely presentational.
 
@@ -81,7 +81,7 @@ Receive props, render UI, emit typed callbacks. No game rules, no domain calcula
 
 `App.tsx` renders a sticky `<header>` at `top-0` containing the `<h1>Battleship</h1>` landmark, mode toggle (`aria-pressed` buttons), difficulty selector (`role="group" aria-label="Difficulty"`), and an inline status slot.
 
-The status slot renders `<GameStatus>` or `<GameStatusMultiplayer>` conditionally based on `headerGameStatus.mode`. `headerGameStatus` is `useState<HeaderGameStatus | null>(null)` — the discriminated union drives which status component appears. It resets to `null` on mode or difficulty change so stale status from the previous game is never displayed.
+The status slot renders `<GameStatus>` or `<VsComputerGameStatus>` conditionally based on `headerGameStatus.mode`. `headerGameStatus` is `useState<HeaderGameStatus | null>(null)` — the discriminated union drives which status component appears. It resets to `null` on mode or difficulty change so stale status from the previous game is never displayed.
 
 Each wiring component receives a typed `onStatusChange` callback. These callbacks are stabilised with `useCallback(fn, [])` to prevent an infinite render loop — without stabilisation, the wiring component's `useEffect` would re-fire on every render because `onStatusChange` would be a new reference each time.
 
@@ -95,17 +95,17 @@ Root layout: `<div className="flex-col">` wrapping `<header>` and `<main classNa
 
 - `shots: Map<CoordinateKey, CellStatus>` — the record of every shot fired
 - `lastResult: ShotResult | null` — drives `aria-live` announcements
-- Session additionally persists: `playerShots`, `computerShots`, `playerLastResult`, `computerLastResult`, and `activeTurn`
+- Vs-computer additionally persists: `playerShots`, `computerShots`, `playerLastResult`, `computerLastResult`, and `activeTurn`
 
 **What is derived via `useMemo`**:
 
 - Whether a specific cell is hit or missed (lookup in the shots map)
 - Whether a ship is sunk (all its cells are in the shots map as hits) — via `isShipSunk` from engine
 - Whether the game is over (all ship IDs are in the sunk set) — via `isGameOver` from engine
-- Session: `winner`, `isAiThinking`, `sunkShipIds` (per board), `shipHitCounts` (per board)
+- Vs-computer: `winner`, `isAiThinking`, `sunkShipIds` (per board), `shipHitCounts` (per board)
 - Status labels and counts
 
-The session hook uses a private `SessionReducerState` (not exported, not in `types/index.ts`). `BoardState` objects are assembled in the hook's return value from persisted state and derived values — they are not stored in the reducer.
+The vs-computer hook uses a private `VsComputerReducerState` (not exported, not in `types/index.ts`). `BoardState` objects are assembled in the hook's return value from persisted state and derived values — they are not stored in the reducer.
 
 **Why this shape.** The alternative is to persist derived values — maintain a `sunkShipIds` set by updating it on every shot. That creates a second source of truth that must be kept consistent. If it ever diverges from the shots map, the UI is wrong. Deriving from the shots map is always consistent by construction.
 
@@ -147,7 +147,7 @@ Three representations exist for different layers:
 
 ## Two Game Modes Without Shared State
 
-Single-player and vs-computer share no state. Each mode has its own hook. `useBattleshipSessionGame` uses a flat reducer state (`playerShots`, `computerShots`, `playerLastResult`, `computerLastResult`, `activeTurn`) and assembles `BoardState` objects in the return value for each player.
+Single-player and vs-computer share no state. Each mode has its own hook. `useVsComputerGame` uses a flat reducer state (`playerShots`, `computerShots`, `playerLastResult`, `computerLastResult`, `activeTurn`) and assembles `BoardState` objects in the return value for each player.
 
 `Board` and `Cell` are shared rendering primitives — they know nothing about game mode. The `disabled` prop on `Board` prevents interaction: the player's own board passes `disabled` (always true, since you observe it but do not fire at it); the opponent's board passes `disabled={activeTurn !== "player" || winner !== null}`.
 

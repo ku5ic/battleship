@@ -1,1 +1,1 @@
-export { BattleshipGame } from "./BattleshipGame";
+export { SinglePlayerGame } from "./SinglePlayerGame";

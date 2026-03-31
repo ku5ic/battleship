@@ -6,7 +6,7 @@ import type {
   CoordinateKey,
   Difficulty,
   PlayerId,
-  SessionBoards,
+  VsComputerBoards,
   Ship,
   ShipType,
   ShotResult,
@@ -49,7 +49,7 @@ export const AI_SHOT_DELAY_MS = 1000;
 // via useMemo in the hook body.
 // ---------------------------------------------------------------------------
 
-interface SessionReducerState {
+interface VsComputerReducerState {
   playerShots: Map<CoordinateKey, CellStatus>;
   computerShots: Map<CoordinateKey, CellStatus>;
   playerLastResult: ShotResult | null;
@@ -57,7 +57,7 @@ interface SessionReducerState {
   activeTurn: PlayerId;
 }
 
-const INITIAL_SESSION_STATE: SessionReducerState = {
+const INITIAL_VS_COMPUTER_STATE: VsComputerReducerState = {
   playerShots: new Map(),
   computerShots: new Map(),
   playerLastResult: null,
@@ -66,7 +66,7 @@ const INITIAL_SESSION_STATE: SessionReducerState = {
 };
 
 // ---------------------------------------------------------------------------
-// Session action union
+// Vs-computer action union
 //
 // PLAYER_FIRE  — player targets a coordinate on the opponent's board.
 // COMPUTER_FIRE — computer targets a coordinate on the player's board.
@@ -75,13 +75,13 @@ const INITIAL_SESSION_STATE: SessionReducerState = {
 // RESET        — restores both boards to their initial state.
 // ---------------------------------------------------------------------------
 
-export type SessionAction =
+export type VsComputerAction =
   | { type: "PLAYER_FIRE"; coordinate: CoordinateKey }
   | { type: "COMPUTER_FIRE"; coordinate: CoordinateKey }
   | { type: "RESET" };
 
-export interface UseBattleshipSessionReturn {
-  board: SessionBoards;
+export interface UseVsComputerGameReturn {
+  board: VsComputerBoards;
   activeTurn: PlayerId;
   winner: PlayerId | null;
   isAiThinking: boolean;
@@ -96,16 +96,16 @@ export interface UseBattleshipSessionReturn {
 }
 
 /**
- * Orchestrates a two-board session.
+ * Orchestrates a two-board vs-computer game.
  *
  * The engine (resolveShot, isGameOver) is board-local and pure; call it once
- * per board independently. Session logic (turn switching, game-over guard)
+ * per board independently. Vs-computer logic (turn switching, game-over guard)
  * lives here and nowhere else.
  */
-export function useBattleshipSessionGame(
+export function useVsComputerGame(
   difficulty: Difficulty = "easy",
   playerShipsOverride?: Ship[],
-): UseBattleshipSessionReturn {
+): UseVsComputerGameReturn {
   const { boardSize, columnLabels } = DIFFICULTY_CONFIG[difficulty];
 
   // Each player gets an independent random layout. Position indexes are
@@ -131,9 +131,9 @@ export function useBattleshipSessionGame(
   // from useMemo([boardSize]) and never change within a mount, so the closure
   // is behaviourally identical to a module-scope definition.
   function reducer(
-    state: SessionReducerState,
-    action: SessionAction,
-  ): SessionReducerState {
+    state: VsComputerReducerState,
+    action: VsComputerAction,
+  ): VsComputerReducerState {
     switch (action.type) {
       case "PLAYER_FIRE": {
         if (state.activeTurn !== "player") return state;
@@ -189,13 +189,13 @@ export function useBattleshipSessionGame(
         };
       }
       case "RESET":
-        return INITIAL_SESSION_STATE;
+        return INITIAL_VS_COMPUTER_STATE;
       default:
         return state;
     }
   }
 
-  const [state, dispatch] = useReducer(reducer, INITIAL_SESSION_STATE);
+  const [state, dispatch] = useReducer(reducer, INITIAL_VS_COMPUTER_STATE);
 
   // ---------------------------------------------------------------------------
   // Derivation chain — declared in dependency order so each useMemo can
@@ -230,7 +230,7 @@ export function useBattleshipSessionGame(
     [playerShips, computerSunkShipIds],
   );
 
-  // 3. Session-level derived values
+  // 3. Vs-computer-level derived values
   const winner = useMemo<PlayerId | null>(() => {
     if (playerIsGameOver) return "player";
     if (computerIsGameOver) return "computer";

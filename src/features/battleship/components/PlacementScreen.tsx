@@ -3,7 +3,7 @@ import { cn } from "@/lib/cn";
 import { Button, Text } from "@/components/ui";
 import { SHIP_DISPLAY_NAMES } from "@/features/battleship/constants";
 import { ShipStatusItem } from "@/features/battleship/components/ShipStatusItem";
-import { usePlacement } from "@/features/battleship/hooks/usePlacement";
+import { usePlacementPhase } from "@/features/battleship/hooks/usePlacementPhase";
 import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
 import { fromKey } from "@/features/battleship/utils/coordinates";
 import type {
@@ -39,7 +39,7 @@ export function PlacementScreen({
     placeShip,
     removeShip,
     confirm,
-  } = usePlacement(difficulty);
+  } = usePlacementPhase(difficulty);
 
   // ---------------------------------------------------------------------------
   // aria-live announcements — key-remount drives re-announcement

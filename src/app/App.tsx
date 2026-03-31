@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
-import { BattleshipGame } from "@/components/game/BattleshipGame";
-import { BattleshipMultiplayerGame } from "@/components/game/BattleshipMultiplayerGame";
+import { SinglePlayerGame } from "@/components/game/SinglePlayerGame";
+import { VsComputerGame } from "@/components/game/VsComputerGame";
 import { Button, Text } from "@/components/ui";
 import {
   GameStatus,
-  GameStatusMultiplayer,
+  VsComputerGameStatus,
   PlacementScreen,
 } from "@/features/battleship/components";
 import type {
@@ -13,16 +13,16 @@ import type {
   Ship,
 } from "@/features/battleship/types";
 
-type Mode = "single" | "multiplayer";
-type MultiplayerPhase = "placement" | "session";
+type Mode = "single" | "vsComputer";
+type VsComputerPhase = "placement" | "battle";
 
 export function App() {
   const [mode, setMode] = useState<Mode>("single");
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [headerGameStatus, setHeaderGameStatus] =
     useState<HeaderGameStatus | null>(null);
-  const [multiplayerPhase, setMultiplayerPhase] =
-    useState<MultiplayerPhase>("placement");
+  const [vsComputerPhase, setVsComputerPhase] =
+    useState<VsComputerPhase>("placement");
   const [confirmedPlayerShips, setConfirmedPlayerShips] = useState<
     Ship[] | null
   >(null);
@@ -30,14 +30,14 @@ export function App() {
   const handleModeChange = useCallback((newMode: Mode) => {
     setMode(newMode);
     setHeaderGameStatus(null);
-    setMultiplayerPhase("placement");
+    setVsComputerPhase("placement");
     setConfirmedPlayerShips(null);
   }, []);
 
   const handleDifficultyChange = useCallback((newDifficulty: Difficulty) => {
     setDifficulty(newDifficulty);
     setHeaderGameStatus(null);
-    setMultiplayerPhase("placement");
+    setVsComputerPhase("placement");
     setConfirmedPlayerShips(null);
   }, []);
 
@@ -48,8 +48,8 @@ export function App() {
     [],
   );
 
-  const handleSessionStatusChange = useCallback(
-    (status: HeaderGameStatus & { mode: "session" }) => {
+  const handleVsComputerStatusChange = useCallback(
+    (status: HeaderGameStatus & { mode: "vsComputer" }) => {
       setHeaderGameStatus(status);
     },
     [],
@@ -70,8 +70,8 @@ export function App() {
                 shotCount={headerGameStatus.shotCount}
               />
             )}
-            {headerGameStatus?.mode === "session" && (
-              <GameStatusMultiplayer
+            {headerGameStatus?.mode === "vsComputer" && (
+              <VsComputerGameStatus
                 winner={headerGameStatus.winner}
                 activeTurn={headerGameStatus.activeTurn}
                 isAiThinking={headerGameStatus.isAiThinking}
@@ -94,11 +94,11 @@ export function App() {
               </Button>
               <Button
                 variant="toggle"
-                active={mode === "multiplayer"}
-                aria-pressed={mode === "multiplayer"}
+                active={mode === "vsComputer"}
+                aria-pressed={mode === "vsComputer"}
                 className="py-1 px-3 text-sm"
                 onClick={() => {
-                  handleModeChange("multiplayer");
+                  handleModeChange("vsComputer");
                 }}
               >
                 vs Computer
@@ -150,31 +150,31 @@ export function App() {
 
       <main className="flex-1 flex flex-col items-center justify-start pt-6 pb-8 px-2 sm:px-4">
         {mode === "single" && (
-          <BattleshipGame
+          <SinglePlayerGame
             key={`${mode}-${difficulty}`}
             difficulty={difficulty}
             onStatusChange={handleSingleStatusChange}
           />
         )}
-        {mode === "multiplayer" && multiplayerPhase === "placement" && (
+        {mode === "vsComputer" && vsComputerPhase === "placement" && (
           <PlacementScreen
             difficulty={difficulty}
             onConfirm={(ships) => {
               setConfirmedPlayerShips(ships);
-              setMultiplayerPhase("session");
+              setVsComputerPhase("battle");
             }}
             onRandomise={() => {
               setConfirmedPlayerShips(null);
-              setMultiplayerPhase("session");
+              setVsComputerPhase("battle");
             }}
           />
         )}
-        {mode === "multiplayer" && multiplayerPhase === "session" && (
-          <BattleshipMultiplayerGame
+        {mode === "vsComputer" && vsComputerPhase === "battle" && (
+          <VsComputerGame
             key={`${mode}-${difficulty}`}
             difficulty={difficulty}
             playerShips={confirmedPlayerShips ?? undefined}
-            onStatusChange={handleSessionStatusChange}
+            onStatusChange={handleVsComputerStatusChange}
           />
         )}
       </main>

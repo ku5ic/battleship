@@ -20,13 +20,13 @@ src/
   app/                          # App.tsx — entry point and mode toggle only
   components/
     board/                      # Board, Cell, useBoardNavigation — generic grid rendering + keyboard navigation, no domain knowledge
-    game/                       # BattleshipGame, BattleshipMultiplayerGame — wiring only
+    game/                       # SinglePlayerGame, VsComputerGame — wiring only
   features/
     battleship/
       components/               # Presentational feature components, props-in/callbacks-out
       constants/                # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
       data/                     # config.ts (raw JSON), layout.ts (parseLayout)
-      hooks/                    # useBattleshipGame, useBattleshipSessionGame
+      hooks/                    # useSinglePlayerGame, useVsComputerGame
       services/                 # Pure engine and AI functions — no React
       types/                    # All domain types — single source of truth
       utils/                    # Pure coordinate helpers
@@ -79,7 +79,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 ### `components/board/` and `components/game/`
 
 - `Board` and `Cell` render a grid. They have no knowledge of ships, fleets, or game rules.
-- `BattleshipGame` and `BattleshipMultiplayerGame` are wiring components — the only place hooks are called. They pass results down as props; they contain no logic of their own.
+- `SinglePlayerGame` and `VsComputerGame` are wiring components — the only place hooks are called. They pass results down as props; they contain no logic of their own.
 - Wiring components are the sole callers of their respective hooks.
 
 ### `features/battleship/components/`
@@ -123,7 +123,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 
 ## State design rules
 
-**Persist only:** shots fired, last shot result, active turn (session only).
+**Persist only:** shots fired, last shot result, active turn (vs-computer only).
 
 **Derive with `useMemo`:** whether a cell is hit or miss, whether a ship is sunk, whether all ships are sunk, whether the game is over, winner, isAiThinking, shipHitCounts, status labels, shot counts.
 

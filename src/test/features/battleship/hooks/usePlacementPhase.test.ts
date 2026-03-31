@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { usePlacement } from "@/features/battleship/hooks/usePlacement";
+import { usePlacementPhase } from "@/features/battleship/hooks/usePlacementPhase";
 import { toKey } from "@/features/battleship/utils/coordinates";
 
 vi.mock("@/features/battleship/services/placement", async () => {
@@ -17,9 +17,9 @@ vi.mock("@/features/battleship/services/placement", async () => {
 // Ship config sizes: carrier=5, battleship=4, cruiser=3, submarine=3, destroyer=2
 // remainingShipTypes should be ordered largest-first.
 
-describe("usePlacement", () => {
+describe("usePlacementPhase", () => {
   it("has correct initial state", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     expect(result.current.placedShips).toHaveLength(0);
     expect(result.current.pendingShip).toBeNull();
@@ -34,7 +34,7 @@ describe("usePlacement", () => {
   });
 
   it("selectShip sets pendingShip with default horizontal orientation", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     act(() => {
       result.current.selectShip("destroyer");
@@ -47,7 +47,7 @@ describe("usePlacement", () => {
   });
 
   it("toggleOrientation flips orientation on pendingShip", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     act(() => {
       result.current.selectShip("destroyer");
@@ -60,7 +60,7 @@ describe("usePlacement", () => {
   });
 
   it("toggleOrientation is a no-op when pendingShip is null", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     act(() => {
       result.current.toggleOrientation();
@@ -70,7 +70,7 @@ describe("usePlacement", () => {
   });
 
   it("setHover updates hoverCoord and reflects in cellStatusMap", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     act(() => {
       result.current.selectShip("destroyer");
@@ -84,7 +84,7 @@ describe("usePlacement", () => {
   });
 
   it("placeShip adds to placedShips and auto-selects next type", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     act(() => {
       result.current.selectShip("carrier");
@@ -104,7 +104,7 @@ describe("usePlacement", () => {
   });
 
   it("placeShip is a no-op when preview is out of bounds", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     act(() => {
       result.current.selectShip("carrier");
@@ -121,7 +121,7 @@ describe("usePlacement", () => {
   });
 
   it("placeShip is a no-op when preview overlaps an existing ship", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     // Place carrier at row 0, cols 0-4
     act(() => {
@@ -150,7 +150,7 @@ describe("usePlacement", () => {
   });
 
   it("placeShip on last ship sets isComplete and clears pendingShip", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     // Place all 5 ships in non-overlapping positions
     const placements: [string, number, number][] = [
@@ -181,7 +181,7 @@ describe("usePlacement", () => {
   });
 
   it("removeShip removes from placedShips and sets pendingShip to that type", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     act(() => {
       result.current.selectShip("destroyer");
@@ -207,7 +207,7 @@ describe("usePlacement", () => {
   });
 
   it("randomise places all ships and clears pendingShip", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     act(() => {
       result.current.randomise();
@@ -219,7 +219,7 @@ describe("usePlacement", () => {
   });
 
   it("reset returns to exact initial state", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     act(() => {
       result.current.selectShip("carrier");
@@ -240,7 +240,7 @@ describe("usePlacement", () => {
   });
 
   it("confirm returns placedShips when isComplete", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     act(() => {
       result.current.randomise();
@@ -255,7 +255,7 @@ describe("usePlacement", () => {
   });
 
   it("confirm throws when not isComplete", () => {
-    const { result } = renderHook(() => usePlacement("easy"));
+    const { result } = renderHook(() => usePlacementPhase("easy"));
 
     expect(() => result.current.confirm()).toThrow(/fleet is not complete/);
   });

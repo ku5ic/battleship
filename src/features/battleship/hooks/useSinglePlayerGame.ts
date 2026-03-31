@@ -50,7 +50,7 @@ const INITIAL_STATE: State = {
 // are added alongside it so consumers get everything from one hook call.
 // ---------------------------------------------------------------------------
 
-export interface UseBattleshipGameReturn extends GameState {
+export interface UseSinglePlayerGameReturn extends GameState {
   boardSize: number;
   columnLabels: readonly string[];
   shipHitCounts: ReadonlyMap<ShipType, number>;
@@ -58,9 +58,9 @@ export interface UseBattleshipGameReturn extends GameState {
   reset: () => void;
 }
 
-export function useBattleshipGame(
+export function useSinglePlayerGame(
   difficulty: Difficulty = "easy",
-): UseBattleshipGameReturn {
+): UseSinglePlayerGameReturn {
   const { boardSize, columnLabels } = DIFFICULTY_CONFIG[difficulty];
 
   // Ships and their position index are stable for this hook's lifetime —
