@@ -15,6 +15,7 @@ import {
   cellSymbol,
   renderBoard,
   renderGameOver,
+  renderLegend,
   renderShotResult,
   renderVsComputerBoards,
   renderVsComputerGameOver,
@@ -194,6 +195,39 @@ describe("renderVsComputerBoards", () => {
 
     expect(playerSection).toContain("■");
     expect(enemySection).not.toContain("■");
+  });
+
+  it("includes the legend in the player section only", () => {
+    const boards: VsComputerBoards = {
+      player: makeBoardState(),
+      computer: makeBoardState(),
+    };
+    const output = renderVsComputerBoards(boards, columnLabels, boardSize);
+    const [playerSection, enemySection] = output.split("--- ENEMY FLEET ---");
+
+    expect(playerSection).toContain("~  Water");
+    expect(playerSection).toContain("■  Ship (your fleet only)");
+    expect(enemySection).not.toContain("~  Water");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// renderLegend
+// ---------------------------------------------------------------------------
+
+describe("renderLegend", () => {
+  it("contains all four symbol explanations", () => {
+    const legend = renderLegend();
+
+    expect(legend).toContain("~  Water");
+    expect(legend).toContain("■  Ship (your fleet only)");
+    expect(legend).toContain("X  Hit");
+    expect(legend).toContain("○  Miss");
+  });
+
+  it("returns exactly four lines", () => {
+    const lines = renderLegend().split("\n");
+    expect(lines).toHaveLength(4);
   });
 });
 

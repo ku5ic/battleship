@@ -24,6 +24,7 @@ import { chooseRandomUnfiredCoordinate } from "@/features/battleship/services/ai
 import {
   renderBoard,
   renderGameOver,
+  renderLegend,
   renderShotResult,
   renderVsComputerBoards,
   renderVsComputerGameOver,
@@ -79,7 +80,8 @@ export async function runSinglePlayer(
     if (isGameOver(ships, sunkShipIds)) break;
 
     const board = toBoardState(ships, state.shots, state.lastResult);
-    console.log(renderBoard(board, columnLabels, boardSize));
+    console.log(renderBoard(board, columnLabels, boardSize, true));
+    console.log("\n" + renderLegend());
     const shotMsg = renderShotResult(state.lastResult, columnLabels);
     if (shotMsg) console.log(shotMsg);
 
@@ -89,7 +91,8 @@ export async function runSinglePlayer(
 
   // Final render after game over.
   const finalBoard = toBoardState(ships, state.shots, state.lastResult);
-  console.log(renderBoard(finalBoard, columnLabels, boardSize));
+  console.log(renderBoard(finalBoard, columnLabels, boardSize, true));
+  console.log("\n" + renderLegend());
   const lastShotMsg = renderShotResult(state.lastResult, columnLabels);
   if (lastShotMsg) console.log(lastShotMsg);
   console.log(renderGameOver(state.shots.size));

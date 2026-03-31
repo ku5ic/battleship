@@ -93,6 +93,19 @@ export function renderBoard(
 }
 
 // ---------------------------------------------------------------------------
+// Symbol legend
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns a compact legend explaining board symbols.
+ */
+export function renderLegend(): string {
+  return ["~  Water", "■  Ship (your fleet only)", "X  Hit", "○  Miss"].join(
+    "\n",
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Vs-computer two-board rendering
 // ---------------------------------------------------------------------------
 
@@ -121,6 +134,8 @@ export function renderVsComputerBoards(
   return [
     "--- YOUR FLEET ---",
     playerBoard,
+    "",
+    renderLegend(),
     "",
     "--- ENEMY FLEET ---",
     computerBoard,
