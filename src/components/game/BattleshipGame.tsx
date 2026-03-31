@@ -1,5 +1,5 @@
 import { Board } from "@/components/board";
-import { Button, Stack, Text } from "@/components/ui";
+import { Button, Stack } from "@/components/ui";
 import {
   GameStatus,
   ShipStatusList,
@@ -35,10 +35,6 @@ export function BattleshipGame({ difficulty }: BattleshipGameProps) {
 
   return (
     <Stack className="w-full max-w-3xl mx-auto">
-      <Text as="h1" variant="title">
-        Battleship
-      </Text>
-
       {/*
         ShotResultAnnouncer is visually hidden and announces transient shot
         events (hit, miss, sunk, already-fired) via aria-live="polite".

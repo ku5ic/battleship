@@ -81,13 +81,6 @@ describe("BattleshipGame", () => {
   // Initial render
   // ---------------------------------------------------------------------------
 
-  it("renders the game heading", () => {
-    render(<BattleshipGame difficulty="easy" />);
-    expect(
-      screen.getByRole("heading", { level: 1, name: "Battleship" }),
-    ).toBeInTheDocument();
-  });
-
   it("shows the initial instruction before any shots are fired", () => {
     render(<BattleshipGame difficulty="easy" />);
     expect(screen.getByText("Select a cell to fire.")).toBeInTheDocument();

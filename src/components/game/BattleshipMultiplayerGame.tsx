@@ -42,10 +42,6 @@ export function BattleshipMultiplayerGame({
 
   return (
     <Stack className="w-full max-w-5xl mx-auto">
-      <Text as="h1" variant="title">
-        Battleship
-      </Text>
-
       {/* Announcers — visually hidden, one per board so events don't collide */}
       <ShotResultAnnouncer result={computerLastResult} />
       <ShotResultAnnouncer result={playerLastResult} />
