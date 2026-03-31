@@ -4,9 +4,11 @@ import {
   computeShipHitCounts,
   isGameOver,
   isShipSunk,
+  nextUnfiredCoordinate,
   outcomeToStatus,
   resolveShot,
 } from "@/features/battleship/services/engine";
+import { allBoardKeys } from "@/features/battleship/utils/coordinates";
 import type {
   CellStatus,
   CoordinateKey,
@@ -258,5 +260,50 @@ describe("computeShipHitCounts", () => {
   it("returns an empty map for an empty fleet", () => {
     const counts = computeShipHitCounts([], shotsMap(["0,0"]));
     expect(counts.size).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// nextUnfiredCoordinate
+// ---------------------------------------------------------------------------
+
+describe("nextUnfiredCoordinate", () => {
+  const keys = allBoardKeys(3); // 9 keys: "0,0" through "2,2"
+
+  it("returns the next unfired key after fromIndex", () => {
+    const shots = shotsMap(["0,0"]); // index 0 is fired
+    expect(nextUnfiredCoordinate(keys, shots, 0)).toBe("1,0");
+  });
+
+  it("wraps around when no unfired key exists after fromIndex", () => {
+    // Fire all keys after index 4 ("1,1"), leave "0,0" unfired
+    const fired: CoordinateKey[] = [
+      "1,0",
+      "2,0",
+      "0,1",
+      "1,1",
+      "2,1",
+      "0,2",
+      "1,2",
+      "2,2",
+    ];
+    const shots = shotsMap(fired);
+    expect(nextUnfiredCoordinate(keys, shots, 4)).toBe("0,0");
+  });
+
+  it("returns null when all keys are fired", () => {
+    const shots = shotsMap(keys);
+    expect(nextUnfiredCoordinate(keys, shots, 0)).toBeNull();
+  });
+
+  it("returns the first unfired key before fromIndex when tail is exhausted", () => {
+    // Fire everything except "0,1" (index 3), search from last index
+    const fired = keys.filter((k) => k !== "0,1");
+    const shots = shotsMap(fired);
+    expect(nextUnfiredCoordinate(keys, shots, 8)).toBe("0,1");
+  });
+
+  it("returns the next key when fromIndex is 0 and subsequent keys are unfired", () => {
+    expect(nextUnfiredCoordinate(keys, new Map(), 0)).toBe("1,0");
   });
 });

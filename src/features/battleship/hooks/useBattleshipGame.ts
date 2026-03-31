@@ -5,6 +5,7 @@ import {
   buildPositionIndex,
   computeShipHitCounts,
   isGameOver,
+  isShipSunk,
   outcomeToStatus,
   resolveShot,
 } from "@/features/battleship/services/engine";
@@ -76,12 +77,10 @@ export function useBattleshipGame(
     switch (action.type) {
       case "FIRE": {
         // Guard: ignore shots after all ships are sunk.
-        if (
-          ships.length > 0 &&
-          ships.every((s) => s.coordinates.every((k) => state.shots.has(k)))
-        ) {
-          return state;
-        }
+        const sunk = new Set<ShipType>(
+          ships.filter((s) => isShipSunk(s, state.shots)).map((s) => s.id),
+        );
+        if (isGameOver(ships, sunk)) return state;
 
         const result = resolveShot(
           action.coordinate,
@@ -110,15 +109,13 @@ export function useBattleshipGame(
 
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
-  const sunkShipIds = useMemo<ReadonlySet<ShipType>>(() => {
-    const sunk = new Set<ShipType>();
-    for (const ship of ships) {
-      if (ship.coordinates.every((key) => state.shots.has(key))) {
-        sunk.add(ship.id);
-      }
-    }
-    return sunk;
-  }, [ships, state.shots]);
+  const sunkShipIds = useMemo<ReadonlySet<ShipType>>(
+    () =>
+      new Set<ShipType>(
+        ships.filter((s) => isShipSunk(s, state.shots)).map((s) => s.id),
+      ),
+    [ships, state.shots],
+  );
 
   const gameOver = useMemo(
     () => isGameOver(ships, sunkShipIds),

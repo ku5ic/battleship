@@ -151,3 +151,24 @@ export function outcomeToStatus(outcome: ShotOutcome): CellStatus | null {
       return null;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Coordinate helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the next unfired coordinate in row-major order starting after
+ * fromIndex, wrapping around to the beginning if needed.
+ * Returns null if every coordinate has been fired at.
+ */
+export function nextUnfiredCoordinate(
+  allKeys: readonly CoordinateKey[],
+  shots: ReadonlyMap<CoordinateKey, CellStatus>,
+  fromIndex: number,
+): CoordinateKey | null {
+  return (
+    allKeys.slice(fromIndex + 1).find((k) => !shots.has(k)) ??
+    allKeys.slice(0, fromIndex).find((k) => !shots.has(k)) ??
+    null
+  );
+}
