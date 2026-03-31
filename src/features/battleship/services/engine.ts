@@ -108,6 +108,19 @@ export function isGameOver(
   return ships.length > 0 && ships.every((ship) => sunkShipIds.has(ship.id));
 }
 
+/**
+ * Computes which ships have been fully sunk from the current shots map.
+ * Shared by both single-player and vs-computer engine modules.
+ */
+export function selectSunkShipIds(
+  ships: readonly Ship[],
+  shots: ReadonlyMap<CoordinateKey, CellStatus>,
+): ReadonlySet<ShipType> {
+  return new Set<ShipType>(
+    ships.filter((s) => isShipSunk(s, shots)).map((s) => s.id),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Hit counting
 // ---------------------------------------------------------------------------

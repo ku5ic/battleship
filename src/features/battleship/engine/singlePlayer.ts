@@ -2,14 +2,13 @@ import type {
   CellStatus,
   CoordinateKey,
   Ship,
-  ShipType,
   ShotResult,
 } from "@/features/battleship/types";
 import {
   isGameOver,
-  isShipSunk,
   outcomeToStatus,
   resolveShot,
+  selectSunkShipIds,
 } from "@/features/battleship/services/engine";
 
 // ---------------------------------------------------------------------------
@@ -56,10 +55,8 @@ export function createSinglePlayerReducer(
     switch (action.type) {
       case "FIRE": {
         // Guard: ignore shots after all ships are sunk.
-        const sunk = new Set<ShipType>(
-          ships.filter((s) => isShipSunk(s, state.shots)).map((s) => s.id),
-        );
-        if (isGameOver(ships, sunk)) return state;
+        if (isGameOver(ships, selectSunkShipIds(ships, state.shots)))
+          return state;
 
         const result = resolveShot(
           action.coordinate,
@@ -85,20 +82,4 @@ export function createSinglePlayerReducer(
         return createSinglePlayerInitialState();
     }
   };
-}
-
-// ---------------------------------------------------------------------------
-// Selectors — pure derivations from persisted state + fleet constants.
-// ---------------------------------------------------------------------------
-
-/**
- * Computes which ships have been fully sunk from the current shots map.
- */
-export function selectSunkShipIds(
-  ships: readonly Ship[],
-  shots: ReadonlyMap<CoordinateKey, CellStatus>,
-): ReadonlySet<ShipType> {
-  return new Set<ShipType>(
-    ships.filter((s) => isShipSunk(s, shots)).map((s) => s.id),
-  );
 }

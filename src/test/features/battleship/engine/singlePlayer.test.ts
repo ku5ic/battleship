@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { parseLayout } from "@/features/battleship/data/layout";
 import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
-import { buildPositionIndex } from "@/features/battleship/services/engine";
+import {
+  buildPositionIndex,
+  selectSunkShipIds,
+} from "@/features/battleship/services/engine";
 import {
   createSinglePlayerInitialState,
   createSinglePlayerReducer,
-  selectSunkShipIds,
 } from "@/features/battleship/engine/singlePlayer";
 import type { CoordinateKey, Ship } from "@/features/battleship/types";
 

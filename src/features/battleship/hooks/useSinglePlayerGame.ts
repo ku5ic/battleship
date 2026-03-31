@@ -5,12 +5,12 @@ import {
   buildPositionIndex,
   computeShipHitCounts,
   isGameOver,
+  selectSunkShipIds,
 } from "@/features/battleship/services/engine";
 import { DIFFICULTY_CONFIG } from "@/features/battleship/constants";
 import {
   createSinglePlayerInitialState,
   createSinglePlayerReducer,
-  selectSunkShipIds,
 } from "@/features/battleship/engine/singlePlayer";
 import type {
   CoordinateKey,
