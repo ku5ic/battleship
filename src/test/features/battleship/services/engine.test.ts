@@ -1,14 +1,15 @@
 import { describe, it, expect } from "vitest";
 import {
-  applyShotToBoard,
   buildPositionIndex,
+  computeShipHitCounts,
   isGameOver,
   isShipSunk,
+  nextUnfiredCoordinate,
   outcomeToStatus,
   resolveShot,
 } from "@/features/battleship/services/engine";
+import { allBoardKeys } from "@/features/battleship/utils/coordinates";
 import type {
-  BoardState,
   CellStatus,
   CoordinateKey,
   Ship,
@@ -45,14 +46,6 @@ const carrier: Ship = {
 
 const fleet: readonly Ship[] = [destroyer, submarine, carrier];
 const index = buildPositionIndex(fleet);
-
-const baseBoard: BoardState = {
-  ships: fleet,
-  shots: new Map(),
-  sunkShipIds: new Set(),
-  isGameOver: false,
-  lastResult: null,
-};
 
 /** Returns a ReadonlyMap with the given keys set to "hit". */
 function shotsMap(
@@ -229,83 +222,88 @@ describe("outcomeToStatus", () => {
 });
 
 // ---------------------------------------------------------------------------
-// applyShotToBoard
+// computeShipHitCounts
 // ---------------------------------------------------------------------------
-//
-describe("applyShotToBoard", () => {
-  it("returns a miss for an empty cell", () => {
-    const { board, result } = applyShotToBoard("9,9", baseBoard, index);
-    expect(result.outcome).toBe("miss");
-    expect(board.shots.get("9,9")).toBe("miss");
-    expect(board.sunkShipIds.size).toBe(0);
-    expect(board.isGameOver).toBe(false);
+
+describe("computeShipHitCounts", () => {
+  it("returns zero for every ship when no shots have been fired", () => {
+    const counts = computeShipHitCounts(fleet, new Map());
+    expect(counts.get("destroyer")).toBe(0);
+    expect(counts.get("submarine")).toBe(0);
+    expect(counts.get("carrier")).toBe(0);
   });
 
-  it("returns a hit for a ship cell that is not yet sunk", () => {
-    const { board, result } = applyShotToBoard("0,0", baseBoard, index);
-    expect(result.outcome).toBe("hit");
-    expect(board.shots.get("0,0")).toBe("hit");
-    expect(board.sunkShipIds.has("destroyer")).toBe(false);
+  it("counts partial hits on one ship while others remain at zero", () => {
+    const counts = computeShipHitCounts(fleet, shotsMap(["0,0"]));
+    expect(counts.get("destroyer")).toBe(1);
+    expect(counts.get("submarine")).toBe(0);
+    expect(counts.get("carrier")).toBe(0);
   });
 
-  it("returns sunk and updates sunkShipIds when the last cell is hit", () => {
-    const oneHitBoard: BoardState = {
-      ...baseBoard,
-      shots: new Map([["0,0", "hit"]]),
-    };
-    const { board, result } = applyShotToBoard("1,0", oneHitBoard, index);
-    expect(result.outcome).toBe("sunk");
-    expect(result.sunkShipId).toBe("destroyer");
-    expect(board.sunkShipIds.has("destroyer")).toBe(true);
-    expect(board.isGameOver).toBe(false); // submarine and carrier remain
+  it("counts all coordinates when every cell of a ship is hit", () => {
+    const counts = computeShipHitCounts(fleet, shotsMap(["0,0", "1,0"]));
+    expect(counts.get("destroyer")).toBe(destroyer.size);
   });
 
-  it("sets isGameOver only when all ships in the fleet are sunk", () => {
-    const allButCarrierSunk: BoardState = {
-      ...baseBoard,
-      shots: new Map([
-        ["0,0", "hit"],
-        ["1,0", "hit"],
-        ["3,0", "hit"],
-        ["3,1", "hit"],
-        ["3,2", "hit"],
-        ["2,9", "hit"],
-        ["3,9", "hit"],
-        ["4,9", "hit"],
-        ["5,9", "hit"],
-      ]),
-      sunkShipIds: new Set(["destroyer", "submarine"]),
-    };
-    const { board, result } = applyShotToBoard("6,9", allButCarrierSunk, index);
-    expect(result.outcome).toBe("sunk");
-    expect(result.sunkShipId).toBe("carrier");
-    expect(board.isGameOver).toBe(true);
+  it("ignores misses that do not land on any ship", () => {
+    const shots = new Map<CoordinateKey, CellStatus>([
+      ["9,9", "miss"],
+      ["8,8", "miss"],
+      ["0,0", "hit"],
+    ]);
+    const counts = computeShipHitCounts(fleet, shots);
+    expect(counts.get("destroyer")).toBe(1);
+    expect(counts.get("submarine")).toBe(0);
+    expect(counts.get("carrier")).toBe(0);
   });
 
-  it("returns already-fired and does not change shots", () => {
-    const firedBoard: BoardState = {
-      ...baseBoard,
-      shots: new Map([["0,0", "hit"]]),
-    };
-    const { board, result } = applyShotToBoard("0,0", firedBoard, index);
-    expect(result.outcome).toBe("already-fired");
-    expect(board.shots.size).toBe(1);
-    expect(board.isGameOver).toBe(false);
+  it("returns an empty map for an empty fleet", () => {
+    const counts = computeShipHitCounts([], shotsMap(["0,0"]));
+    expect(counts.size).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// nextUnfiredCoordinate
+// ---------------------------------------------------------------------------
+
+describe("nextUnfiredCoordinate", () => {
+  const keys = allBoardKeys(3); // 9 keys: "0,0" through "2,2"
+
+  it("returns the next unfired key after fromIndex", () => {
+    const shots = shotsMap(["0,0"]); // index 0 is fired
+    expect(nextUnfiredCoordinate(keys, shots, 0)).toBe("1,0");
   });
 
-  it("does not mutate the input shots", () => {
-    const sizeBefore = baseBoard.shots.size;
-    applyShotToBoard("9,9", baseBoard, index);
-    expect(baseBoard.shots.size).toBe(sizeBefore);
+  it("wraps around when no unfired key exists after fromIndex", () => {
+    // Fire all keys after index 4 ("1,1"), leave "0,0" unfired
+    const fired: CoordinateKey[] = [
+      "1,0",
+      "2,0",
+      "0,1",
+      "1,1",
+      "2,1",
+      "0,2",
+      "1,2",
+      "2,2",
+    ];
+    const shots = shotsMap(fired);
+    expect(nextUnfiredCoordinate(keys, shots, 4)).toBe("0,0");
   });
 
-  it("does not mutate the input sunkShipIds", () => {
-    const oneHitBoard: BoardState = {
-      ...baseBoard,
-      shots: new Map([["0,0", "hit"]]),
-    };
-    const sizeBefore = oneHitBoard.sunkShipIds.size;
-    applyShotToBoard("1,0", oneHitBoard, index);
-    expect(oneHitBoard.sunkShipIds.size).toBe(sizeBefore);
+  it("returns null when all keys are fired", () => {
+    const shots = shotsMap(keys);
+    expect(nextUnfiredCoordinate(keys, shots, 0)).toBeNull();
+  });
+
+  it("returns the first unfired key before fromIndex when tail is exhausted", () => {
+    // Fire everything except "0,1" (index 3), search from last index
+    const fired = keys.filter((k) => k !== "0,1");
+    const shots = shotsMap(fired);
+    expect(nextUnfiredCoordinate(keys, shots, 8)).toBe("0,1");
+  });
+
+  it("returns the next key when fromIndex is 0 and subsequent keys are unfired", () => {
+    expect(nextUnfiredCoordinate(keys, new Map(), 0)).toBe("1,0");
   });
 });

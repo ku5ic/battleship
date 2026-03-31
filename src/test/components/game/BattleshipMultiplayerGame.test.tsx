@@ -1,7 +1,8 @@
-import { render, screen, within, waitFor } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { BattleshipMultiplayerGame } from "@/components/game/BattleshipMultiplayerGame";
+import { AI_SHOT_DELAY_MS } from "@/features/battleship/hooks/useBattleshipSessionGame";
 
 // ---------------------------------------------------------------------------
 // Mock placement to return the same deterministic layout used by the
@@ -26,18 +27,6 @@ vi.mock("@/features/battleship/services/placement", async () => {
 vi.mock("@/features/battleship/services/ai", () => ({
   chooseRandomUnfiredCoordinate: vi.fn(() => "9,8" as const),
 }));
-
-// ---------------------------------------------------------------------------
-// Mock the session hook module to set AI_SHOT_DELAY_MS to 0.
-// This avoids fake timers entirely — the setTimeout fires in the same
-// event loop tick so tests don't need to manually advance time.
-// ---------------------------------------------------------------------------
-vi.mock("@/features/battleship/hooks/useBattleshipSessionGame", async () => {
-  const actual = await vi.importActual(
-    "@/features/battleship/hooks/useBattleshipSessionGame",
-  );
-  return { ...actual, AI_SHOT_DELAY_MS: 0 };
-});
 
 // Ship positions — identical on both boards (shared fleet):
 //   destroyer:  [0,0] [1,0]
@@ -80,9 +69,24 @@ function cellIn(section: HTMLElement, coord: string): HTMLElement {
   return el;
 }
 
+// ---------------------------------------------------------------------------
+// Timer strategy
+//
+// The session hook's AI turn fires after a real setTimeout(AI_SHOT_DELAY_MS).
+// Using vi.useFakeTimers() with shouldAdvanceTime: true lets the fake clock
+// track wall-clock time so userEvent's internal delays resolve naturally,
+// while still allowing manual advancement via vi.advanceTimersByTime() to
+// flush the AI timer deterministically without waiting the full 1000ms.
+// ---------------------------------------------------------------------------
+
 describe("BattleshipMultiplayerGame", () => {
   beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   // ---------------------------------------------------------------------------
@@ -192,7 +196,7 @@ describe("BattleshipMultiplayerGame", () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Computer fires (AI_SHOT_DELAY_MS = 0, coordinate = "9,8")
+  // Computer fires (fake timers + manual advancement, coordinate = "9,8")
   // ---------------------------------------------------------------------------
 
   it("computer fires on the player board after the delay", async () => {
@@ -201,10 +205,11 @@ describe("BattleshipMultiplayerGame", () => {
 
     await user.click(cellIn(opponentBoard(), "9,9")); // miss
 
-    // With delay=0 the shot fires in the next tick.
-    await waitFor(() => {
-      expect(cellIn(yourBoard(), "9,8")).toHaveAccessibleName(/miss/i);
+    act(() => {
+      vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
     });
+
+    expect(cellIn(yourBoard(), "9,8")).toHaveAccessibleName(/miss/i);
   });
 
   it("returns the turn to the player after the computer misses", async () => {
@@ -213,14 +218,13 @@ describe("BattleshipMultiplayerGame", () => {
 
     await user.click(cellIn(opponentBoard(), "9,9"));
 
-    await waitFor(
-      () => {
-        expect(
-          screen.getByText("Your turn — select a cell to fire."),
-        ).toBeInTheDocument();
-      },
-      { timeout: 5000 },
-    );
+    act(() => {
+      vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
+    });
+
+    expect(
+      screen.getByText("Your turn — select a cell to fire."),
+    ).toBeInTheDocument();
   });
 
   // ---------------------------------------------------------------------------
@@ -305,13 +309,15 @@ describe("BattleshipMultiplayerGame", () => {
     await user.click(cellIn(opponentBoard(), "9,9")); // miss — AI timer starts
     await user.click(screen.getByRole("button", { name: "Restart" }));
 
-    // Give the event loop a tick — if the timer weren't cancelled the AI
-    // shot would land here.
-    await waitFor(() => {
-      expect(
-        screen.getByText("Your turn — select a cell to fire."),
-      ).toBeInTheDocument();
+    // Flush the cancelled timer — if the timeout weren't cleared by reset,
+    // the AI shot would land and mark a cell on the player board.
+    act(() => {
+      vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
     });
+
+    expect(
+      screen.getByText("Your turn — select a cell to fire."),
+    ).toBeInTheDocument();
 
     const firedOnPlayerBoard = within(yourBoard())
       .getAllByRole("button")

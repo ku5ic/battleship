@@ -84,8 +84,9 @@ export interface GameState {
 // structurally identical. The alias signals "this is one player's board"
 // without duplicating the definition or introducing an inheritance hierarchy.
 //
-// SessionState is the top-level shape owned by the session hook. The engine
-// and existing single-board hook remain untouched.
+// The session hook's internal reducer state is private to the hook file.
+// The public view types below (BoardState, SessionBoards) are what
+// components consume — assembled from derived values by the hook.
 // ---------------------------------------------------------------------------
 
 export type PlayerId = "player" | "computer";
@@ -96,13 +97,6 @@ export type BoardState = GameState;
 export interface SessionBoards {
   player: BoardState;
   computer: BoardState;
-}
-
-export interface SessionState {
-  board: SessionBoards;
-  activeTurn: PlayerId;
-  winner: PlayerId | null;
-  isAiThinking: boolean;
 }
 
 export type Difficulty = "easy" | "moderate" | "hard";

@@ -1,28 +1,15 @@
-import { useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import type { CellStatus, CoordinateKey } from "@/features/battleship/types";
-import {
-  allBoardKeys,
-  fromKey,
-  toKey,
-} from "@/features/battleship/utils/coordinates";
 import { Cell } from "@/components/board/Cell";
+import { useBoardNavigation } from "@/components/board/useBoardNavigation";
 
 interface BoardProps {
   boardSize: number;
   columnLabels: readonly string[];
   shots: ReadonlyMap<CoordinateKey, CellStatus>;
   onFire?: (coord: CoordinateKey) => void;
-  isGameOver: boolean;
-  isReadOnly?: boolean;
+  disabled?: boolean;
 }
-
-const ARROW_DELTAS: Partial<Record<string, [number, number]>> = {
-  ArrowUp: [0, -1],
-  ArrowDown: [0, 1],
-  ArrowLeft: [-1, 0],
-  ArrowRight: [1, 0],
-};
 
 /**
  * Renders the game board with column and row labels sized by boardSize.
@@ -49,66 +36,12 @@ export function Board({
   columnLabels,
   shots,
   onFire,
-  isGameOver,
-  isReadOnly,
+  disabled,
 }: BoardProps) {
-  const [focusedCoord, setFocusedCoord] = useState<CoordinateKey>("0,0");
-  const boardRef = useRef<HTMLDivElement>(null);
+  const { boardRef, focusedCoord, allKeys, handleKeyDown, handleCellFire } =
+    useBoardNavigation(boardSize, shots, onFire);
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    const delta = ARROW_DELTAS[e.key];
-    if (!delta) return;
-
-    const target = e.target as HTMLElement;
-    const raw = target.dataset.coord;
-    if (!raw) return;
-
-    e.preventDefault();
-
-    const { col, row } = fromKey(raw as CoordinateKey);
-    const [dc, dr] = delta;
-    const nextCol = Math.min(boardSize - 1, Math.max(0, col + dc));
-    const nextRow = Math.min(boardSize - 1, Math.max(0, row + dr));
-    const nextCoord = toKey(nextCol, nextRow);
-
-    setFocusedCoord(nextCoord);
-    boardRef.current
-      ?.querySelector<HTMLElement>(`[data-coord="${nextCoord}"]`)
-      ?.focus();
-  }
-
-  // ALL_KEYS depends on boardSize. In practice boardSize is stable for the
-  // hook's lifetime; the component is remounted via key when difficulty changes.
-  const ALL_KEYS = useMemo(() => allBoardKeys(boardSize), [boardSize]);
-
-  /**
-   * Fires the shot then immediately advances keyboard focus to the next unfired
-   * cell in row-major order. `shots` hasn't updated yet at call time, so `fired`
-   * is excluded manually when searching for the next target.
-   *
-   * requestAnimationFrame defers the focus call until after React has flushed
-   * the render that marks the fired cell as disabled. Without this, the browser
-   * may focus a button that is about to become disabled and silently drop focus.
-   */
-  function handleCellFire(fired: CoordinateKey) {
-    onFire?.(fired);
-
-    const firedIndex = ALL_KEYS.indexOf(fired);
-    const next =
-      ALL_KEYS.slice(firedIndex + 1).find((k) => !shots.has(k)) ??
-      ALL_KEYS.slice(0, firedIndex).find((k) => !shots.has(k));
-
-    if (!next) return; // every cell is now fired — game over
-
-    setFocusedCoord(next);
-    requestAnimationFrame(() => {
-      boardRef.current
-        ?.querySelector<HTMLElement>(`[data-coord="${next}"]`)
-        ?.focus();
-    });
-  }
-
-  const rows = groupByRow(ALL_KEYS, boardSize);
+  const rows = groupByRow(allKeys, boardSize);
 
   // Inline style is justified: Tailwind cannot generate grid-template-columns
   // for arbitrary runtime values. The 1.5rem first track holds the row label.
@@ -121,7 +54,7 @@ export function Board({
       aria-label="Battleship board. Use arrow keys to navigate, Space or Enter to fire."
       aria-rowcount={boardSize}
       aria-colcount={boardSize}
-      aria-readonly={isGameOver}
+      aria-readonly={!!disabled}
       onKeyDown={handleKeyDown}
       className="w-full select-none"
       tabIndex={0}
@@ -171,7 +104,7 @@ export function Board({
                 columnLabel={columnLabels[colIndex]}
                 status={shots.get(coord) ?? "untouched"}
                 onFire={handleCellFire}
-                disabled={isGameOver || isReadOnly}
+                disabled={disabled}
                 tabIndex={coord === focusedCoord ? 0 : -1}
               />
             </div>

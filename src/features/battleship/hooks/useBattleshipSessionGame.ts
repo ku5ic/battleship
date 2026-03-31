@@ -2,24 +2,67 @@ import { useEffect, useReducer, useCallback, useMemo } from "react";
 import { generateRandomLayout } from "@/features/battleship/services/placement";
 import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
 import type {
-  BoardState,
+  CellStatus,
   CoordinateKey,
   Difficulty,
   PlayerId,
   SessionBoards,
-  SessionState,
-  Ship,
   ShipType,
   ShotResult,
 } from "@/features/battleship/types";
 import { DIFFICULTY_CONFIG } from "@/features/battleship/constants";
 import {
   buildPositionIndex,
-  applyShotToBoard,
+  computeShipHitCounts,
+  isGameOver,
+  isShipSunk,
+  outcomeToStatus,
+  resolveShot,
 } from "@/features/battleship/services/engine";
 import { chooseRandomUnfiredCoordinate } from "@/features/battleship/services/ai";
 
 export const AI_SHOT_DELAY_MS = 1000;
+
+// ---------------------------------------------------------------------------
+// Naming legend
+//
+//   playerShots    = coordinates the PLAYER fired at the COMPUTER's board
+//   computerShots  = coordinates the COMPUTER fired at the PLAYER's board
+//   playerShips    = the PLAYER's fleet (computer fires at these)
+//   computerShips  = the COMPUTER's fleet (player fires at these)
+//
+// Board assembly for the UI:
+//
+//   "Your fleet" panel:
+//     ships = playerShips, shots = computerShots,
+//     sunkShipIds = computerSunkShipIds, isGameOver = computerIsGameOver
+//
+//   "Enemy fleet" panel:
+//     ships = computerShips, shots = playerShots,
+//     sunkShipIds = playerSunkShipIds, isGameOver = playerIsGameOver
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Reducer state — persists only the irreducible minimum.
+// Everything else (sunkShipIds, isGameOver, winner, isAiThinking) is derived
+// via useMemo in the hook body.
+// ---------------------------------------------------------------------------
+
+interface SessionReducerState {
+  playerShots: Map<CoordinateKey, CellStatus>;
+  computerShots: Map<CoordinateKey, CellStatus>;
+  playerLastResult: ShotResult | null;
+  computerLastResult: ShotResult | null;
+  activeTurn: PlayerId;
+}
+
+const INITIAL_SESSION_STATE: SessionReducerState = {
+  playerShots: new Map(),
+  computerShots: new Map(),
+  playerLastResult: null,
+  computerLastResult: null,
+  activeTurn: "player",
+};
 
 // ---------------------------------------------------------------------------
 // Session action union
@@ -49,16 +92,6 @@ export interface UseBattleshipSessionReturn {
   computerShipHitCounts: ReadonlyMap<ShipType, number>;
   playerFireShot: (coordinate: CoordinateKey) => void;
   reset: () => void;
-}
-
-function createBoardState(ships: readonly Ship[]): BoardState {
-  return {
-    ships,
-    shots: new Map(),
-    sunkShipIds: new Set(),
-    isGameOver: false,
-    lastResult: null,
-  };
 }
 
 /**
@@ -91,120 +124,155 @@ export function useBattleshipSessionGame(
     };
   }, [boardSize]);
 
-  function buildInitialSessionState(): SessionState {
-    return {
-      board: {
-        player: createBoardState(playerShips),
-        computer: createBoardState(computerShips),
-      },
-      activeTurn: "player",
-      winner: null,
-      isAiThinking: false,
-    };
-  }
-
-  // The reducer is defined here to close over the position indexes and
-  // buildInitialSessionState. All three are derived from useMemo([boardSize])
-  // and are stable within a mount.
-  function reducer(state: SessionState, action: SessionAction): SessionState {
+  // The reducer is defined here to close over the position indexes. Both are
+  // from useMemo([boardSize]) and never change within a mount, so the closure
+  // is behaviourally identical to a module-scope definition.
+  function reducer(
+    state: SessionReducerState,
+    action: SessionAction,
+  ): SessionReducerState {
     switch (action.type) {
       case "PLAYER_FIRE": {
-        // Guard: ignore if it's not the player's turn or the session is already over.
-        if (state.activeTurn !== "player" || state.winner !== null) {
-          return state;
-        }
+        if (state.activeTurn !== "player") return state;
 
-        const { board: nextComputerBoard, result } = applyShotToBoard(
+        const result = resolveShot(
           action.coordinate,
-          state.board.computer,
+          state.playerShots,
           computerPositionIndex,
         );
 
+        if (result.outcome === "already-fired") {
+          return { ...state, playerLastResult: result };
+        }
+
+        const status = outcomeToStatus(result.outcome);
+        if (status === null) return state;
+
+        const playerShots = new Map(state.playerShots);
+        playerShots.set(action.coordinate, status);
+
         return {
           ...state,
-          board: { ...state.board, computer: nextComputerBoard },
-          // Player keeps their turn on a hit — computer only gets to fire on a miss.
+          playerShots,
+          playerLastResult: result,
+          // Player keeps their turn on a hit — computer only fires on a miss.
           activeTurn: result.outcome === "miss" ? "computer" : "player",
-          winner: nextComputerBoard.isGameOver ? "player" : null,
-          // AI thinking begins only if the turn switched to the computer.
-          isAiThinking:
-            result.outcome === "miss" && !nextComputerBoard.isGameOver,
         };
       }
       case "COMPUTER_FIRE": {
-        // Guard: ignore if it's not the computer's turn or the session is already over.
-        if (state.activeTurn !== "computer" || state.winner !== null) {
-          return state;
-        }
+        if (state.activeTurn !== "computer") return state;
 
-        const { board: nextPlayerBoard, result } = applyShotToBoard(
+        const result = resolveShot(
           action.coordinate,
-          state.board.player,
+          state.computerShots,
           playerPositionIndex,
         );
 
+        if (result.outcome === "already-fired") {
+          return { ...state, computerLastResult: result };
+        }
+
+        const status = outcomeToStatus(result.outcome);
+        if (status === null) return state;
+
+        const computerShots = new Map(state.computerShots);
+        computerShots.set(action.coordinate, status);
+
         return {
           ...state,
-          board: { ...state.board, player: nextPlayerBoard },
+          computerShots,
+          computerLastResult: result,
           activeTurn: result.outcome === "miss" ? "player" : "computer",
-          winner: nextPlayerBoard.isGameOver ? "computer" : null,
-          isAiThinking:
-            result.outcome !== "miss" && !nextPlayerBoard.isGameOver,
         };
       }
-      case "RESET": {
-        return buildInitialSessionState();
-      }
+      case "RESET":
+        return INITIAL_SESSION_STATE;
       default:
         return state;
     }
   }
 
-  const [state, dispatch] = useReducer(reducer, null, () =>
-    buildInitialSessionState(),
+  const [state, dispatch] = useReducer(reducer, INITIAL_SESSION_STATE);
+
+  // ---------------------------------------------------------------------------
+  // Derivation chain — declared in dependency order so each useMemo can
+  // reference the previous result.
+  // ---------------------------------------------------------------------------
+
+  // 1. Sunk ship IDs — which ships each player has destroyed
+  const playerSunkShipIds = useMemo<ReadonlySet<ShipType>>(() => {
+    const sunk = new Set<ShipType>();
+    for (const ship of computerShips) {
+      if (isShipSunk(ship, state.playerShots)) sunk.add(ship.id);
+    }
+    return sunk;
+  }, [computerShips, state.playerShots]);
+
+  const computerSunkShipIds = useMemo<ReadonlySet<ShipType>>(() => {
+    const sunk = new Set<ShipType>();
+    for (const ship of playerShips) {
+      if (isShipSunk(ship, state.computerShots)) sunk.add(ship.id);
+    }
+    return sunk;
+  }, [playerShips, state.computerShots]);
+
+  // 2. Game-over flags
+  const playerIsGameOver = useMemo(
+    () => isGameOver(computerShips, playerSunkShipIds),
+    [computerShips, playerSunkShipIds],
   );
+
+  const computerIsGameOver = useMemo(
+    () => isGameOver(playerShips, computerSunkShipIds),
+    [playerShips, computerSunkShipIds],
+  );
+
+  // 3. Session-level derived values
+  const winner = useMemo<PlayerId | null>(() => {
+    if (playerIsGameOver) return "player";
+    if (computerIsGameOver) return "computer";
+    return null;
+  }, [playerIsGameOver, computerIsGameOver]);
+
+  const isAiThinking = state.activeTurn === "computer" && winner === null;
+
+  // 4. Hit counts
+  const playerShipHitCounts = useMemo(
+    () => computeShipHitCounts(playerShips, state.computerShots),
+    [playerShips, state.computerShots],
+  );
+
+  const computerShipHitCounts = useMemo(
+    () => computeShipHitCounts(computerShips, state.playerShots),
+    [computerShips, state.playerShots],
+  );
+
+  // ---------------------------------------------------------------------------
+  // Callbacks
+  // ---------------------------------------------------------------------------
 
   const playerFireShot = useCallback(
     (coordinate: CoordinateKey) => {
-      if (state.activeTurn !== "player" || state.winner !== null) return;
+      if (winner !== null) return;
       dispatch({ type: "PLAYER_FIRE", coordinate });
     },
-    [state.activeTurn, state.winner],
+    [winner],
   );
 
   const reset = useCallback(() => {
     dispatch({ type: "RESET" });
   }, []);
 
-  const playerShipHitCounts = useMemo<ReadonlyMap<ShipType, number>>(() => {
-    const counts = new Map<ShipType, number>();
-    for (const ship of playerShips) {
-      counts.set(
-        ship.id,
-        ship.coordinates.filter((key) => state.board.player.shots.has(key))
-          .length,
-      );
-    }
-    return counts;
-  }, [playerShips, state.board.player.shots]);
-
-  const computerShipHitCounts = useMemo<ReadonlyMap<ShipType, number>>(() => {
-    const counts = new Map<ShipType, number>();
-    for (const ship of computerShips) {
-      counts.set(
-        ship.id,
-        ship.coordinates.filter((key) => state.board.computer.shots.has(key))
-          .length,
-      );
-    }
-    return counts;
-  }, [computerShips, state.board.computer.shots]);
+  // ---------------------------------------------------------------------------
+  // AI turn — fires after a delay when it is the computer's turn.
+  // winner must be fully resolved above before this effect runs.
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    if (state.activeTurn !== "computer" || state.winner !== null) return;
+    if (state.activeTurn !== "computer" || winner !== null) return;
 
     const coordinate = chooseRandomUnfiredCoordinate(
-      state.board.player.shots,
+      state.computerShots,
       boardSize,
     );
     if (coordinate === null) return;
@@ -216,20 +284,39 @@ export function useBattleshipSessionGame(
     return () => {
       clearTimeout(timeout);
     };
-  }, [state.activeTurn, state.winner, state.board.player.shots, boardSize]);
+  }, [state.activeTurn, winner, state.computerShots, boardSize]);
+
+  // ---------------------------------------------------------------------------
+  // Return value — assemble BoardState views from derived values.
+  // See naming legend at top of file for the cross-wiring rationale.
+  // ---------------------------------------------------------------------------
 
   return {
     board: {
-      player: state.board.player,
-      computer: state.board.computer,
+      // "Your fleet" panel: player's ships, shots the computer fired at them
+      player: {
+        ships: playerShips,
+        shots: state.computerShots,
+        sunkShipIds: computerSunkShipIds,
+        isGameOver: computerIsGameOver,
+        lastResult: state.computerLastResult,
+      },
+      // "Enemy fleet" panel: computer's ships, shots the player fired at them
+      computer: {
+        ships: computerShips,
+        shots: state.playerShots,
+        sunkShipIds: playerSunkShipIds,
+        isGameOver: playerIsGameOver,
+        lastResult: state.playerLastResult,
+      },
     },
     activeTurn: state.activeTurn,
-    winner: state.winner,
-    isAiThinking: state.isAiThinking,
+    winner,
+    isAiThinking,
     boardSize,
     columnLabels,
-    playerLastResult: state.board.player.lastResult,
-    computerLastResult: state.board.computer.lastResult,
+    playerLastResult: state.playerLastResult,
+    computerLastResult: state.computerLastResult,
     playerShipHitCounts,
     computerShipHitCounts,
     playerFireShot,

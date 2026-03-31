@@ -3,7 +3,9 @@ import { generateRandomLayout } from "@/features/battleship/services/placement";
 import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
 import {
   buildPositionIndex,
+  computeShipHitCounts,
   isGameOver,
+  isShipSunk,
   outcomeToStatus,
   resolveShot,
 } from "@/features/battleship/services/engine";
@@ -16,7 +18,6 @@ import type {
   ShipType,
   ShotResult,
 } from "@/features/battleship/types";
-import { toKey } from "@/features/battleship/utils/coordinates";
 
 // ---------------------------------------------------------------------------
 // State shape and reducer
@@ -53,8 +54,8 @@ export interface UseBattleshipGameReturn extends GameState {
   boardSize: number;
   columnLabels: readonly string[];
   shipHitCounts: ReadonlyMap<ShipType, number>;
-  fireShot: (col: number, row: number) => void;
-  resetGame: () => void;
+  fireShot: (coordinate: CoordinateKey) => void;
+  reset: () => void;
 }
 
 export function useBattleshipGame(
@@ -69,12 +70,18 @@ export function useBattleshipGame(
     return { ships: generated, positionIndex: buildPositionIndex(generated) };
   }, [boardSize]);
 
-  // The reducer is defined here to close over positionIndex. Because positionIndex
-  // is from useMemo([boardSize]) and never changes within a mount, the closure
-  // is behaviourally identical to a module-scope definition.
+  // The reducer is defined here to close over ships and positionIndex. Because
+  // both are from useMemo([boardSize]) and never change within a mount, the
+  // closure is behaviourally identical to a module-scope definition.
   function reducer(state: State, action: Action): State {
     switch (action.type) {
       case "FIRE": {
+        // Guard: ignore shots after all ships are sunk.
+        const sunk = new Set<ShipType>(
+          ships.filter((s) => isShipSunk(s, state.shots)).map((s) => s.id),
+        );
+        if (isGameOver(ships, sunk)) return state;
+
         const result = resolveShot(
           action.coordinate,
           state.shots,
@@ -102,41 +109,29 @@ export function useBattleshipGame(
 
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
-  const sunkShipIds = useMemo<ReadonlySet<ShipType>>(() => {
-    const sunk = new Set<ShipType>();
-    for (const ship of ships) {
-      if (ship.coordinates.every((key) => state.shots.has(key))) {
-        sunk.add(ship.id);
-      }
-    }
-    return sunk;
-  }, [ships, state.shots]);
+  const sunkShipIds = useMemo<ReadonlySet<ShipType>>(
+    () =>
+      new Set<ShipType>(
+        ships.filter((s) => isShipSunk(s, state.shots)).map((s) => s.id),
+      ),
+    [ships, state.shots],
+  );
 
   const gameOver = useMemo(
     () => isGameOver(ships, sunkShipIds),
     [ships, sunkShipIds],
   );
 
-  const shipHitCounts = useMemo<ReadonlyMap<ShipType, number>>(() => {
-    const counts = new Map<ShipType, number>();
-    for (const ship of ships) {
-      counts.set(
-        ship.id,
-        ship.coordinates.filter((key) => state.shots.has(key)).length,
-      );
-    }
-    return counts;
-  }, [ships, state.shots]);
-
-  const fireShot = useCallback(
-    (col: number, row: number): void => {
-      if (gameOver) return;
-      dispatch({ type: "FIRE", coordinate: toKey(col, row) });
-    },
-    [gameOver],
+  const shipHitCounts = useMemo(
+    () => computeShipHitCounts(ships, state.shots),
+    [ships, state.shots],
   );
 
-  const resetGame = useCallback((): void => {
+  const fireShot = useCallback((coordinate: CoordinateKey): void => {
+    dispatch({ type: "FIRE", coordinate });
+  }, []);
+
+  const reset = useCallback((): void => {
     dispatch({ type: "RESET" });
   }, []);
 
@@ -150,6 +145,6 @@ export function useBattleshipGame(
     columnLabels,
     shipHitCounts,
     fireShot,
-    resetGame,
+    reset,
   };
 }

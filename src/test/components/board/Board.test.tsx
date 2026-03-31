@@ -24,6 +24,7 @@ const LABELS_15 = [
   "N",
   "O",
 ];
+const LABELS_3 = ["A", "B", "C"];
 
 describe("Board", () => {
   // ---------------------------------------------------------------------------
@@ -37,7 +38,6 @@ describe("Board", () => {
         columnLabels={LABELS_10}
         shots={noShots}
         onFire={vi.fn()}
-        isGameOver={false}
       />,
     );
     expect(screen.getByRole("grid")).toBeInTheDocument();
@@ -50,7 +50,6 @@ describe("Board", () => {
         columnLabels={LABELS_10}
         shots={noShots}
         onFire={vi.fn()}
-        isGameOver={false}
       />,
     );
     expect(
@@ -65,7 +64,6 @@ describe("Board", () => {
         columnLabels={LABELS_10}
         shots={noShots}
         onFire={vi.fn()}
-        isGameOver={false}
       />,
     );
     expect(screen.getAllByRole("button")).toHaveLength(100);
@@ -78,7 +76,6 @@ describe("Board", () => {
         columnLabels={LABELS_10}
         shots={noShots}
         onFire={vi.fn()}
-        isGameOver={false}
       />,
     );
     // The column header row carries aria-hidden="true" so it is excluded from
@@ -94,7 +91,6 @@ describe("Board", () => {
         columnLabels={LABELS_15}
         shots={noShots}
         onFire={vi.fn()}
-        isGameOver={false}
       />,
     );
     const grid = screen.getByRole("grid");
@@ -115,7 +111,6 @@ describe("Board", () => {
         columnLabels={LABELS_10}
         shots={noShots}
         onFire={vi.fn()}
-        isGameOver={false}
       />,
     );
     const buttons = screen.getAllByRole("button");
@@ -130,7 +125,6 @@ describe("Board", () => {
         columnLabels={LABELS_10}
         shots={shots}
         onFire={vi.fn()}
-        isGameOver={false}
       />,
     );
     expect(screen.getByRole("button", { name: /A1.*hit/i })).toBeDisabled();
@@ -144,7 +138,6 @@ describe("Board", () => {
         columnLabels={LABELS_10}
         shots={shots}
         onFire={vi.fn()}
-        isGameOver={false}
       />,
     );
     expect(screen.getByRole("button", { name: /J10.*miss/i })).toBeDisabled();
@@ -158,7 +151,6 @@ describe("Board", () => {
         columnLabels={LABELS_10}
         shots={shots}
         onFire={vi.fn()}
-        isGameOver={false}
       />,
     );
     // B1 (1,0) has not been fired.
@@ -179,7 +171,6 @@ describe("Board", () => {
         columnLabels={LABELS_10}
         shots={noShots}
         onFire={onFire}
-        isGameOver={false}
       />,
     );
     // Use /A1,/ — /A1/i alone also matches "A10, not fired…".
@@ -196,7 +187,6 @@ describe("Board", () => {
         columnLabels={LABELS_10}
         shots={noShots}
         onFire={onFire}
-        isGameOver={false}
       />,
     );
     // J10 = col 9, row 9
@@ -214,7 +204,6 @@ describe("Board", () => {
         columnLabels={LABELS_10}
         shots={shots}
         onFire={onFire}
-        isGameOver={false}
       />,
     );
     await user.click(screen.getByRole("button", { name: /A1.*hit/i }));
@@ -222,32 +211,153 @@ describe("Board", () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Game over state
+  // Disabled state
   // ---------------------------------------------------------------------------
 
-  it("sets aria-readonly to true when game is over", () => {
+  it("sets aria-readonly to true when disabled", () => {
     render(
       <Board
         boardSize={10}
         columnLabels={LABELS_10}
         shots={noShots}
         onFire={vi.fn()}
-        isGameOver={true}
+        disabled
       />,
     );
     expect(screen.getByRole("grid")).toHaveAttribute("aria-readonly", "true");
   });
 
-  it("sets aria-readonly to false when game is in progress", () => {
+  it("sets aria-readonly to false when not disabled", () => {
     render(
       <Board
         boardSize={10}
         columnLabels={LABELS_10}
         shots={noShots}
         onFire={vi.fn()}
-        isGameOver={false}
       />,
     );
     expect(screen.getByRole("grid")).toHaveAttribute("aria-readonly", "false");
+  });
+
+  // ---------------------------------------------------------------------------
+  // Keyboard navigation
+  // ---------------------------------------------------------------------------
+
+  it("moves focus right on ArrowRight", async () => {
+    const user = userEvent.setup();
+    render(
+      <Board
+        boardSize={10}
+        columnLabels={LABELS_10}
+        shots={noShots}
+        onFire={vi.fn()}
+      />,
+    );
+    // Focus directly to avoid triggering handleCellFire via click.
+    screen.getByRole("button", { name: /A1,/i }).focus();
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("button", { name: /B1,/i })).toHaveFocus();
+  });
+
+  it("clamps at the right edge of the board", async () => {
+    const user = userEvent.setup();
+    render(
+      <Board
+        boardSize={10}
+        columnLabels={LABELS_10}
+        shots={noShots}
+        onFire={vi.fn()}
+      />,
+    );
+    screen.getByRole("button", { name: /J1,/i }).focus();
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("button", { name: /J1,/i })).toHaveFocus();
+  });
+
+  it("moves focus down on ArrowDown", async () => {
+    const user = userEvent.setup();
+    render(
+      <Board
+        boardSize={10}
+        columnLabels={LABELS_10}
+        shots={noShots}
+        onFire={vi.fn()}
+      />,
+    );
+    screen.getByRole("button", { name: /A1,/i }).focus();
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("button", { name: /A2,/i })).toHaveFocus();
+  });
+
+  it("clamps at the top edge of the board", async () => {
+    const user = userEvent.setup();
+    render(
+      <Board
+        boardSize={10}
+        columnLabels={LABELS_10}
+        shots={noShots}
+        onFire={vi.fn()}
+      />,
+    );
+    screen.getByRole("button", { name: /A1,/i }).focus();
+    await user.keyboard("{ArrowUp}");
+    expect(screen.getByRole("button", { name: /A1,/i })).toHaveFocus();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Focus advancement
+  // ---------------------------------------------------------------------------
+
+  it("advances focus to the next unfired cell after firing", async () => {
+    const user = userEvent.setup();
+    // "0,0" is already in shots so the hook's search skips it correctly.
+    // Click "1,0" (B1) — the first enabled cell. Focus should advance to "2,0" (C1).
+    const shots = new Map<CoordinateKey, CellStatus>([["0,0", "hit"]]);
+    render(
+      <Board
+        boardSize={3}
+        columnLabels={LABELS_3}
+        shots={shots}
+        onFire={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /B1,/i }));
+    // Flush the requestAnimationFrame that defers focus advancement.
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        resolve();
+      });
+    });
+    expect(screen.getByRole("button", { name: /C1,/i })).toHaveFocus();
+  });
+
+  it("wraps focus to the first unfired cell when firing near the end", async () => {
+    const user = userEvent.setup();
+    // All cells fired except "0,0" (A1) and "2,2" (C3).
+    // Click "2,2" — focus should wrap to "0,0".
+    const shots = new Map<CoordinateKey, CellStatus>([
+      ["1,0", "miss"],
+      ["2,0", "miss"],
+      ["0,1", "miss"],
+      ["1,1", "miss"],
+      ["2,1", "miss"],
+      ["0,2", "miss"],
+      ["1,2", "miss"],
+    ]);
+    render(
+      <Board
+        boardSize={3}
+        columnLabels={LABELS_3}
+        shots={shots}
+        onFire={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /C3,/i }));
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        resolve();
+      });
+    });
+    expect(screen.getByRole("button", { name: /A1,/i })).toHaveFocus();
   });
 });

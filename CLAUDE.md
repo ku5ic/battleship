@@ -19,13 +19,13 @@ This file governs how Claude Code operates in this repository. Read it in full b
 src/
   app/                          # App.tsx — entry point and mode toggle only
   components/
-    board/                      # Board, Cell — generic grid rendering, no domain knowledge
+    board/                      # Board, Cell, useBoardNavigation — generic grid rendering + keyboard navigation, no domain knowledge
     game/                       # BattleshipGame, BattleshipMultiplayerGame — wiring only
   features/
     battleship/
       components/               # Presentational feature components, props-in/callbacks-out
       constants/                # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
-      data/                     # config.ts (raw JSON), layout.ts (parseLayout), index.ts
+      data/                     # config.ts (raw JSON), layout.ts (parseLayout)
       hooks/                    # useBattleshipGame, useBattleshipSessionGame
       services/                 # Pure engine and AI functions — no React
       types/                    # All domain types — single source of truth
@@ -123,9 +123,9 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 
 ## State design rules
 
-**Persist only:** shots fired, last shot result, sunk ship IDs, game-over flag, session turn state, AI thinking flag.
+**Persist only:** shots fired, last shot result, active turn (session only).
 
-**Derive with `useMemo`:** whether a cell is hit or miss, whether a ship is sunk, whether all ships are sunk, status labels, shot counts.
+**Derive with `useMemo`:** whether a cell is hit or miss, whether a ship is sunk, whether all ships are sunk, whether the game is over, winner, isAiThinking, shipHitCounts, status labels, shot counts.
 
 **Never duplicate a source of truth.** If a value can be computed from persisted state plus constants, it must be computed, not stored.
 

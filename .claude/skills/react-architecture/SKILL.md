@@ -15,8 +15,12 @@ React is a thin rendering shell around a pure domain layer. Game rules, calculat
 
 ---
 
-— no inline string interpolation anywhere else
+## Layer contracts
 
+### `utils/` — coordinate helpers
+
+- Pure functions only — no state, no side effects, no React
+- `toKey(col, row)` is the single point of `CoordinateKey` production — no inline string interpolation anywhere else
 - `RawCoordinate` tuples must not escape `data/` or `utils/`
 
 ### `services/` — pure game rules
@@ -31,7 +35,7 @@ React is a thin rendering shell around a pure domain layer. Game rules, calculat
 - `useReducer` over multiple `useState` when transitions have guard logic or need to be atomic
 - Reducers are synchronous — async behaviour (AI timing, network) belongs in `useEffect`; the effect dispatches a pre-resolved value
 - Derive with `useMemo`; do not persist what can be computed
-- Module-scope constants (position indexes, ship arrays) are built once at module load, not inside the hook body
+- Values that depend on stable props (e.g. `boardSize` from `difficulty`) are computed inside hooks via `useMemo` — module-scope constants are only appropriate when the value is truly static (e.g. `DIFFICULTY_CONFIG`, `ARROW_DELTAS`)
 - Expose typed, view-ready data — not raw state slices
 
 ### `components/` — render and emit
@@ -46,9 +50,9 @@ React is a thin rendering shell around a pure domain layer. Game rules, calculat
 
 ## State design rules
 
-**Persist only:** shots fired, last shot result, sunk ship IDs, game-over flag, turn state, AI thinking flag.
+**Persist only:** shots fired, last shot result, active turn (session only).
 
-**Derive with `useMemo`:** cell visual state, sunk status, game-over derived from sunk count, status labels, shot counts.
+**Derive with `useMemo`:** cell visual state, sunk status, game-over, winner, isAiThinking, shipHitCounts, status labels, shot counts.
 
 **Atomic updates:** when two values must change together use `useReducer` — single dispatch, never two `setState` calls.
 

@@ -82,8 +82,7 @@ export function BattleshipMultiplayerGame({
             boardSize={boardSize}
             columnLabels={columnLabels}
             shots={board.player.shots}
-            isGameOver={board.player.isGameOver}
-            isReadOnly
+            disabled
           />
           <div className="mt-2">
             <ShipStatusList
@@ -112,8 +111,7 @@ export function BattleshipMultiplayerGame({
             onFire={(coord: CoordinateKey) => {
               playerFireShot(coord);
             }}
-            isGameOver={board.computer.isGameOver}
-            isReadOnly={activeTurn !== "player" || sessionOver}
+            disabled={activeTurn !== "player" || sessionOver}
           />
           <div className="mt-2">
             <ShipStatusList
