@@ -1,5 +1,4 @@
 import type {
-  BoardState,
   CellStatus,
   CoordinateKey,
   Ship,
@@ -7,11 +6,6 @@ import type {
   ShotOutcome,
   ShotResult,
 } from "@/features/battleship/types";
-
-export interface ApplyShotResult {
-  board: BoardState;
-  result: ShotResult;
-}
 
 // ---------------------------------------------------------------------------
 // Position index
@@ -86,53 +80,6 @@ export function resolveShot(
   }
 
   return { coordinate, outcome: "hit" };
-}
-
-/**
- * Applies a single shot to a board and returns the next board state together
- * with the resolved shot result.
- *
- * Pure — the input board is never mutated. The caller is responsible for
- * holding the position index; build it once with `buildPositionIndex` and
- * pass it in for every shot on the same board.
- *
- * `already-fired` is a valid result. The returned board is identical to the
- * input in that case — the caller can check `result.outcome` to decide
- * whether to advance turn state.
- */
-export function applyShotToBoard(
-  coordinate: CoordinateKey,
-  board: BoardState,
-  positionIndex: ReadonlyMap<CoordinateKey, Ship>,
-): ApplyShotResult {
-  const result = resolveShot(coordinate, board.shots, positionIndex);
-
-  if (result.outcome === "already-fired") {
-    return { board: { ...board, lastResult: result }, result };
-  }
-
-  const status = outcomeToStatus(result.outcome);
-  // outcomeToStatus only returns null for "already-fired", which is handled above.
-  // This guard is for the type checker.
-  if (status === null) return { board, result };
-
-  const shots = new Map(board.shots);
-  shots.set(coordinate, status);
-
-  const sunkShipIds = new Set<ShipType>(board.sunkShipIds);
-  if (result.outcome === "sunk" && result.sunkShipId !== undefined) {
-    sunkShipIds.add(result.sunkShipId);
-  }
-
-  const nextBoard: BoardState = {
-    ...board,
-    shots,
-    sunkShipIds,
-    isGameOver: isGameOver(board.ships, sunkShipIds),
-    lastResult: result,
-  };
-
-  return { board: nextBoard, result };
 }
 
 // ---------------------------------------------------------------------------

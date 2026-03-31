@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  applyShotToBoard,
   buildPositionIndex,
   computeShipHitCounts,
   isGameOver,
@@ -9,7 +8,6 @@ import {
   resolveShot,
 } from "@/features/battleship/services/engine";
 import type {
-  BoardState,
   CellStatus,
   CoordinateKey,
   Ship,
@@ -46,14 +44,6 @@ const carrier: Ship = {
 
 const fleet: readonly Ship[] = [destroyer, submarine, carrier];
 const index = buildPositionIndex(fleet);
-
-const baseBoard: BoardState = {
-  ships: fleet,
-  shots: new Map(),
-  sunkShipIds: new Set(),
-  isGameOver: false,
-  lastResult: null,
-};
 
 /** Returns a ReadonlyMap with the given keys set to "hit". */
 function shotsMap(
@@ -268,87 +258,5 @@ describe("computeShipHitCounts", () => {
   it("returns an empty map for an empty fleet", () => {
     const counts = computeShipHitCounts([], shotsMap(["0,0"]));
     expect(counts.size).toBe(0);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// applyShotToBoard
-// ---------------------------------------------------------------------------
-//
-describe("applyShotToBoard", () => {
-  it("returns a miss for an empty cell", () => {
-    const { board, result } = applyShotToBoard("9,9", baseBoard, index);
-    expect(result.outcome).toBe("miss");
-    expect(board.shots.get("9,9")).toBe("miss");
-    expect(board.sunkShipIds.size).toBe(0);
-    expect(board.isGameOver).toBe(false);
-  });
-
-  it("returns a hit for a ship cell that is not yet sunk", () => {
-    const { board, result } = applyShotToBoard("0,0", baseBoard, index);
-    expect(result.outcome).toBe("hit");
-    expect(board.shots.get("0,0")).toBe("hit");
-    expect(board.sunkShipIds.has("destroyer")).toBe(false);
-  });
-
-  it("returns sunk and updates sunkShipIds when the last cell is hit", () => {
-    const oneHitBoard: BoardState = {
-      ...baseBoard,
-      shots: new Map([["0,0", "hit"]]),
-    };
-    const { board, result } = applyShotToBoard("1,0", oneHitBoard, index);
-    expect(result.outcome).toBe("sunk");
-    expect(result.sunkShipId).toBe("destroyer");
-    expect(board.sunkShipIds.has("destroyer")).toBe(true);
-    expect(board.isGameOver).toBe(false); // submarine and carrier remain
-  });
-
-  it("sets isGameOver only when all ships in the fleet are sunk", () => {
-    const allButCarrierSunk: BoardState = {
-      ...baseBoard,
-      shots: new Map([
-        ["0,0", "hit"],
-        ["1,0", "hit"],
-        ["3,0", "hit"],
-        ["3,1", "hit"],
-        ["3,2", "hit"],
-        ["2,9", "hit"],
-        ["3,9", "hit"],
-        ["4,9", "hit"],
-        ["5,9", "hit"],
-      ]),
-      sunkShipIds: new Set(["destroyer", "submarine"]),
-    };
-    const { board, result } = applyShotToBoard("6,9", allButCarrierSunk, index);
-    expect(result.outcome).toBe("sunk");
-    expect(result.sunkShipId).toBe("carrier");
-    expect(board.isGameOver).toBe(true);
-  });
-
-  it("returns already-fired and does not change shots", () => {
-    const firedBoard: BoardState = {
-      ...baseBoard,
-      shots: new Map([["0,0", "hit"]]),
-    };
-    const { board, result } = applyShotToBoard("0,0", firedBoard, index);
-    expect(result.outcome).toBe("already-fired");
-    expect(board.shots.size).toBe(1);
-    expect(board.isGameOver).toBe(false);
-  });
-
-  it("does not mutate the input shots", () => {
-    const sizeBefore = baseBoard.shots.size;
-    applyShotToBoard("9,9", baseBoard, index);
-    expect(baseBoard.shots.size).toBe(sizeBefore);
-  });
-
-  it("does not mutate the input sunkShipIds", () => {
-    const oneHitBoard: BoardState = {
-      ...baseBoard,
-      shots: new Map([["0,0", "hit"]]),
-    };
-    const sizeBefore = oneHitBoard.sunkShipIds.size;
-    applyShotToBoard("1,0", oneHitBoard, index);
-    expect(oneHitBoard.sunkShipIds.size).toBe(sizeBefore);
   });
 });
