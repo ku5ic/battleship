@@ -10,11 +10,13 @@ Run this before every task. No code generation until preflight passes.
 
 3. **Identify the correct layer** for each piece of work:
    - Pure calculation or rule → `services/`
+   - State machine (reducer factory, selectors) → `engine/`
    - Coordinate manipulation → `utils/`
    - Type definition → `types/`
    - State orchestration or side effects → `hooks/`
    - Rendering or user intent → `components/`
    - Static parse of input → `data/`
+   - Terminal I/O → `cli/`
 
 4. **Check for duplication**. Does anything you are about to write already exist? List any overlapping types, utilities, or logic found in step 2. If a duplicate exists, you must reuse it — not recreate it.
 

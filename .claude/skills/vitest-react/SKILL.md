@@ -13,9 +13,9 @@ This skill encodes testing strategy, patterns, and anti-patterns for this projec
 
 Write tests in order of value, not order of ease:
 
-1. **Domain / service layer** — highest value. Pure functions, no dependencies. A failure here means a game rule is broken. Cover every rule, every guard, every edge case.
-2. **Hook layer** — `renderHook` with mocked collaborators. Covers state shape, transition logic, and side-effect coordination without mounting a full component tree.
-3. **Component integration** — wiring components (`BattleshipGame`, `BattleshipMultiplayerGame`) exercised end-to-end with user interactions.
+1. **Domain layer (engine, services, utils, data)** — highest value. Pure functions, no dependencies. A failure here means a game rule or state transition is broken. Cover every rule, every guard, every edge case.
+2. **Hook layer** — `renderHook` with mocked collaborators. Covers side-effect coordination and derived value assembly without mounting a full component tree.
+3. **Component integration** — wiring components (`SinglePlayerGame`, `VsComputerGame`) exercised end-to-end with user interactions.
 4. **Presentational components** — cover rendering, prop-driven state, and accessibility contracts. Fast and isolated.
 
 ---
@@ -26,13 +26,20 @@ Tests mirror `src/`:
 
 ```
 src/test/
+  cli/
+    input.test.ts
+    renderer.test.ts
   features/battleship/
+    engine/singlePlayer.test.ts
+    engine/vsComputer.test.ts
     services/engine.test.ts
-    hooks/useBattleshipGame.test.tsx
+    hooks/useSinglePlayerGame.test.ts
+    hooks/useVsComputerGame.test.ts
     components/ShipStatusList.test.tsx
   components/
     board/Board.test.tsx
-    game/BattleshipGame.test.tsx
+    game/SinglePlayerGame.test.tsx
+    game/VsComputerGame.test.tsx
 ```
 
 One test file per source file. No barrel test files.
@@ -91,14 +98,14 @@ Use `renderHook` from `@testing-library/react`:
 
 ```ts
 import { renderHook, act } from "@testing-library/react";
-import { useBattleshipGame } from "@/features/battleship/hooks/useBattleshipGame";
+import { useSinglePlayerGame } from "@/features/battleship/hooks/useSinglePlayerGame";
 
 it("increments shot count after firing", () => {
-  const { result } = renderHook(() => useBattleshipGame());
+  const { result } = renderHook(() => useSinglePlayerGame("easy"));
   act(() => {
-    result.current.fireShot(0, 0);
+    result.current.fireShot("0,0");
   });
-  expect(result.current.shots.size).toBe(1);
+  expect(result.current.board.shots.size).toBe(1);
 });
 ```
 
@@ -117,7 +124,7 @@ Wrap all state-triggering calls in `act()`. Use `rerender` from `renderHook` whe
 export const AI_SHOT_DELAY_MS = 600;
 
 // In the test
-vi.mock("@/features/battleship/hooks/useBattleshipSessionGame", async () => {
+vi.mock("@/features/battleship/hooks/useVsComputerGame", async () => {
   const actual = await vi.importActual("...");
   return { ...actual, AI_SHOT_DELAY_MS: 0 };
 });
@@ -130,6 +137,25 @@ await waitFor(() => {
   expect(result.current.board.player.shots.size).toBe(1);
 });
 ```
+
+---
+
+## Engine testing
+
+Engine files (`engine/singlePlayer.ts`, `engine/vsComputer.ts`) export pure reducer factories and selectors. Test them as plain function calls — no `renderHook`, no React dependency:
+
+```ts
+import { createSinglePlayerReducer, createSinglePlayerInitialState } from "@/features/battleship/engine/singlePlayer";
+
+it("records a miss", () => {
+  const reducer = createSinglePlayerReducer(ships, positionIndex);
+  const state = reducer(createSinglePlayerInitialState(), { type: "FIRE", coordinate: "9,9" });
+  expect(state.shots.get("9,9")).toBe("miss");
+  expect(state.lastResult?.outcome).toBe("miss");
+});
+```
+
+Engine tests are the highest-value tests in the codebase — they verify the state machine that both the React hooks and the CLI consume.
 
 ---
 

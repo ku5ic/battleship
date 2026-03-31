@@ -1,6 +1,6 @@
 # Battleship
 
-A browser-based Battleship game built with React and TypeScript. The primary purpose of this project is to demonstrate how I approach frontend architecture: where logic lives, how state is shaped, how the UI layer stays thin, and how accessibility is treated as a first-class constraint rather than an afterthought.
+A Battleship game with a React frontend and a standalone CLI, built in TypeScript. The primary purpose of this project is to demonstrate how I approach frontend architecture: where logic lives, how state is shaped, how the UI layer stays thin, and how accessibility is treated as a first-class constraint rather than an afterthought.
 
 **[Play it live →](https://ku5ic.github.io/battleship/)**
 
@@ -42,6 +42,16 @@ Board size scales with difficulty. Fleet composition is fixed.
 | Moderate   | 15×15 | A–O     |
 | Hard       | 20×20 | A–T     |
 
+### CLI
+
+A terminal interface that drives the same engine reducers as the React frontend. Supports both single-player and vs-computer modes with difficulty selection.
+
+```bash
+npm run cli
+```
+
+The CLI deliberately omits colours, ANSI formatting, game persistence, and the AI shot delay (which is a UI affordance for the browser — in a terminal, results print synchronously). Both modes use randomly generated fleets; there is no placement phase.
+
 ---
 
 ## Stack
@@ -58,7 +68,7 @@ Board size scales with difficulty. Fleet composition is fixed.
 
 ## Architecture
 
-The core principle is that React is a thin rendering shell around a pure domain layer. Components render state and emit intent. Hooks orchestrate feature-level interaction. Services contain the rules.
+The core principle is that React is a thin rendering shell around a pure domain layer. Components render state and emit intent. Hooks orchestrate feature-level interaction. An engine layer owns state transitions as pure `(state, action) => state` reducers. Services contain the rules. Both the React frontend and the CLI consume the same engine and service layers.
 
 Full reasoning — including what is persisted vs derived, why `useReducer` was chosen, what the layer boundaries enforce, and what would change with more time — is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
@@ -67,6 +77,7 @@ Full reasoning — including what is persisted vs derived, why `useReducer` was 
 ```
 src/
   app/                        # Sticky header (h1, controls, status slot) and mode routing
+  cli/                        # Terminal runner — drives engine directly, no React
   components/
     board/                    # Board and Cell — generic grid rendering
     game/                     # Wiring components — hooks called here only
@@ -74,9 +85,10 @@ src/
     battleship/
       components/             # Presentational feature components
       constants/              # Board size, difficulty config, labels
-      data/                   # Raw config and parseLayout()
-      hooks/                  # useSinglePlayerGame, useVsComputerGame
-      services/               # Pure engine functions and AI helper
+      data/                   # Raw config (RAW_GAME_CONFIG)
+      engine/                 # Pure (state, action) => state reducers — no React
+      hooks/                  # useSinglePlayerGame, useVsComputerGame — wiring over engine/
+      services/               # Pure rule evaluation and AI helper
       types/                  # All domain types — single source of truth
       utils/                  # Coordinate utilities
   lib/                        # Shared utilities (cn)
@@ -112,6 +124,7 @@ Dev server starts at `http://localhost:5173`.
 | `npm run format`        | Format `src/` with Prettier                  |
 | `npm run format:check`  | Check formatting without writing             |
 | `npm run typecheck`     | Type-check without emitting                  |
+| `npm run cli`           | Play Battleship in the terminal via tsx       |
 
 CI runs `typecheck` → `lint` → `format:check` → `test`. All four must pass on every push.
 

@@ -4,7 +4,7 @@
 
 This project treats Battleship as a pure domain problem and React as a rendering shell around it. That separation is not abstract philosophy — it has direct, practical consequences for testability, maintainability, and the ability to extend the codebase without touching existing logic.
 
-The domain layer contains no React imports. Game rules are plain TypeScript functions. A new game mode (vs-computer) was added without modifying any existing service, utility, or type — only a new hook and a new wiring component. That is the proof the boundary is real.
+The domain layer contains no React imports. Game rules are plain TypeScript functions. State transition logic lives in a dedicated engine layer — pure `(state, action) => state` reducers that are consumed by both React hooks and a standalone CLI runner. A new game mode (vs-computer) was added without modifying any existing service, utility, or type — only a new engine module, a new hook, and a new wiring component. A CLI runner was added without modifying any React code. That is the proof the boundary is real.
 
 ---
 
@@ -13,6 +13,7 @@ The domain layer contains no React imports. Game rules are plain TypeScript func
 ```
 src/
   app/                        # Sticky header (h1, controls, status slot) and mode routing
+  cli/                        # Terminal runner — index.ts (entry), loop.ts, renderer.ts, input.ts
   components/
     board/                    # Board, Cell, useBoardNavigation — generic grid rendering + keyboard navigation, no domain knowledge
     game/                     # SinglePlayerGame, VsComputerGame — wiring only
@@ -20,9 +21,10 @@ src/
     battleship/
       components/             # Presentational feature components, props in / callbacks out
       constants/              # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
-      data/                   # Raw config and parseLayout()
-      hooks/                  # useSinglePlayerGame, useVsComputerGame
-      services/               # Pure engine functions and AI helper
+      data/                   # Raw config (RAW_GAME_CONFIG)
+      engine/                 # Pure (state, action) => state reducers and selectors — no React
+      hooks/                  # useSinglePlayerGame, useVsComputerGame — wiring over engine/
+      services/               # Pure rule evaluation and AI helper — no React
       types/                  # All domain types — single source of truth
       utils/                  # Coordinate utilities
   lib/                        # Shared utilities — cn() only
@@ -43,7 +45,7 @@ Key types include `CoordinateKey`, `Ship`, `CellStatus`, `ShotResult`, `GameStat
 
 ### `data/`
 
-Parses and validates the raw ship layout once at module load. `parseLayout` throws on invalid input — this is intentional. The layout is static configuration; an error here is a programming mistake, not a runtime condition. Nothing re-parses at runtime.
+Owns the raw ship configuration (`RAW_GAME_CONFIG`). `parseLayout` validates a raw config into typed `Ship` records and throws on any violation — it is currently used only by test files to build deterministic fleets from the static layout. Production code generates fleets via `generateRandomLayout` in `services/placement.ts`. `parseLayout` is a candidate for removal in a follow-up PR if no production consumer is added.
 
 ### `utils/`
 
@@ -51,9 +53,9 @@ Pure functions only. `toKey(col, row)` is the single production site for `Coordi
 
 ### `services/`
 
-Pure functions only — no React imports, no hooks. Own all rule evaluation: hit detection, miss detection, sunk logic, game-over logic, AI coordinate selection. Independently unit-testable. A regression here means a game rule is broken.
+Pure functions only — no React imports, no hooks. Own all rule evaluation: hit detection, miss detection, sunk logic, game-over logic, AI coordinate selection, random fleet generation. Independently unit-testable. A regression here means a game rule is broken.
 
-Key engine functions:
+Key functions in `services/engine.ts`:
 
 - `resolveShot(coord, positionIndex, shots)` — determines the outcome of a single shot
 - `isShipSunk(ship, shots)` — checks whether all of a ship's coordinates have been hit
@@ -61,9 +63,20 @@ Key engine functions:
 - `computeShipHitCounts(ships, shots)` — returns a map of ship id to hit count
 - `nextUnfiredCoordinate(allKeys, shots, fromIndex)` — returns the next unfired coordinate in row-major order after `fromIndex`, wrapping around; returns `null` if all coordinates are fired
 
+Services own rule evaluation but not state transitions — that responsibility belongs to `engine/`.
+
+### `engine/`
+
+Pure `(state, action) => state` reducer factories and selectors. No React imports, no hooks, no side effects. Each module exports a factory function that closes over fleet data (position indexes) and returns a standard reducer:
+
+- `engine/singlePlayer.ts` — `createSinglePlayerReducer(ships, positionIndex)` returns a reducer handling `FIRE` and `RESET`. Exports `SinglePlayerState`, `SinglePlayerAction`, and `createSinglePlayerInitialState()`.
+- `engine/vsComputer.ts` — `createVsComputerReducer(playerPositionIndex, computerPositionIndex)` returns a reducer handling `PLAYER_FIRE`, `COMPUTER_FIRE`, and `RESET`. Exports `VsComputerState`, `VsComputerAction`, `createVsComputerInitialState()`, and `selectWinner()`.
+
+The engine layer exists because reducer logic is consumed by two independent callers — React hooks (via `useReducer`) and the CLI runner (via direct function calls). Keeping reducers in `engine/` rather than inline in hooks avoids duplication and ensures both consumers share identical state transition logic.
+
 ### `hooks/`
 
-State orchestration. Connect the domain layer to React's rendering model. Expose typed, view-ready data — not raw state slices. Two hooks exist: `useSinglePlayerGame` for single-player, `useVsComputerGame` for vs-computer. Neither calls the other.
+React wiring over `engine/`. Each hook imports a reducer factory from `engine/`, passes it to `useReducer`, and derives view-ready data via `useMemo`. The hook body contains no reducer logic — only side-effect coordination (AI timing via `useEffect`) and derived value assembly. Two hooks exist: `useSinglePlayerGame` for single-player, `useVsComputerGame` for vs-computer. Neither calls the other.
 
 ### `components/`
 
@@ -105,7 +118,7 @@ Root layout: `<div className="flex-col">` wrapping `<header>` and `<main classNa
 - Vs-computer: `winner`, `isAiThinking`, `sunkShipIds` (per board), `shipHitCounts` (per board)
 - Status labels and counts
 
-The vs-computer hook uses a private `VsComputerReducerState` (not exported, not in `types/index.ts`). `BoardState` objects are assembled in the hook's return value from persisted state and derived values — they are not stored in the reducer.
+State types (`SinglePlayerState`, `VsComputerState`) and action types are defined in `engine/` alongside their reducers — not in `types/index.ts`, since they are internal to the state machine rather than shared domain concepts. `BoardState` objects are assembled in the hook's return value (or by the CLI loop's `toBoardState` helper) from persisted state and derived values — they are not stored in the reducer.
 
 **Why this shape.** The alternative is to persist derived values — maintain a `sunkShipIds` set by updating it on every shot. That creates a second source of truth that must be kept consistent. If it ever diverges from the shots map, the UI is wrong. Deriving from the shots map is always consistent by construction.
 
@@ -117,7 +130,7 @@ Firing a shot must update two values atomically: the shots map and the last resu
 
 `useReducer` eliminates this: a single dispatch produces a single new state object. The component never sees an intermediate.
 
-The reducer delegates rule evaluation to pure service functions — it calls `isShipSunk` and `isGameOver` from engine.ts as guards rather than implementing the checks inline. This keeps rules testable in isolation and the reducer focused on state transitions.
+The reducer (in `engine/`) delegates rule evaluation to pure service functions — it calls `isShipSunk` and `isGameOver` from `services/engine.ts` as guards rather than implementing the checks inline. This keeps rules testable in isolation and the reducer focused on state transitions.
 
 **Alternative considered:** `useState` with a combined object (`{ shots, lastResult }`). This would enforce atomicity but at the cost of clarity — setter calls become object spreads, and the transition logic would live inline in event handlers rather than in an explicit reducer case. `useReducer` makes the transition logic explicit and locatable.
 
@@ -130,6 +143,27 @@ The AI fires after a configurable delay. That delay is a side effect — it invo
 The approach: the reducer handles `PLAYER_FIRE` and `COMPUTER_FIRE` synchronously. A `useEffect` watches for `activeTurn === "computer"` and schedules a `setTimeout`. When the timeout fires, it calls `chooseRandomUnfiredCoordinate` (the AI service function) and dispatches `COMPUTER_FIRE` with the result. The reducer never sees the async operation — only the resolved value.
 
 **Alternative considered:** async thunks or a middleware layer. Rejected as overengineering for this scope. A `useEffect` is the idiomatic React mechanism for scheduling a side effect in response to a state change. Using it here requires no additional infrastructure.
+
+---
+
+## CLI Runner
+
+A standalone terminal interface in `src/cli/` drives the same engine reducers that the React hooks consume. The CLI proves the domain boundary is real — it uses `engine/`, `services/`, `utils/`, `constants/`, and `data/` with zero React dependency.
+
+### Structure
+
+- `index.ts` — entry point. Mode and difficulty menus, readline lifecycle, fleet generation via `generateRandomLayout`. Run with `npm run cli` (uses `tsx`).
+- `loop.ts` — game loops for both modes. Calls engine reducer factories directly as `(state, action) => state` functions. Derives `BoardState` snapshots for the renderer.
+- `renderer.ts` — pure string rendering. Board grids, shot results, game-over messages.
+- `input.ts` — coordinate parser (`parseCoordinateInput`) and readline prompt loop. Exports a `LineReader` interface to avoid importing Node's `readline` types (which are unavailable under the `vite/client` type scope).
+
+### AI delay omission
+
+`AI_SHOT_DELAY_MS` is intentionally not used in the CLI. The delay is a UI affordance for the React frontend — it gives the player time to register the computer's turn visually. In a terminal, the shot result is printed synchronously and no delay is needed.
+
+### What the CLI deliberately does not support
+
+No colours or ANSI formatting. No game persistence or replay. No placement phase — both modes use `generateRandomLayout`. These are deliberate scope constraints, not missing features.
 
 ---
 
@@ -159,7 +193,7 @@ Adding a third mode would require a new hook and a new wiring component. No exis
 
 Prioritized by the cost of a regression.
 
-**Domain (services, utils, data)** — thorough unit coverage. Pure functions, zero dependencies. Every rule, every guard condition, every edge case. The test suite here is the specification.
+**Domain (engine, services, utils, data)** — thorough unit coverage. Pure functions, zero dependencies. Every rule, every guard condition, every edge case. The test suite here is the specification.
 
 **Hooks** — `renderHook` with deterministic collaborators. `chooseRandomUnfiredCoordinate` is mocked to a fixed coordinate so AI-turn tests are predictable. `AI_SHOT_DELAY_MS` is exported and overridden to `0` in tests — this avoids `vi.useFakeTimers()`, which conflicts with `userEvent`'s internal timing.
 
@@ -169,7 +203,7 @@ Prioritized by the cost of a regression.
 
 ## Deliberate Omissions
 
-**Player ship placement.** Out of scope. Ships are placed via `generateRandomLayout` on every mount. The architecture supports manual placement — `parseLayout` accepts any valid config — but the UI surface was not built.
+**Player ship placement — partial.** Vs-computer mode has a `PlacementScreen` that lets the player manually position ships before battle begins. Single-player mode does not have a placement phase — ships are placed via `generateRandomLayout` on mount. The CLI runner also uses `generateRandomLayout` for both modes and has no placement phase.
 
 **Animations.** Not justified by the requirements. Could be disruptive for users with `prefers-reduced-motion`.
 
