@@ -5,43 +5,19 @@ import {
   buildPositionIndex,
   computeShipHitCounts,
   isGameOver,
-  isShipSunk,
-  outcomeToStatus,
-  resolveShot,
 } from "@/features/battleship/services/engine";
 import { DIFFICULTY_CONFIG } from "@/features/battleship/constants";
+import {
+  createSinglePlayerInitialState,
+  createSinglePlayerReducer,
+  selectSunkShipIds,
+} from "@/features/battleship/engine/singlePlayer";
 import type {
-  CellStatus,
   CoordinateKey,
   Difficulty,
   GameState,
   ShipType,
-  ShotResult,
 } from "@/features/battleship/types";
-
-// ---------------------------------------------------------------------------
-// State shape and reducer
-//
-// Only the two values that change over time are persisted. Everything else
-// (sunkShipIds, isGameOver) is derived in the hook body from shots alone.
-//
-// A reducer is justified here because fireShot has a natural "guard then
-// commit" shape that reads more clearly as an action than as sequential
-// setters. It also makes the reset action trivial and keeps both state
-// fields in sync without needing useEffect.
-// ---------------------------------------------------------------------------
-
-interface State {
-  shots: Map<CoordinateKey, CellStatus>;
-  lastResult: ShotResult | null;
-}
-
-type Action = { type: "FIRE"; coordinate: CoordinateKey } | { type: "RESET" };
-
-const INITIAL_STATE: State = {
-  shots: new Map(),
-  lastResult: null,
-};
 
 // ---------------------------------------------------------------------------
 // Public interface
@@ -70,50 +46,19 @@ export function useSinglePlayerGame(
     return { ships: generated, positionIndex: buildPositionIndex(generated) };
   }, [boardSize]);
 
-  // The reducer is defined here to close over ships and positionIndex. Because
-  // both are from useMemo([boardSize]) and never change within a mount, the
-  // closure is behaviourally identical to a module-scope definition.
-  function reducer(state: State, action: Action): State {
-    switch (action.type) {
-      case "FIRE": {
-        // Guard: ignore shots after all ships are sunk.
-        const sunk = new Set<ShipType>(
-          ships.filter((s) => isShipSunk(s, state.shots)).map((s) => s.id),
-        );
-        if (isGameOver(ships, sunk)) return state;
+  const reducer = useMemo(
+    () => createSinglePlayerReducer(ships, positionIndex),
+    [ships, positionIndex],
+  );
 
-        const result = resolveShot(
-          action.coordinate,
-          state.shots,
-          positionIndex,
-        );
+  const [state, dispatch] = useReducer(
+    reducer,
+    undefined,
+    createSinglePlayerInitialState,
+  );
 
-        if (result.outcome === "already-fired") {
-          // Surface the duplicate feedback without touching shots.
-          return { ...state, lastResult: result };
-        }
-
-        const status = outcomeToStatus(result.outcome);
-        if (status === null) return state; // unreachable given the guard above
-
-        const shots = new Map(state.shots);
-        shots.set(action.coordinate, status);
-
-        return { shots, lastResult: result };
-      }
-
-      case "RESET":
-        return INITIAL_STATE;
-    }
-  }
-
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
-
-  const sunkShipIds = useMemo<ReadonlySet<ShipType>>(
-    () =>
-      new Set<ShipType>(
-        ships.filter((s) => isShipSunk(s, state.shots)).map((s) => s.id),
-      ),
+  const sunkShipIds = useMemo(
+    () => selectSunkShipIds(ships, state.shots),
     [ships, state.shots],
   );
 
