@@ -60,7 +60,7 @@ export function BattleshipGame({ difficulty }: BattleshipGameProps) {
           columnLabels={columnLabels}
           shots={shots}
           onFire={fireShot}
-          isGameOver={isGameOver}
+          disabled={isGameOver}
         />
 
         <div className="w-full max-w-xs lg:w-48 lg:shrink-0">
