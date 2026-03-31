@@ -70,7 +70,7 @@ describe("BattleshipGame", () => {
   // ---------------------------------------------------------------------------
 
   it("renders a 15×15 grid for moderate difficulty", () => {
-    render(<BattleshipGame difficulty="moderate" />);
+    render(<BattleshipGame difficulty="moderate" onStatusChange={vi.fn()} />);
     const grid = screen.getByRole("grid", { name: /Battleship board/i });
     expect(grid).toHaveAttribute("aria-rowcount", "15");
     expect(grid).toHaveAttribute("aria-colcount", "15");
@@ -81,34 +81,22 @@ describe("BattleshipGame", () => {
   // Initial render
   // ---------------------------------------------------------------------------
 
-  it("renders the game heading", () => {
-    render(<BattleshipGame difficulty="easy" />);
-    expect(
-      screen.getByRole("heading", { level: 1, name: "Battleship" }),
-    ).toBeInTheDocument();
-  });
-
-  it("shows the initial instruction before any shots are fired", () => {
-    render(<BattleshipGame difficulty="easy" />);
-    expect(screen.getByText("Select a cell to fire.")).toBeInTheDocument();
-  });
-
   it("renders the game board", () => {
-    render(<BattleshipGame difficulty="easy" />);
+    render(<BattleshipGame difficulty="easy" onStatusChange={vi.fn()} />);
     expect(
       screen.getByRole("grid", { name: /Battleship board/i }),
     ).toBeInTheDocument();
   });
 
   it("renders the fleet status panel", () => {
-    render(<BattleshipGame difficulty="easy" />);
+    render(<BattleshipGame difficulty="easy" onStatusChange={vi.fn()} />);
     expect(
       screen.getByRole("region", { name: /Fleet status/i }),
     ).toBeInTheDocument();
   });
 
   it("does not render the Play again button before the game is over", () => {
-    render(<BattleshipGame difficulty="easy" />);
+    render(<BattleshipGame difficulty="easy" onStatusChange={vi.fn()} />);
     expect(
       screen.queryByRole("button", { name: /Play again/i }),
     ).not.toBeInTheDocument();
@@ -120,18 +108,11 @@ describe("BattleshipGame", () => {
 
   it("marks an empty cell as miss after firing", async () => {
     const user = userEvent.setup();
-    render(<BattleshipGame difficulty="easy" />);
+    render(<BattleshipGame difficulty="easy" onStatusChange={vi.fn()} />);
     // J10 (9,9) has no ship
     await user.click(cellByCoord("9,9"));
     expect(cellByCoord("9,9")).toBeDisabled();
     expect(cellByCoord("9,9")).toHaveAccessibleName(/miss/i);
-  });
-
-  it("increments the shot count after a miss", async () => {
-    const user = userEvent.setup();
-    render(<BattleshipGame difficulty="easy" />);
-    await user.click(cellByCoord("9,9"));
-    expect(screen.getByText("1 shot fired.")).toBeInTheDocument();
   });
 
   // ---------------------------------------------------------------------------
@@ -140,23 +121,16 @@ describe("BattleshipGame", () => {
 
   it("marks a ship cell as hit after firing", async () => {
     const user = userEvent.setup();
-    render(<BattleshipGame difficulty="easy" />);
+    render(<BattleshipGame difficulty="easy" onStatusChange={vi.fn()} />);
     // A1 (0,0) — destroyer bow
     await user.click(cellByCoord("0,0"));
     expect(cellByCoord("0,0")).toBeDisabled();
     expect(cellByCoord("0,0")).toHaveAccessibleName(/hit/i);
   });
 
-  it("increments the shot count after a hit", async () => {
-    const user = userEvent.setup();
-    render(<BattleshipGame difficulty="easy" />);
-    await user.click(cellByCoord("0,0"));
-    expect(screen.getByText("1 shot fired.")).toBeInTheDocument();
-  });
-
   it("updates the fleet status hit count after a hit", async () => {
     const user = userEvent.setup();
-    render(<BattleshipGame difficulty="easy" />);
+    render(<BattleshipGame difficulty="easy" onStatusChange={vi.fn()} />);
     await user.click(cellByCoord("0,0"));
     expect(screen.getByLabelText(/Destroyer: 1 of 2 hit/i)).toBeInTheDocument();
   });
@@ -167,7 +141,7 @@ describe("BattleshipGame", () => {
 
   it("marks a ship as sunk once all its cells are hit", async () => {
     const user = userEvent.setup();
-    render(<BattleshipGame difficulty="easy" />);
+    render(<BattleshipGame difficulty="easy" onStatusChange={vi.fn()} />);
     await fireCoords(user, ["0,0", "1,0"]); // destroyer
     expect(screen.getByLabelText(/Destroyer: sunk/i)).toBeInTheDocument();
     expect(screen.getByText("Sunk")).toBeInTheDocument();
@@ -175,7 +149,7 @@ describe("BattleshipGame", () => {
 
   it("does not mark a partially hit ship as sunk", async () => {
     const user = userEvent.setup();
-    render(<BattleshipGame difficulty="easy" />);
+    render(<BattleshipGame difficulty="easy" onStatusChange={vi.fn()} />);
     await user.click(cellByCoord("0,0")); // one of two destroyer cells
     expect(screen.queryByText("Sunk")).not.toBeInTheDocument();
   });
@@ -184,16 +158,9 @@ describe("BattleshipGame", () => {
   // Game over
   // ---------------------------------------------------------------------------
 
-  it("shows the game-over message after all ships are sunk", async () => {
-    const user = userEvent.setup();
-    render(<BattleshipGame difficulty="easy" />);
-    await fireCoords(user, ALL_SHIP_COORDS);
-    expect(screen.getByText("All ships sunk!")).toBeInTheDocument();
-  });
-
   it("shows the Play again button after all ships are sunk", async () => {
     const user = userEvent.setup();
-    render(<BattleshipGame difficulty="easy" />);
+    render(<BattleshipGame difficulty="easy" onStatusChange={vi.fn()} />);
     await fireCoords(user, ALL_SHIP_COORDS);
     expect(
       screen.getByRole("button", { name: /Play again/i }),
@@ -202,12 +169,49 @@ describe("BattleshipGame", () => {
 
   it("resets the board when Play again is clicked", async () => {
     const user = userEvent.setup();
-    render(<BattleshipGame difficulty="easy" />);
+    render(<BattleshipGame difficulty="easy" onStatusChange={vi.fn()} />);
     await fireCoords(user, ALL_SHIP_COORDS);
     await user.click(screen.getByRole("button", { name: /Play again/i }));
-    expect(screen.getByText("Select a cell to fire.")).toBeInTheDocument();
     expect(
       screen.getAllByRole("button").filter((b) => !b.hasAttribute("disabled")),
     ).toHaveLength(100);
+  });
+
+  // ---------------------------------------------------------------------------
+  // onStatusChange callback
+  // ---------------------------------------------------------------------------
+
+  it("calls onStatusChange with initial status on mount", () => {
+    const onStatusChange = vi.fn();
+    render(
+      <BattleshipGame difficulty="easy" onStatusChange={onStatusChange} />,
+    );
+    expect(onStatusChange.mock.lastCall).toEqual([
+      { mode: "single", isGameOver: false, shotCount: 0 },
+    ]);
+  });
+
+  it("calls onStatusChange with updated shotCount after a shot", async () => {
+    const user = userEvent.setup();
+    const onStatusChange = vi.fn();
+    render(
+      <BattleshipGame difficulty="easy" onStatusChange={onStatusChange} />,
+    );
+    await user.click(cellByCoord("9,9"));
+    expect(onStatusChange.mock.lastCall).toEqual([
+      { mode: "single", isGameOver: false, shotCount: 1 },
+    ]);
+  });
+
+  it("calls onStatusChange with isGameOver: true after all ships are sunk", async () => {
+    const user = userEvent.setup();
+    const onStatusChange = vi.fn();
+    render(
+      <BattleshipGame difficulty="easy" onStatusChange={onStatusChange} />,
+    );
+    await fireCoords(user, ALL_SHIP_COORDS);
+    expect(onStatusChange.mock.lastCall).toEqual([
+      { mode: "single", isGameOver: true, shotCount: 17 },
+    ]);
   });
 });
