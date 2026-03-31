@@ -19,7 +19,7 @@ export function useBoardNavigation(
   shots: ReadonlyMap<CoordinateKey, CellStatus>,
   onFire: ((coord: CoordinateKey) => void) | undefined,
 ): {
-  boardRef: React.RefObject<HTMLDivElement>;
+  boardRef: React.RefObject<HTMLDivElement | null>;
   focusedCoord: CoordinateKey;
   allKeys: CoordinateKey[];
   handleKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
