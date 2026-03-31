@@ -162,6 +162,29 @@ export function isGameOver(
 }
 
 // ---------------------------------------------------------------------------
+// Hit counting
+// ---------------------------------------------------------------------------
+
+/**
+ * Counts how many coordinates of each ship have been fired at.
+ * Pure — safe to call inside useMemo with the same dependency array shape
+ * as the inline version it replaces.
+ */
+export function computeShipHitCounts(
+  ships: readonly Ship[],
+  shots: ReadonlyMap<CoordinateKey, CellStatus>,
+): ReadonlyMap<ShipType, number> {
+  const counts = new Map<ShipType, number>();
+  for (const ship of ships) {
+    counts.set(
+      ship.id,
+      ship.coordinates.filter((key) => shots.has(key)).length,
+    );
+  }
+  return counts;
+}
+
+// ---------------------------------------------------------------------------
 // Outcome classification helpers
 // ---------------------------------------------------------------------------
 

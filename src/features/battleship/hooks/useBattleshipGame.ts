@@ -3,6 +3,7 @@ import { generateRandomLayout } from "@/features/battleship/services/placement";
 import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
 import {
   buildPositionIndex,
+  computeShipHitCounts,
   isGameOver,
   outcomeToStatus,
   resolveShot,
@@ -117,16 +118,10 @@ export function useBattleshipGame(
     [ships, sunkShipIds],
   );
 
-  const shipHitCounts = useMemo<ReadonlyMap<ShipType, number>>(() => {
-    const counts = new Map<ShipType, number>();
-    for (const ship of ships) {
-      counts.set(
-        ship.id,
-        ship.coordinates.filter((key) => state.shots.has(key)).length,
-      );
-    }
-    return counts;
-  }, [ships, state.shots]);
+  const shipHitCounts = useMemo(
+    () => computeShipHitCounts(ships, state.shots),
+    [ships, state.shots],
+  );
 
   const fireShot = useCallback(
     (col: number, row: number): void => {

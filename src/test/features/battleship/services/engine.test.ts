@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   applyShotToBoard,
   buildPositionIndex,
+  computeShipHitCounts,
   isGameOver,
   isShipSunk,
   outcomeToStatus,
@@ -225,6 +226,48 @@ describe("outcomeToStatus", () => {
 
   it("returns null for 'already-fired'", () => {
     expect(outcomeToStatus("already-fired")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeShipHitCounts
+// ---------------------------------------------------------------------------
+
+describe("computeShipHitCounts", () => {
+  it("returns zero for every ship when no shots have been fired", () => {
+    const counts = computeShipHitCounts(fleet, new Map());
+    expect(counts.get("destroyer")).toBe(0);
+    expect(counts.get("submarine")).toBe(0);
+    expect(counts.get("carrier")).toBe(0);
+  });
+
+  it("counts partial hits on one ship while others remain at zero", () => {
+    const counts = computeShipHitCounts(fleet, shotsMap(["0,0"]));
+    expect(counts.get("destroyer")).toBe(1);
+    expect(counts.get("submarine")).toBe(0);
+    expect(counts.get("carrier")).toBe(0);
+  });
+
+  it("counts all coordinates when every cell of a ship is hit", () => {
+    const counts = computeShipHitCounts(fleet, shotsMap(["0,0", "1,0"]));
+    expect(counts.get("destroyer")).toBe(destroyer.size);
+  });
+
+  it("ignores misses that do not land on any ship", () => {
+    const shots = new Map<CoordinateKey, CellStatus>([
+      ["9,9", "miss"],
+      ["8,8", "miss"],
+      ["0,0", "hit"],
+    ]);
+    const counts = computeShipHitCounts(fleet, shots);
+    expect(counts.get("destroyer")).toBe(1);
+    expect(counts.get("submarine")).toBe(0);
+    expect(counts.get("carrier")).toBe(0);
+  });
+
+  it("returns an empty map for an empty fleet", () => {
+    const counts = computeShipHitCounts([], shotsMap(["0,0"]));
+    expect(counts.size).toBe(0);
   });
 });
 

@@ -14,8 +14,9 @@ import type {
 } from "@/features/battleship/types";
 import { DIFFICULTY_CONFIG } from "@/features/battleship/constants";
 import {
-  buildPositionIndex,
   applyShotToBoard,
+  buildPositionIndex,
+  computeShipHitCounts,
 } from "@/features/battleship/services/engine";
 import { chooseRandomUnfiredCoordinate } from "@/features/battleship/services/ai";
 
@@ -176,29 +177,15 @@ export function useBattleshipSessionGame(
     dispatch({ type: "RESET" });
   }, []);
 
-  const playerShipHitCounts = useMemo<ReadonlyMap<ShipType, number>>(() => {
-    const counts = new Map<ShipType, number>();
-    for (const ship of playerShips) {
-      counts.set(
-        ship.id,
-        ship.coordinates.filter((key) => state.board.player.shots.has(key))
-          .length,
-      );
-    }
-    return counts;
-  }, [playerShips, state.board.player.shots]);
+  const playerShipHitCounts = useMemo(
+    () => computeShipHitCounts(playerShips, state.board.player.shots),
+    [playerShips, state.board.player.shots],
+  );
 
-  const computerShipHitCounts = useMemo<ReadonlyMap<ShipType, number>>(() => {
-    const counts = new Map<ShipType, number>();
-    for (const ship of computerShips) {
-      counts.set(
-        ship.id,
-        ship.coordinates.filter((key) => state.board.computer.shots.has(key))
-          .length,
-      );
-    }
-    return counts;
-  }, [computerShips, state.board.computer.shots]);
+  const computerShipHitCounts = useMemo(
+    () => computeShipHitCounts(computerShips, state.board.computer.shots),
+    [computerShips, state.board.computer.shots],
+  );
 
   useEffect(() => {
     if (state.activeTurn !== "computer" || state.winner !== null) return;
