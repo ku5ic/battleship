@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
-import { useBattleshipSessionGame } from "@/features/battleship/hooks/useBattleshipSessionGame";
+import { useVsComputerGame } from "@/features/battleship/hooks/useVsComputerGame";
 import type { CoordinateKey } from "@/features/battleship/types";
 
 // ---------------------------------------------------------------------------
@@ -44,7 +44,7 @@ const ALL_COMPUTER_SHIP_COORDS: [number, number][] = [
   [6, 9], // carrier
 ];
 
-describe("useBattleshipSessionGame", () => {
+describe("useVsComputerGame", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -58,19 +58,19 @@ describe("useBattleshipSessionGame", () => {
   // ---------------------------------------------------------------------------
 
   it("initialises boardSize from difficulty", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("moderate"));
+    const { result } = renderHook(() => useVsComputerGame("moderate"));
     expect(result.current.boardSize).toBe(15);
   });
 
   it("starts on the player's turn with no winner", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
     expect(result.current.activeTurn).toBe("player");
     expect(result.current.winner).toBeNull();
     expect(result.current.isAiThinking).toBe(false);
   });
 
   it("starts with empty shot maps on both boards", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
     expect(result.current.board.player.shots.size).toBe(0);
     expect(result.current.board.computer.shots.size).toBe(0);
   });
@@ -80,7 +80,7 @@ describe("useBattleshipSessionGame", () => {
   // ---------------------------------------------------------------------------
 
   it("records a miss on the computer board when the player fires at an empty cell", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
 
     act(() => {
       result.current.playerFireShot("9,9");
@@ -90,7 +90,7 @@ describe("useBattleshipSessionGame", () => {
   });
 
   it("switches turn to computer after a player miss", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
 
     act(() => {
       result.current.playerFireShot("9,9");
@@ -105,7 +105,7 @@ describe("useBattleshipSessionGame", () => {
   // ---------------------------------------------------------------------------
 
   it("records a hit on the computer board when the player fires at a ship cell", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
 
     act(() => {
       result.current.playerFireShot("0,0"); // destroyer
@@ -115,7 +115,7 @@ describe("useBattleshipSessionGame", () => {
   });
 
   it("keeps the player's turn after a hit", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
 
     act(() => {
       result.current.playerFireShot("0,0");
@@ -130,7 +130,7 @@ describe("useBattleshipSessionGame", () => {
   // ---------------------------------------------------------------------------
 
   it("ignores playerFireShot when it is the computer's turn", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
 
     // Miss to cede the turn to the computer.
     act(() => {
@@ -151,7 +151,7 @@ describe("useBattleshipSessionGame", () => {
   // ---------------------------------------------------------------------------
 
   it("computer fires after the delay when it is its turn", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
 
     // Hand the turn to the computer.
     act(() => {
@@ -168,7 +168,7 @@ describe("useBattleshipSessionGame", () => {
   });
 
   it("switches turn back to player after the computer fires a miss", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
 
     act(() => {
       result.current.playerFireShot("9,9");
@@ -188,7 +188,7 @@ describe("useBattleshipSessionGame", () => {
   });
 
   it("sets isAiThinking to false after the computer fires", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
 
     act(() => {
       result.current.playerFireShot("9,9");
@@ -214,7 +214,7 @@ describe("useBattleshipSessionGame", () => {
   // ---------------------------------------------------------------------------
 
   it("sets winner to player when all computer ships are sunk", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
 
     for (const [col, row] of ALL_COMPUTER_SHIP_COORDS) {
       act(() => {
@@ -228,8 +228,8 @@ describe("useBattleshipSessionGame", () => {
     expect(result.current.board.computer.isGameOver).toBe(true);
   });
 
-  it("does not accept player shots after the session is won", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+  it("does not accept player shots after the game is won", () => {
+    const { result } = renderHook(() => useVsComputerGame("easy"));
 
     for (const [col, row] of ALL_COMPUTER_SHIP_COORDS) {
       act(() => {
@@ -253,7 +253,7 @@ describe("useBattleshipSessionGame", () => {
   // ---------------------------------------------------------------------------
 
   it("restores initial state on reset", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
 
     act(() => {
       result.current.playerFireShot("0,0");
@@ -271,7 +271,7 @@ describe("useBattleshipSessionGame", () => {
   });
 
   it("cancels the pending AI timeout on reset", () => {
-    const { result } = renderHook(() => useBattleshipSessionGame("easy"));
+    const { result } = renderHook(() => useVsComputerGame("easy"));
 
     // Miss to trigger the AI timer.
     act(() => {

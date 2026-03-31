@@ -6,29 +6,32 @@ import {
   ShipStatusList,
   ShotResultAnnouncer,
 } from "@/features/battleship/components";
-import { useBattleshipSessionGame } from "@/features/battleship/hooks/useBattleshipSessionGame";
+import { useVsComputerGame } from "@/features/battleship/hooks/useVsComputerGame";
 import type {
   CoordinateKey,
   Difficulty,
   HeaderGameStatus,
+  Ship,
 } from "@/features/battleship/types";
 
-interface BattleshipMultiplayerGameProps {
+interface VsComputerGameProps {
   difficulty: Difficulty;
-  onStatusChange: (status: HeaderGameStatus & { mode: "session" }) => void;
+  playerShips?: Ship[];
+  onStatusChange: (status: HeaderGameStatus & { mode: "vsComputer" }) => void;
 }
 
 /**
- * Wires the session hook to the presentational layer.
+ * Wires the vs-computer hook to the presentational layer.
  *
- * This is the only component that calls useBattleshipSessionGame. Everything
+ * This is the only component that calls useVsComputerGame. Everything
  * below it receives plain props and emits callbacks — no child is aware the
  * hook exists.
  */
-export function BattleshipMultiplayerGame({
+export function VsComputerGame({
   difficulty,
+  playerShips,
   onStatusChange,
-}: BattleshipMultiplayerGameProps) {
+}: VsComputerGameProps) {
   const {
     board,
     activeTurn,
@@ -42,12 +45,12 @@ export function BattleshipMultiplayerGame({
     columnLabels,
     playerFireShot,
     reset,
-  } = useBattleshipSessionGame(difficulty);
+  } = useVsComputerGame(difficulty, playerShips);
 
-  const sessionOver = winner !== null;
+  const gameOver = winner !== null;
 
   useEffect(() => {
-    onStatusChange({ mode: "session", winner, activeTurn, isAiThinking });
+    onStatusChange({ mode: "vsComputer", winner, activeTurn, isAiThinking });
   }, [winner, activeTurn, isAiThinking, onStatusChange]);
 
   return (
@@ -110,7 +113,7 @@ export function BattleshipMultiplayerGame({
             onFire={(coord: CoordinateKey) => {
               playerFireShot(coord);
             }}
-            disabled={activeTurn !== "player" || sessionOver}
+            disabled={activeTurn !== "player" || gameOver}
           />
           <div className="mt-2">
             <ShipStatusList
@@ -123,7 +126,7 @@ export function BattleshipMultiplayerGame({
       </div>
 
       {/* Reset — always available */}
-      <Button onClick={reset}>{sessionOver ? "Play again" : "Restart"}</Button>
+      <Button onClick={reset}>{gameOver ? "Play again" : "Restart"}</Button>
     </Stack>
   );
 }

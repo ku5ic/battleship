@@ -5,10 +5,10 @@ import {
   ShipStatusList,
   ShotResultAnnouncer,
 } from "@/features/battleship/components";
-import { useBattleshipGame } from "@/features/battleship/hooks/useBattleshipGame";
+import { useSinglePlayerGame } from "@/features/battleship/hooks/useSinglePlayerGame";
 import type { Difficulty, HeaderGameStatus } from "@/features/battleship/types";
 
-interface BattleshipGameProps {
+interface SinglePlayerGameProps {
   difficulty: Difficulty;
   onStatusChange: (status: HeaderGameStatus & { mode: "single" }) => void;
 }
@@ -16,14 +16,14 @@ interface BattleshipGameProps {
 /**
  * Wires the game hook to the presentational layer.
  *
- * This is the only component that calls useBattleshipGame. Everything below
+ * This is the only component that calls useSinglePlayerGame. Everything below
  * it receives plain props and emits callbacks — no child is aware the hook
  * exists.
  */
-export function BattleshipGame({
+export function SinglePlayerGame({
   difficulty,
   onStatusChange,
-}: BattleshipGameProps) {
+}: SinglePlayerGameProps) {
   const {
     ships,
     shots,
@@ -35,7 +35,7 @@ export function BattleshipGame({
     columnLabels,
     fireShot,
     reset,
-  } = useBattleshipGame(difficulty);
+  } = useSinglePlayerGame(difficulty);
 
   useEffect(() => {
     onStatusChange({ mode: "single", isGameOver, shotCount: shots.size });

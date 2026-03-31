@@ -74,7 +74,7 @@ export interface GameState {
 }
 
 // ---------------------------------------------------------------------------
-// Two-board session model
+// Two-board vs-computer model
 //
 // PlayerId identifies which player owns which board. "player" fires at the
 // "opponent" board; the hook decides whose turn it is and which board to
@@ -84,8 +84,8 @@ export interface GameState {
 // structurally identical. The alias signals "this is one player's board"
 // without duplicating the definition or introducing an inheritance hierarchy.
 //
-// The session hook's internal reducer state is private to the hook file.
-// The public view types below (BoardState, SessionBoards) are what
+// The vs-computer hook's internal reducer state is private to the hook file.
+// The public view types below (BoardState, VsComputerBoards) are what
 // components consume — assembled from derived values by the hook.
 // ---------------------------------------------------------------------------
 
@@ -94,7 +94,7 @@ export type PlayerId = "player" | "computer";
 /** One player's board as seen by their opponent. Structurally identical to GameState. */
 export type BoardState = GameState;
 
-export interface SessionBoards {
+export interface VsComputerBoards {
   player: BoardState;
   computer: BoardState;
 }
@@ -102,13 +102,27 @@ export interface SessionBoards {
 export type HeaderGameStatus =
   | { mode: "single"; isGameOver: boolean; shotCount: number }
   | {
-      mode: "session";
+      mode: "vsComputer";
       winner: PlayerId | null;
       activeTurn: PlayerId;
       isAiThinking: boolean;
     };
 
 export type Difficulty = "easy" | "moderate" | "hard";
+
+/** Cell visual state during the placement phase. Distinct from CellStatus
+ * which encodes shot outcomes during gameplay. */
+export type PlacementCellStatus =
+  | "empty"
+  | "occupied"
+  | "preview-valid"
+  | "preview-invalid";
+
+/** The ship the player has selected but not yet placed on the board. */
+export interface PendingShip {
+  type: ShipType;
+  orientation: Orientation;
+}
 
 export interface DifficultyConfig {
   boardSize: number;

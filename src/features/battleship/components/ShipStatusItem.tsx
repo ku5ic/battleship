@@ -7,58 +7,135 @@ export interface ShipStatusItemProps {
   size: number;
   hitCount: number;
   isSunk: boolean;
+  /** Placement mode: true when the ship has been placed on the board. */
+  isPlaced?: boolean;
+  /** Placement mode: true when this ship is the pending selection. */
+  isSelected?: boolean;
+  /** When provided, renders as a <button> instead of a <div>. */
+  onClick?: () => void;
+}
+
+function buildLabel(
+  name: string,
+  size: number,
+  hitCount: number,
+  isSunk: boolean,
+  onClick: (() => void) | undefined,
+  isPlaced: boolean | undefined,
+  isSelected: boolean | undefined,
+): string {
+  // Game mode — onClick absent
+  if (onClick === undefined) {
+    return isSunk
+      ? `${name}: sunk`
+      : `${name}: ${String(hitCount)} of ${String(size)} hit`;
+  }
+  // Placement mode — placed
+  if (isPlaced) {
+    return `${name}: placed. Click to re-place.`;
+  }
+  // Placement mode — selected or awaiting selection
+  return isSelected
+    ? `${name}, ${String(size)} cells. Selected.`
+    : `${name}, ${String(size)} cells. Select to place.`;
 }
 
 /**
  * Renders one ship row in the fleet status panel.
  *
- * Hit state is communicated both visually (filled pips, strikethrough name)
- * and via the accessible aria-label — not through color alone.
+ * In game mode (onClick absent), displays hit pips and sunk state.
+ * In placement mode (onClick present), displays placed/selected state
+ * and renders as an interactive button.
  */
 export function ShipStatusItem({
   id,
   size,
   hitCount,
   isSunk,
+  isPlaced,
+  isSelected,
+  onClick,
 }: ShipStatusItemProps) {
   const name = SHIP_DISPLAY_NAMES[id];
-  const label = isSunk
-    ? `${name}: sunk`
-    : `${name}: ${String(hitCount)} of ${String(size)} hit`;
+  const label = buildLabel(
+    name,
+    size,
+    hitCount,
+    isSunk,
+    onClick,
+    isPlaced,
+    isSelected,
+  );
 
-  return (
-    <div
-      className={cn("flex items-center gap-3 py-2", isSunk && "opacity-50")}
-      aria-label={label}
-    >
+  const showPips = !isPlaced;
+  const showPlacedBadge = isPlaced === true;
+  const isMuted = isSunk || isPlaced;
+
+  const content = (
+    <>
       <span
         className={cn(
           "w-24 text-sm font-medium",
-          isSunk ? "text-slate-400 line-through" : "text-slate-200",
+          isMuted ? "text-slate-400 line-through" : "text-slate-200",
         )}
       >
         {name}
       </span>
 
-      <div className="flex gap-0.5" aria-hidden="true">
-        {Array.from({ length: size }, (_, i) => (
-          <div
-            key={i}
-            className={cn(
-              "w-4 h-4 border",
-              i < hitCount
-                ? "bg-red-700 border-red-500"
-                : "bg-slate-700 border-slate-500",
-            )}
-          />
-        ))}
-      </div>
+      {showPips && (
+        <div className="flex gap-0.5" aria-hidden="true">
+          {Array.from({ length: size }, (_, i) => (
+            <div
+              key={i}
+              className={cn(
+                "w-4 h-4 border",
+                i < hitCount
+                  ? "bg-red-700 border-red-500"
+                  : "bg-slate-700 border-slate-500",
+              )}
+            />
+          ))}
+        </div>
+      )}
 
       {isSunk && (
         <span className="text-xs text-red-400 font-semibold uppercase tracking-wider">
           Sunk
         </span>
       )}
+
+      {showPlacedBadge && (
+        <span className="text-xs text-green-400 font-semibold uppercase tracking-wider">
+          Placed
+        </span>
+      )}
+    </>
+  );
+
+  const className = cn(
+    "flex items-center gap-3 py-2",
+    isMuted && "opacity-50",
+    isSelected && "ring-2 ring-yellow-400 ring-offset-2 ring-offset-slate-900",
+    onClick !== undefined && "w-full rounded px-2 text-left",
+  );
+
+  if (onClick !== undefined) {
+    return (
+      <button
+        type="button"
+        className={className}
+        aria-label={label}
+        aria-pressed={isSelected ?? false}
+        onClick={onClick}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className={className} aria-label={label}>
+      {content}
     </div>
   );
 }

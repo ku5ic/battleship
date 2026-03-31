@@ -1,29 +1,44 @@
 import { useCallback, useState } from "react";
-import { BattleshipGame } from "@/components/game/BattleshipGame";
-import { BattleshipMultiplayerGame } from "@/components/game/BattleshipMultiplayerGame";
+import { SinglePlayerGame } from "@/components/game/SinglePlayerGame";
+import { VsComputerGame } from "@/components/game/VsComputerGame";
 import { Button, Text } from "@/components/ui";
 import {
   GameStatus,
-  GameStatusMultiplayer,
+  VsComputerGameStatus,
+  PlacementScreen,
 } from "@/features/battleship/components";
-import type { Difficulty, HeaderGameStatus } from "@/features/battleship/types";
+import type {
+  Difficulty,
+  HeaderGameStatus,
+  Ship,
+} from "@/features/battleship/types";
 
-type Mode = "single" | "multiplayer";
+type Mode = "single" | "vsComputer";
+type VsComputerPhase = "placement" | "battle";
 
 export function App() {
   const [mode, setMode] = useState<Mode>("single");
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [headerGameStatus, setHeaderGameStatus] =
     useState<HeaderGameStatus | null>(null);
+  const [vsComputerPhase, setVsComputerPhase] =
+    useState<VsComputerPhase>("placement");
+  const [confirmedPlayerShips, setConfirmedPlayerShips] = useState<
+    Ship[] | null
+  >(null);
 
   const handleModeChange = useCallback((newMode: Mode) => {
     setMode(newMode);
     setHeaderGameStatus(null);
+    setVsComputerPhase("placement");
+    setConfirmedPlayerShips(null);
   }, []);
 
   const handleDifficultyChange = useCallback((newDifficulty: Difficulty) => {
     setDifficulty(newDifficulty);
     setHeaderGameStatus(null);
+    setVsComputerPhase("placement");
+    setConfirmedPlayerShips(null);
   }, []);
 
   const handleSingleStatusChange = useCallback(
@@ -33,8 +48,8 @@ export function App() {
     [],
   );
 
-  const handleSessionStatusChange = useCallback(
-    (status: HeaderGameStatus & { mode: "session" }) => {
+  const handleVsComputerStatusChange = useCallback(
+    (status: HeaderGameStatus & { mode: "vsComputer" }) => {
       setHeaderGameStatus(status);
     },
     [],
@@ -55,8 +70,8 @@ export function App() {
                 shotCount={headerGameStatus.shotCount}
               />
             )}
-            {headerGameStatus?.mode === "session" && (
-              <GameStatusMultiplayer
+            {headerGameStatus?.mode === "vsComputer" && (
+              <VsComputerGameStatus
                 winner={headerGameStatus.winner}
                 activeTurn={headerGameStatus.activeTurn}
                 isAiThinking={headerGameStatus.isAiThinking}
@@ -79,11 +94,11 @@ export function App() {
               </Button>
               <Button
                 variant="toggle"
-                active={mode === "multiplayer"}
-                aria-pressed={mode === "multiplayer"}
+                active={mode === "vsComputer"}
+                aria-pressed={mode === "vsComputer"}
                 className="py-1 px-3 text-sm"
                 onClick={() => {
-                  handleModeChange("multiplayer");
+                  handleModeChange("vsComputer");
                 }}
               >
                 vs Computer
@@ -134,17 +149,32 @@ export function App() {
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-start pt-6 pb-8 px-2 sm:px-4">
-        {mode === "single" ? (
-          <BattleshipGame
+        {mode === "single" && (
+          <SinglePlayerGame
             key={`${mode}-${difficulty}`}
             difficulty={difficulty}
             onStatusChange={handleSingleStatusChange}
           />
-        ) : (
-          <BattleshipMultiplayerGame
+        )}
+        {mode === "vsComputer" && vsComputerPhase === "placement" && (
+          <PlacementScreen
+            difficulty={difficulty}
+            onConfirm={(ships) => {
+              setConfirmedPlayerShips(ships);
+              setVsComputerPhase("battle");
+            }}
+            onRandomise={() => {
+              setConfirmedPlayerShips(null);
+              setVsComputerPhase("battle");
+            }}
+          />
+        )}
+        {mode === "vsComputer" && vsComputerPhase === "battle" && (
+          <VsComputerGame
             key={`${mode}-${difficulty}`}
             difficulty={difficulty}
-            onStatusChange={handleSessionStatusChange}
+            playerShips={confirmedPlayerShips ?? undefined}
+            onStatusChange={handleVsComputerStatusChange}
           />
         )}
       </main>

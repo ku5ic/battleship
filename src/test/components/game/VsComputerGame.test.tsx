@@ -1,8 +1,8 @@
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { BattleshipMultiplayerGame } from "@/components/game/BattleshipMultiplayerGame";
-import { AI_SHOT_DELAY_MS } from "@/features/battleship/hooks/useBattleshipSessionGame";
+import { VsComputerGame } from "@/components/game/VsComputerGame";
+import { AI_SHOT_DELAY_MS } from "@/features/battleship/hooks/useVsComputerGame";
 
 // ---------------------------------------------------------------------------
 // Mock placement to return the same deterministic layout used by the
@@ -72,14 +72,14 @@ function cellIn(section: HTMLElement, coord: string): HTMLElement {
 // ---------------------------------------------------------------------------
 // Timer strategy
 //
-// The session hook's AI turn fires after a real setTimeout(AI_SHOT_DELAY_MS).
+// The vs-computer hook's AI turn fires after a real setTimeout(AI_SHOT_DELAY_MS).
 // Using vi.useFakeTimers() with shouldAdvanceTime: true lets the fake clock
 // track wall-clock time so userEvent's internal delays resolve naturally,
 // while still allowing manual advancement via vi.advanceTimersByTime() to
 // flush the AI timer deterministically without waiting the full 1000ms.
 // ---------------------------------------------------------------------------
 
-describe("BattleshipMultiplayerGame", () => {
+describe("VsComputerGame", () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.clearAllMocks();
@@ -94,42 +94,32 @@ describe("BattleshipMultiplayerGame", () => {
   // ---------------------------------------------------------------------------
 
   it("renders both board sections", () => {
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
     expect(yourBoard()).toBeInTheDocument();
     expect(opponentBoard()).toBeInTheDocument();
   });
 
   it("renders two fleet status panels", () => {
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
     expect(
       screen.getAllByRole("region", { name: /Fleet status/i }),
     ).toHaveLength(2);
   });
 
   it("renders the Restart button on load", () => {
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
     expect(screen.getByRole("button", { name: "Restart" })).toBeInTheDocument();
   });
 
   it("all player board cells are disabled on load", () => {
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
     const grid = within(yourBoard()).getByRole("grid");
     const buttons = within(grid).getAllByRole("button");
     expect(buttons.every((b) => b.hasAttribute("disabled"))).toBe(true);
   });
 
   it("opponent board cells are enabled on the player's turn", () => {
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
     const buttons = within(opponentBoard()).getAllByRole("button");
     expect(buttons.some((b) => !b.hasAttribute("disabled"))).toBe(true);
   });
@@ -140,9 +130,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("marks the opponent cell as hit when the player hits a ship", async () => {
     const user = userEvent.setup();
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
     await user.click(cellIn(opponentBoard(), "0,0")); // destroyer
 
@@ -155,9 +143,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("marks the opponent cell as miss when the player fires at empty water", async () => {
     const user = userEvent.setup();
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
     await user.click(cellIn(opponentBoard(), "9,9"));
 
@@ -166,9 +152,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("disables all opponent board cells while the computer is thinking", async () => {
     const user = userEvent.setup();
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
     await user.click(cellIn(opponentBoard(), "9,9"));
 
@@ -183,9 +167,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("computer fires on the player board after the delay", async () => {
     const user = userEvent.setup();
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
     await user.click(cellIn(opponentBoard(), "9,9")); // miss
 
@@ -202,9 +184,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("marks the destroyer as sunk after both cells are hit", async () => {
     const user = userEvent.setup();
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
     await user.click(cellIn(opponentBoard(), "0,0"));
     await user.click(cellIn(opponentBoard(), "1,0"));
@@ -220,9 +200,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("disables all opponent cells after the player wins", async () => {
     const user = userEvent.setup();
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
     for (const coord of ALL_COMPUTER_SHIP_COORDS) {
       await user.click(cellIn(opponentBoard(), coord));
@@ -234,9 +212,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("shows Play again button after the player wins", async () => {
     const user = userEvent.setup();
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
     for (const coord of ALL_COMPUTER_SHIP_COORDS) {
       await user.click(cellIn(opponentBoard(), coord));
@@ -253,9 +229,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("resets both boards when Restart is clicked", async () => {
     const user = userEvent.setup();
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
     await user.click(cellIn(opponentBoard(), "0,0"));
     await user.click(screen.getByRole("button", { name: "Restart" }));
@@ -265,9 +239,7 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("cancels the pending AI shot on reset", async () => {
     const user = userEvent.setup();
-    render(
-      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
-    );
+    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
     await user.click(cellIn(opponentBoard(), "9,9")); // miss — AI timer starts
     await user.click(screen.getByRole("button", { name: "Restart" }));
@@ -289,17 +261,14 @@ describe("BattleshipMultiplayerGame", () => {
   // onStatusChange callback
   // ---------------------------------------------------------------------------
 
-  it("calls onStatusChange with initial session status on mount", () => {
+  it("calls onStatusChange with initial vs-computer status on mount", () => {
     const onStatusChange = vi.fn();
     render(
-      <BattleshipMultiplayerGame
-        difficulty="easy"
-        onStatusChange={onStatusChange}
-      />,
+      <VsComputerGame difficulty="easy" onStatusChange={onStatusChange} />,
     );
     expect(onStatusChange.mock.lastCall).toEqual([
       {
-        mode: "session",
+        mode: "vsComputer",
         winner: null,
         activeTurn: "player",
         isAiThinking: false,
@@ -311,21 +280,81 @@ describe("BattleshipMultiplayerGame", () => {
     const user = userEvent.setup();
     const onStatusChange = vi.fn();
     render(
-      <BattleshipMultiplayerGame
-        difficulty="easy"
-        onStatusChange={onStatusChange}
-      />,
+      <VsComputerGame difficulty="easy" onStatusChange={onStatusChange} />,
     );
 
     await user.click(cellIn(opponentBoard(), "9,9")); // miss — triggers AI turn
 
     expect(onStatusChange.mock.lastCall).toEqual([
       {
-        mode: "session",
+        mode: "vsComputer",
         winner: null,
         activeTurn: "computer",
         isAiThinking: true,
       },
     ]);
+  });
+
+  // ---------------------------------------------------------------------------
+  // playerShips prop
+  // ---------------------------------------------------------------------------
+
+  it("uses provided playerShips on the player board", async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    // Custom layout: single destroyer at 9,8 — exactly where the AI fires
+    const customPlayerShips = [
+      {
+        id: "carrier" as const,
+        size: 5,
+        coordinates: ["0,0", "1,0", "2,0", "3,0", "4,0"] as const,
+        orientation: "horizontal" as const,
+      },
+      {
+        id: "battleship" as const,
+        size: 4,
+        coordinates: ["0,1", "1,1", "2,1", "3,1"] as const,
+        orientation: "horizontal" as const,
+      },
+      {
+        id: "cruiser" as const,
+        size: 3,
+        coordinates: ["0,2", "1,2", "2,2"] as const,
+        orientation: "horizontal" as const,
+      },
+      {
+        id: "submarine" as const,
+        size: 3,
+        coordinates: ["0,3", "1,3", "2,3"] as const,
+        orientation: "horizontal" as const,
+      },
+      {
+        id: "destroyer" as const,
+        size: 2,
+        coordinates: ["9,8", "9,9"] as const,
+        orientation: "vertical" as const,
+      },
+    ];
+
+    render(
+      <VsComputerGame
+        difficulty="easy"
+        playerShips={customPlayerShips}
+        onStatusChange={vi.fn()}
+      />,
+    );
+
+    // Fire a miss to trigger the AI turn
+    await user.click(cellIn(opponentBoard(), "9,9"));
+
+    // Advance past AI delay
+    act(() => {
+      vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
+    });
+
+    // The AI fires at "9,8" (our mocked AI target), which is a destroyer
+    // coordinate in our custom layout — should register as a hit
+    const cell = cellIn(yourBoard(), "9,8");
+    expect(cell).toBeDisabled();
   });
 });

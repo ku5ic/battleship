@@ -12,7 +12,7 @@ This is not a tutorial project or a boilerplate. Every decision here has a speci
 
 **Pure domain logic.** Game rules — hit detection, sunk ship resolution, turn management, game-over detection — live in plain TypeScript functions with no React dependency. They are independently unit-testable and have no awareness of how they are rendered.
 
-**Derived state over persisted state.** Each hook persists only what cannot be computed: the shots map and last shot result (single-player adds nothing else; the session hook adds per-player shots, per-player results, and the active turn). Everything else — whether a cell is hit or missed, whether a ship is sunk, whether the game is over, who the winner is — is derived via `useMemo`. There is no duplicated source of truth.
+**Derived state over persisted state.** Each hook persists only what cannot be computed: the shots map and last shot result (single-player adds nothing else; the vs-computer hook adds per-player shots, per-player results, and the active turn). Everything else — whether a cell is hit or missed, whether a ship is sunk, whether the game is over, who the winner is — is derived via `useMemo`. There is no duplicated source of truth.
 
 **`useReducer` for atomic transitions.** Firing a shot updates the shots map and the last result in a single dispatch. Two separate `useState` calls would make an inconsistent intermediate state possible. The reducer is synchronous; the AI timing side effect lives in a `useEffect` that dispatches a pre-resolved action.
 
@@ -30,7 +30,7 @@ Fire at a hidden fleet until all ships are sunk. No opponent turn.
 
 ### vs Computer
 
-Both sides have their own fleet. The player fires at the computer's board; the computer fires back after a short delay. A hit earns another shot; a miss hands the turn over. The session ends when one fleet is entirely sunk.
+Both sides have their own fleet. The player fires at the computer's board; the computer fires back after a short delay. A hit earns another shot; a miss hands the turn over. The game ends when one fleet is entirely sunk.
 
 ### Difficulty
 
@@ -75,7 +75,7 @@ src/
       components/             # Presentational feature components
       constants/              # Board size, difficulty config, labels
       data/                   # Raw config and parseLayout()
-      hooks/                  # useBattleshipGame, useBattleshipSessionGame
+      hooks/                  # useSinglePlayerGame, useVsComputerGame
       services/               # Pure engine functions and AI helper
       types/                  # All domain types — single source of truth
       utils/                  # Coordinate utilities

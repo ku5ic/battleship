@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ShipStatusItem } from "@/features/battleship/components/ShipStatusItem";
 
 describe("ShipStatusItem", () => {
@@ -113,5 +113,128 @@ describe("ShipStatusItem", () => {
     );
     const nameEl = screen.getByText("Destroyer");
     expect(nameEl).not.toHaveClass("line-through");
+  });
+
+  // ---------------------------------------------------------------------------
+  // Placement mode — onClick / isPlaced / isSelected
+  // ---------------------------------------------------------------------------
+
+  it("renders as div when onClick is absent", () => {
+    const { container } = render(
+      <ShipStatusItem id="destroyer" size={2} hitCount={0} isSunk={false} />,
+    );
+    expect(container.querySelector("button")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("renders as button with aria-pressed=false when onClick is provided", () => {
+    render(
+      <ShipStatusItem
+        id="destroyer"
+        size={2}
+        hitCount={0}
+        isSunk={false}
+        onClick={vi.fn()}
+      />,
+    );
+    const btn = screen.getByRole("button");
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("sets aria-pressed=true when isSelected is true", () => {
+    render(
+      <ShipStatusItem
+        id="destroyer"
+        size={2}
+        hitCount={0}
+        isSunk={false}
+        onClick={vi.fn()}
+        isSelected={true}
+      />,
+    );
+    expect(screen.getByRole("button")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("renders pip row when isPlaced is false", () => {
+    const { container } = render(
+      <ShipStatusItem
+        id="destroyer"
+        size={2}
+        hitCount={0}
+        isSunk={false}
+        onClick={vi.fn()}
+        isPlaced={false}
+      />,
+    );
+    expect(container.querySelector('[aria-hidden="true"]')).toBeInTheDocument();
+    expect(screen.queryByText("Placed")).not.toBeInTheDocument();
+  });
+
+  it("renders Placed badge and hides pip row when isPlaced is true", () => {
+    const { container } = render(
+      <ShipStatusItem
+        id="destroyer"
+        size={2}
+        hitCount={0}
+        isSunk={false}
+        onClick={vi.fn()}
+        isPlaced={true}
+      />,
+    );
+    expect(screen.getByText("Placed")).toBeInTheDocument();
+    expect(
+      container.querySelector('[aria-hidden="true"]'),
+    ).not.toBeInTheDocument();
+  });
+
+  it("accessible label in placement mode includes ship name and size", () => {
+    render(
+      <ShipStatusItem
+        id="destroyer"
+        size={2}
+        hitCount={0}
+        isSunk={false}
+        onClick={vi.fn()}
+        isPlaced={false}
+        isSelected={false}
+      />,
+    );
+    expect(
+      screen.getByLabelText("Destroyer, 2 cells. Select to place."),
+    ).toBeInTheDocument();
+  });
+
+  it("accessible label in placement mode includes Selected when isSelected", () => {
+    render(
+      <ShipStatusItem
+        id="destroyer"
+        size={2}
+        hitCount={0}
+        isSunk={false}
+        onClick={vi.fn()}
+        isPlaced={false}
+        isSelected={true}
+      />,
+    );
+    expect(
+      screen.getByLabelText("Destroyer, 2 cells. Selected."),
+    ).toBeInTheDocument();
+  });
+
+  it("accessible label in placement mode includes placed when isPlaced", () => {
+    render(
+      <ShipStatusItem
+        id="destroyer"
+        size={2}
+        hitCount={0}
+        isSunk={false}
+        onClick={vi.fn()}
+        isPlaced={true}
+      />,
+    );
+    expect(
+      screen.getByLabelText("Destroyer: placed. Click to re-place."),
+    ).toBeInTheDocument();
   });
 });

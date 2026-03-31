@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { generateRandomLayout } from "@/features/battleship/services/placement";
+import {
+  computeShipPreview,
+  generateRandomLayout,
+} from "@/features/battleship/services/placement";
 import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
-import { fromKey } from "@/features/battleship/utils/coordinates";
+import { fromKey, toKey } from "@/features/battleship/utils/coordinates";
 import type { CoordinateKey } from "@/features/battleship/types";
 
 const RUNS = 20;
@@ -97,5 +100,51 @@ describe("generateRandomLayout", () => {
     expect(() => generateRandomLayout(RAW_GAME_CONFIG, 2)).toThrow(
       /failed to place all ships/,
     );
+  });
+});
+
+describe("computeShipPreview", () => {
+  it("returns correct keys for in-bounds horizontal placement", () => {
+    const result = computeShipPreview(toKey(2, 3), 3, "horizontal", 10);
+    expect(result).toEqual([toKey(2, 3), toKey(3, 3), toKey(4, 3)]);
+  });
+
+  it("returns correct keys for in-bounds vertical placement", () => {
+    const result = computeShipPreview(toKey(5, 1), 4, "vertical", 10);
+    expect(result).toEqual([
+      toKey(5, 1),
+      toKey(5, 2),
+      toKey(5, 3),
+      toKey(5, 4),
+    ]);
+  });
+
+  it("returns null when anchor at right edge overflows horizontally", () => {
+    const result = computeShipPreview(toKey(8, 0), 3, "horizontal", 10);
+    expect(result).toBeNull();
+  });
+
+  it("returns null when anchor at bottom edge overflows vertically", () => {
+    const result = computeShipPreview(toKey(0, 9), 2, "vertical", 10);
+    expect(result).toBeNull();
+  });
+
+  it("returns one key for a single-cell ship", () => {
+    const result = computeShipPreview(toKey(4, 4), 1, "horizontal", 10);
+    expect(result).toEqual([toKey(4, 4)]);
+  });
+
+  it("returns boardSize keys for full-width ship at col 0 horizontal", () => {
+    const result = computeShipPreview(toKey(0, 0), 10, "horizontal", 10);
+    expect(result).toHaveLength(10);
+    expect(result?.[0]).toBe(toKey(0, 0));
+    expect(result?.[9]).toBe(toKey(9, 0));
+  });
+
+  it("returns boardSize keys for full-height ship at row 0 vertical", () => {
+    const result = computeShipPreview(toKey(0, 0), 10, "vertical", 10);
+    expect(result).toHaveLength(10);
+    expect(result?.[0]).toBe(toKey(0, 0));
+    expect(result?.[9]).toBe(toKey(0, 9));
   });
 });
