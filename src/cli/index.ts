@@ -1,3 +1,5 @@
+import { createInterface } from "node:readline";
+import { stdin, stdout } from "node:process";
 import type { Difficulty } from "@/features/battleship/types";
 import type { LineReader } from "@/cli/input";
 import { DIFFICULTY_CONFIG } from "@/features/battleship/constants";
@@ -6,29 +8,14 @@ import { generateRandomLayout } from "@/features/battleship/services/placement";
 import { runSinglePlayer, runVsComputer } from "@/cli/loop";
 
 // ---------------------------------------------------------------------------
-// Node readline — tsconfig.app.json restricts types to "vite/client", so
-// Node globals like `process` are unavailable to the type-checker. Dynamic
-// imports of "node:readline" and "node:process" resolve the types from
-// @types/node at import time, avoiding unsafe member access.
+// Node readline
 // ---------------------------------------------------------------------------
 
 interface ClosableLineReader extends LineReader {
   close: () => void;
 }
 
-async function createLineReader(): Promise<ClosableLineReader> {
-  // Dynamic imports resolve to `any` under the vite/client type scope.
-  // Explicit type annotations narrow to the subset we actually use.
-  const { createInterface } = (await import("node:readline")) as {
-    createInterface: (opts: {
-      input: unknown;
-      output: unknown;
-    }) => ClosableLineReader;
-  };
-  const { stdin, stdout } = (await import("node:process")) as {
-    stdin: unknown;
-    stdout: unknown;
-  };
+function createLineReader(): ClosableLineReader {
   return createInterface({ input: stdin, output: stdout });
 }
 
@@ -84,7 +71,7 @@ const DIFFICULTY_OPTIONS: readonly MenuOption<Difficulty>[] = [
 ];
 
 async function main(): Promise<void> {
-  const rl = await createLineReader();
+  const rl = createLineReader();
 
   try {
     console.log("\n\u2693  BATTLESHIP  \u2693\n");

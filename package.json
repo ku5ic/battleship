@@ -14,7 +14,7 @@
     "format": "prettier --write src",
     "format:check": "prettier --check src",
     "typecheck": "tsc --noEmit",
-    "cli": "tsx --tsconfig tsconfig.app.json src/cli/index.ts"
+    "cli": "tsx --tsconfig tsconfig.cli.json src/cli/index.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",
