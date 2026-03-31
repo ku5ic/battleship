@@ -1,15 +1,16 @@
+import { useEffect } from "react";
 import { Board } from "@/components/board";
 import { Button, Stack } from "@/components/ui";
 import {
-  GameStatus,
   ShipStatusList,
   ShotResultAnnouncer,
 } from "@/features/battleship/components";
 import { useBattleshipGame } from "@/features/battleship/hooks/useBattleshipGame";
-import type { Difficulty } from "@/features/battleship/types";
+import type { Difficulty, HeaderGameStatus } from "@/features/battleship/types";
 
 interface BattleshipGameProps {
   difficulty: Difficulty;
+  onStatusChange: (status: HeaderGameStatus & { mode: "single" }) => void;
 }
 
 /**
@@ -19,7 +20,10 @@ interface BattleshipGameProps {
  * it receives plain props and emits callbacks — no child is aware the hook
  * exists.
  */
-export function BattleshipGame({ difficulty }: BattleshipGameProps) {
+export function BattleshipGame({
+  difficulty,
+  onStatusChange,
+}: BattleshipGameProps) {
   const {
     ships,
     shots,
@@ -33,17 +37,17 @@ export function BattleshipGame({ difficulty }: BattleshipGameProps) {
     reset,
   } = useBattleshipGame(difficulty);
 
+  useEffect(() => {
+    onStatusChange({ mode: "single", isGameOver, shotCount: shots.size });
+  }, [isGameOver, shots.size, onStatusChange]);
+
   return (
     <Stack className="w-full max-w-3xl mx-auto">
       {/*
         ShotResultAnnouncer is visually hidden and announces transient shot
         events (hit, miss, sunk, already-fired) via aria-live="polite".
-        GameStatus announces the stable game-over state via role="status".
-        Keeping them separate prevents the live region from being clobbered
-        mid-sequence and ensures each concern has one clear owner.
       */}
       <ShotResultAnnouncer result={lastResult} />
-      <GameStatus isGameOver={isGameOver} shotCount={shots.size} />
 
       {/*
         On large screens the board and fleet panel sit side-by-side, with the

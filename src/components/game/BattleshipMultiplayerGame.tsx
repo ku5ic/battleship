@@ -1,16 +1,21 @@
+import { useEffect } from "react";
 import { Board } from "@/components/board";
 import { Button, Stack, Text } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import {
-  GameStatusMultiplayer,
   ShipStatusList,
   ShotResultAnnouncer,
 } from "@/features/battleship/components";
 import { useBattleshipSessionGame } from "@/features/battleship/hooks/useBattleshipSessionGame";
-import type { Difficulty, CoordinateKey } from "@/features/battleship/types";
+import type {
+  CoordinateKey,
+  Difficulty,
+  HeaderGameStatus,
+} from "@/features/battleship/types";
 
 interface BattleshipMultiplayerGameProps {
   difficulty: Difficulty;
+  onStatusChange: (status: HeaderGameStatus & { mode: "session" }) => void;
 }
 
 /**
@@ -22,6 +27,7 @@ interface BattleshipMultiplayerGameProps {
  */
 export function BattleshipMultiplayerGame({
   difficulty,
+  onStatusChange,
 }: BattleshipMultiplayerGameProps) {
   const {
     board,
@@ -40,18 +46,15 @@ export function BattleshipMultiplayerGame({
 
   const sessionOver = winner !== null;
 
+  useEffect(() => {
+    onStatusChange({ mode: "session", winner, activeTurn, isAiThinking });
+  }, [winner, activeTurn, isAiThinking, onStatusChange]);
+
   return (
     <Stack className="w-full max-w-5xl mx-auto">
       {/* Announcers — visually hidden, one per board so events don't collide */}
       <ShotResultAnnouncer result={computerLastResult} />
       <ShotResultAnnouncer result={playerLastResult} />
-
-      {/* Turn / winner status */}
-      <GameStatusMultiplayer
-        winner={winner}
-        activeTurn={activeTurn}
-        isAiThinking={isAiThinking}
-      />
 
       {/* Boards */}
       {/* Side-by-side only at easy — moderate and hard grids are too wide

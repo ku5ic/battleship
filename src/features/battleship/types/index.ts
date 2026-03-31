@@ -99,6 +99,15 @@ export interface SessionBoards {
   computer: BoardState;
 }
 
+export type HeaderGameStatus =
+  | { mode: "single"; isGameOver: boolean; shotCount: number }
+  | {
+      mode: "session";
+      winner: PlayerId | null;
+      activeTurn: PlayerId;
+      isAiThinking: boolean;
+    };
+
 export type Difficulty = "easy" | "moderate" | "hard";
 
 export interface DifficultyConfig {

@@ -93,47 +93,43 @@ describe("BattleshipMultiplayerGame", () => {
   // Initial render
   // ---------------------------------------------------------------------------
 
-  it("renders the heading", () => {
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
-    expect(
-      screen.getByRole("heading", { level: 1, name: "Battleship" }),
-    ).toBeInTheDocument();
-  });
-
   it("renders both board sections", () => {
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
     expect(yourBoard()).toBeInTheDocument();
     expect(opponentBoard()).toBeInTheDocument();
   });
 
   it("renders two fleet status panels", () => {
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
     expect(
       screen.getAllByRole("region", { name: /Fleet status/i }),
     ).toHaveLength(2);
   });
 
-  it("shows the player turn prompt on load", () => {
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
-    expect(
-      screen.getByText("Your turn — select a cell to fire."),
-    ).toBeInTheDocument();
-  });
-
   it("renders the Restart button on load", () => {
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
     expect(screen.getByRole("button", { name: "Restart" })).toBeInTheDocument();
   });
 
   it("all player board cells are disabled on load", () => {
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
     const grid = within(yourBoard()).getByRole("grid");
     const buttons = within(grid).getAllByRole("button");
     expect(buttons.every((b) => b.hasAttribute("disabled"))).toBe(true);
   });
 
   it("opponent board cells are enabled on the player's turn", () => {
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
     const buttons = within(opponentBoard()).getAllByRole("button");
     expect(buttons.some((b) => !b.hasAttribute("disabled"))).toBe(true);
   });
@@ -144,22 +140,13 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("marks the opponent cell as hit when the player hits a ship", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
 
     await user.click(cellIn(opponentBoard(), "0,0")); // destroyer
 
     expect(cellIn(opponentBoard(), "0,0")).toHaveAccessibleName(/hit/i);
-  });
-
-  it("keeps the player's turn after a hit", async () => {
-    const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
-
-    await user.click(cellIn(opponentBoard(), "0,0"));
-
-    expect(
-      screen.getByText("Your turn — select a cell to fire."),
-    ).toBeInTheDocument();
   });
 
   // ---------------------------------------------------------------------------
@@ -168,25 +155,20 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("marks the opponent cell as miss when the player fires at empty water", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
 
     await user.click(cellIn(opponentBoard(), "9,9"));
 
     expect(cellIn(opponentBoard(), "9,9")).toHaveAccessibleName(/miss/i);
   });
 
-  it("shows the computer thinking status immediately after a player miss", async () => {
-    const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
-
-    await user.click(cellIn(opponentBoard(), "9,9"));
-
-    expect(screen.getByText("Computer is thinking…")).toBeInTheDocument();
-  });
-
   it("disables all opponent board cells while the computer is thinking", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
 
     await user.click(cellIn(opponentBoard(), "9,9"));
 
@@ -201,7 +183,9 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("computer fires on the player board after the delay", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
 
     await user.click(cellIn(opponentBoard(), "9,9")); // miss
 
@@ -212,28 +196,15 @@ describe("BattleshipMultiplayerGame", () => {
     expect(cellIn(yourBoard(), "9,8")).toHaveAccessibleName(/miss/i);
   });
 
-  it("returns the turn to the player after the computer misses", async () => {
-    const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
-
-    await user.click(cellIn(opponentBoard(), "9,9"));
-
-    act(() => {
-      vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
-    });
-
-    expect(
-      screen.getByText("Your turn — select a cell to fire."),
-    ).toBeInTheDocument();
-  });
-
   // ---------------------------------------------------------------------------
   // Sunk ship on opponent board
   // ---------------------------------------------------------------------------
 
   it("marks the destroyer as sunk after both cells are hit", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
 
     await user.click(cellIn(opponentBoard(), "0,0"));
     await user.click(cellIn(opponentBoard(), "1,0"));
@@ -247,22 +218,11 @@ describe("BattleshipMultiplayerGame", () => {
   // Player wins
   // ---------------------------------------------------------------------------
 
-  it("shows the win message after all opponent ships are sunk", async () => {
-    const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
-
-    for (const coord of ALL_COMPUTER_SHIP_COORDS) {
-      await user.click(cellIn(opponentBoard(), coord));
-    }
-
-    expect(
-      screen.getByText("You win! All enemy ships sunk."),
-    ).toBeInTheDocument();
-  });
-
   it("disables all opponent cells after the player wins", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
 
     for (const coord of ALL_COMPUTER_SHIP_COORDS) {
       await user.click(cellIn(opponentBoard(), coord));
@@ -274,7 +234,9 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("shows Play again button after the player wins", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
 
     for (const coord of ALL_COMPUTER_SHIP_COORDS) {
       await user.click(cellIn(opponentBoard(), coord));
@@ -291,20 +253,21 @@ describe("BattleshipMultiplayerGame", () => {
 
   it("resets both boards when Restart is clicked", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
 
     await user.click(cellIn(opponentBoard(), "0,0"));
     await user.click(screen.getByRole("button", { name: "Restart" }));
 
-    expect(
-      screen.getByText("Your turn — select a cell to fire."),
-    ).toBeInTheDocument();
     expect(cellIn(opponentBoard(), "0,0")).toHaveAccessibleName(/not fired/i);
   });
 
   it("cancels the pending AI shot on reset", async () => {
     const user = userEvent.setup();
-    render(<BattleshipMultiplayerGame difficulty="easy" />);
+    render(
+      <BattleshipMultiplayerGame difficulty="easy" onStatusChange={vi.fn()} />,
+    );
 
     await user.click(cellIn(opponentBoard(), "9,9")); // miss — AI timer starts
     await user.click(screen.getByRole("button", { name: "Restart" }));
@@ -315,14 +278,54 @@ describe("BattleshipMultiplayerGame", () => {
       vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
     });
 
-    expect(
-      screen.getByText("Your turn — select a cell to fire."),
-    ).toBeInTheDocument();
-
     const firedOnPlayerBoard = within(yourBoard())
       .getAllByRole("button")
       .filter((b) => /hit|miss/i.test(b.getAttribute("aria-label") ?? ""));
 
     expect(firedOnPlayerBoard).toHaveLength(0);
+  });
+
+  // ---------------------------------------------------------------------------
+  // onStatusChange callback
+  // ---------------------------------------------------------------------------
+
+  it("calls onStatusChange with initial session status on mount", () => {
+    const onStatusChange = vi.fn();
+    render(
+      <BattleshipMultiplayerGame
+        difficulty="easy"
+        onStatusChange={onStatusChange}
+      />,
+    );
+    expect(onStatusChange.mock.lastCall).toEqual([
+      {
+        mode: "session",
+        winner: null,
+        activeTurn: "player",
+        isAiThinking: false,
+      },
+    ]);
+  });
+
+  it("calls onStatusChange with isAiThinking: true after a player miss", async () => {
+    const user = userEvent.setup();
+    const onStatusChange = vi.fn();
+    render(
+      <BattleshipMultiplayerGame
+        difficulty="easy"
+        onStatusChange={onStatusChange}
+      />,
+    );
+
+    await user.click(cellIn(opponentBoard(), "9,9")); // miss — triggers AI turn
+
+    expect(onStatusChange.mock.lastCall).toEqual([
+      {
+        mode: "session",
+        winner: null,
+        activeTurn: "computer",
+        isAiThinking: true,
+      },
+    ]);
   });
 });
