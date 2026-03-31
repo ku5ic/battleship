@@ -26,14 +26,23 @@ React is a thin rendering shell around a pure domain layer. Game rules, calculat
 ### `services/` — pure game rules
 
 - Pure functions only — no React imports, no hooks, no effects
-- Own all rule evaluation: hit detection, miss, sunk, game-over, AI coordinate selection
+- Own all rule evaluation: hit detection, miss, sunk, game-over, AI coordinate selection, random fleet generation
 - Unit-testable with zero React dependency
 - Never reconstruct a `CoordinateKey` outside `toKey()`
+- Services own rules but not state transitions — that belongs in `engine/`
 
-### `hooks/` — state orchestration
+### `engine/` — pure state machines
 
-- `useReducer` over multiple `useState` when transitions have guard logic or need to be atomic
-- Reducers are synchronous — async behaviour (AI timing, network) belongs in `useEffect`; the effect dispatches a pre-resolved value
+- Pure `(state, action) => state` reducer factories and selectors — no React imports, no hooks, no side effects
+- Each module exports a factory that closes over fleet data (position indexes) and returns a standard reducer
+- State and action types are co-located with their reducer, not in `types/`
+- Consumed by both React hooks (via `useReducer`) and the CLI runner (via direct function calls)
+- Reducers must stay synchronous — async behaviour belongs in the consumer
+
+### `hooks/` — React wiring over engine
+
+- Import reducer factories from `engine/`, pass to `useReducer`
+- Hook bodies contain no reducer logic — only side-effect coordination (AI timing via `useEffect`) and derived value assembly
 - Derive with `useMemo`; do not persist what can be computed
 - Values that depend on stable props (e.g. `boardSize` from `difficulty`) are computed inside hooks via `useMemo` — module-scope constants are only appropriate when the value is truly static (e.g. `DIFFICULTY_CONFIG`, `ARROW_DELTAS`)
 - Expose typed, view-ready data — not raw state slices
@@ -62,7 +71,7 @@ React is a thin rendering shell around a pure domain layer. Game rules, calculat
 
 ## Wiring components
 
-`BattleshipGame` and `BattleshipMultiplayerGame` are the only components that call their respective hooks. Everything below receives plain props and emits callbacks. No child is aware the hook exists.
+`SinglePlayerGame` and `VsComputerGame` are the only components that call their respective hooks. Everything below receives plain props and emits callbacks. No child is aware the hook exists.
 
 ---
 

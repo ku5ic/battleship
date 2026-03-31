@@ -18,6 +18,7 @@ This file governs how Claude Code operates in this repository. Read it in full b
 ```
 src/
   app/                          # App.tsx — entry point and mode toggle only
+  cli/                          # Terminal runner — index.ts (entry), loop.ts, renderer.ts, input.ts
   components/
     board/                      # Board, Cell, useBoardNavigation — generic grid rendering + keyboard navigation, no domain knowledge
     game/                       # SinglePlayerGame, VsComputerGame — wiring only
@@ -25,9 +26,10 @@ src/
     battleship/
       components/               # Presentational feature components, props-in/callbacks-out
       constants/                # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
-      data/                     # config.ts (raw JSON), layout.ts (parseLayout)
-      hooks/                    # useSinglePlayerGame, useVsComputerGame
-      services/                 # Pure engine and AI functions — no React
+      data/                     # config.ts (RAW_GAME_CONFIG), layout.ts (parseLayout — test-only)
+      engine/                   # Pure (state, action) => state reducers and selectors — no React
+      hooks/                    # useSinglePlayerGame, useVsComputerGame — wiring over engine/
+      services/                 # Pure rule evaluation and AI functions — no React
       types/                    # All domain types — single source of truth
       utils/                    # Pure coordinate helpers
   lib/                          # Shared utilities — cn() only
@@ -63,18 +65,33 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 ### `services/`
 
 - Pure functions only. No React imports, no hooks, no `useEffect`.
-- Own all game rules: hit detection, miss detection, sunk logic, game-over logic, AI coordinate selection.
+- Own all rule evaluation: hit detection, miss detection, sunk logic, game-over logic, AI coordinate selection, random fleet generation.
 - Independently unit testable with no React dependency.
 - Never call `toKey()` inline — import from `utils/`. Never reconstruct a `CoordinateKey` by string interpolation outside `toKey`.
+- Services own rules but not state transitions — that belongs in `engine/`.
+
+### `engine/`
+
+- Pure `(state, action) => state` reducer factories and selectors. No React imports, no hooks, no side effects.
+- Each module exports a factory that closes over fleet data and returns a standard reducer.
+- State and action types are co-located with their reducer, not in `types/`.
+- Consumed by both React hooks (via `useReducer`) and the CLI runner (via direct function calls).
+- Reducers must stay synchronous. Async behaviour belongs in the consumer (hook `useEffect` or CLI loop).
 
 ### `hooks/`
 
-- Orchestrate feature-level state and side effects.
-- `useReducer` is preferred over multiple `useState` calls when transitions have guard logic or need to be atomic.
-- Reducers must stay synchronous. Async behaviour (AI timing, network) belongs in `useEffect` — the effect dispatches an action carrying a pre-resolved value.
+- React wiring over `engine/`. Import a reducer factory from `engine/`, pass it to `useReducer`.
+- Hook bodies contain no reducer logic — only side-effect coordination and derived value assembly.
 - Derive values with `useMemo`. Do not persist what can be derived.
 - When values depend on a stable prop (e.g. `boardSize` from `difficulty`), compute them inside the hook via `useMemo`. Module-scope constants are only appropriate when the value is truly static.
 - Hooks expose typed, view-ready data. They do not expose raw state slices.
+
+### `cli/`
+
+- I/O bootstrap and terminal rendering. No React, no game rules, no domain calculations.
+- Drives engine reducers directly as `(state, action) => state` functions.
+- `LineReader` interface abstracts Node's readline to avoid importing Node types under the `vite/client` type scope.
+- No tests — all meaningful logic is covered by engine, services, renderer, and input tests.
 
 ### `components/board/` and `components/game/`
 
@@ -170,7 +187,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 
 ## Testing rules
 
-### Domain (services, utils, data)
+### Domain (engine, services, utils, data)
 
 - Thorough unit coverage. Pure functions with no dependencies — test every rule, edge case, and guard.
 - A test failure here means a game rule is broken.

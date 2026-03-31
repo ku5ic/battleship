@@ -2,7 +2,6 @@ import { useEffect, useReducer, useCallback, useMemo } from "react";
 import { generateRandomLayout } from "@/features/battleship/services/placement";
 import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
 import type {
-  CellStatus,
   CoordinateKey,
   Difficulty,
   PlayerId,
@@ -16,11 +15,14 @@ import {
   buildPositionIndex,
   computeShipHitCounts,
   isGameOver,
-  isShipSunk,
-  outcomeToStatus,
-  resolveShot,
+  selectSunkShipIds,
 } from "@/features/battleship/services/engine";
 import { chooseRandomUnfiredCoordinate } from "@/features/battleship/services/ai";
+import {
+  createVsComputerInitialState,
+  createVsComputerReducer,
+  selectWinner,
+} from "@/features/battleship/engine/vsComputer";
 
 export const AI_SHOT_DELAY_MS = 1000;
 
@@ -42,43 +44,6 @@ export const AI_SHOT_DELAY_MS = 1000;
 //     ships = computerShips, shots = playerShots,
 //     sunkShipIds = playerSunkShipIds, isGameOver = playerIsGameOver
 // ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Reducer state — persists only the irreducible minimum.
-// Everything else (sunkShipIds, isGameOver, winner, isAiThinking) is derived
-// via useMemo in the hook body.
-// ---------------------------------------------------------------------------
-
-interface VsComputerReducerState {
-  playerShots: Map<CoordinateKey, CellStatus>;
-  computerShots: Map<CoordinateKey, CellStatus>;
-  playerLastResult: ShotResult | null;
-  computerLastResult: ShotResult | null;
-  activeTurn: PlayerId;
-}
-
-const INITIAL_VS_COMPUTER_STATE: VsComputerReducerState = {
-  playerShots: new Map(),
-  computerShots: new Map(),
-  playerLastResult: null,
-  computerLastResult: null,
-  activeTurn: "player",
-};
-
-// ---------------------------------------------------------------------------
-// Vs-computer action union
-//
-// PLAYER_FIRE  — player targets a coordinate on the opponent's board.
-// COMPUTER_FIRE — computer targets a coordinate on the player's board.
-//                 The coordinate is resolved by the AI service before dispatch,
-//                 so the reducer treats it identically to a player shot.
-// RESET        — restores both boards to their initial state.
-// ---------------------------------------------------------------------------
-
-export type VsComputerAction =
-  | { type: "PLAYER_FIRE"; coordinate: CoordinateKey }
-  | { type: "COMPUTER_FIRE"; coordinate: CoordinateKey }
-  | { type: "RESET" };
 
 export interface UseVsComputerGameReturn {
   board: VsComputerBoards;
@@ -127,75 +92,16 @@ export function useVsComputerGame(
     };
   }, [boardSize, playerShipsOverride]);
 
-  // The reducer is defined here to close over the position indexes. Both are
-  // from useMemo([boardSize]) and never change within a mount, so the closure
-  // is behaviourally identical to a module-scope definition.
-  function reducer(
-    state: VsComputerReducerState,
-    action: VsComputerAction,
-  ): VsComputerReducerState {
-    switch (action.type) {
-      case "PLAYER_FIRE": {
-        if (state.activeTurn !== "player") return state;
+  const reducer = useMemo(
+    () => createVsComputerReducer(playerPositionIndex, computerPositionIndex),
+    [playerPositionIndex, computerPositionIndex],
+  );
 
-        const result = resolveShot(
-          action.coordinate,
-          state.playerShots,
-          computerPositionIndex,
-        );
-
-        if (result.outcome === "already-fired") {
-          return { ...state, playerLastResult: result };
-        }
-
-        const status = outcomeToStatus(result.outcome);
-        if (status === null) return state;
-
-        const playerShots = new Map(state.playerShots);
-        playerShots.set(action.coordinate, status);
-
-        return {
-          ...state,
-          playerShots,
-          playerLastResult: result,
-          // Player keeps their turn on a hit — computer only fires on a miss.
-          activeTurn: result.outcome === "miss" ? "computer" : "player",
-        };
-      }
-      case "COMPUTER_FIRE": {
-        if (state.activeTurn !== "computer") return state;
-
-        const result = resolveShot(
-          action.coordinate,
-          state.computerShots,
-          playerPositionIndex,
-        );
-
-        if (result.outcome === "already-fired") {
-          return { ...state, computerLastResult: result };
-        }
-
-        const status = outcomeToStatus(result.outcome);
-        if (status === null) return state;
-
-        const computerShots = new Map(state.computerShots);
-        computerShots.set(action.coordinate, status);
-
-        return {
-          ...state,
-          computerShots,
-          computerLastResult: result,
-          activeTurn: result.outcome === "miss" ? "player" : "computer",
-        };
-      }
-      case "RESET":
-        return INITIAL_VS_COMPUTER_STATE;
-      default:
-        return state;
-    }
-  }
-
-  const [state, dispatch] = useReducer(reducer, INITIAL_VS_COMPUTER_STATE);
+  const [state, dispatch] = useReducer(
+    reducer,
+    undefined,
+    createVsComputerInitialState,
+  );
 
   // ---------------------------------------------------------------------------
   // Derivation chain — declared in dependency order so each useMemo can
@@ -203,21 +109,15 @@ export function useVsComputerGame(
   // ---------------------------------------------------------------------------
 
   // 1. Sunk ship IDs — which ships each player has destroyed
-  const playerSunkShipIds = useMemo<ReadonlySet<ShipType>>(() => {
-    const sunk = new Set<ShipType>();
-    for (const ship of computerShips) {
-      if (isShipSunk(ship, state.playerShots)) sunk.add(ship.id);
-    }
-    return sunk;
-  }, [computerShips, state.playerShots]);
+  const playerSunkShipIds = useMemo(
+    () => selectSunkShipIds(computerShips, state.playerShots),
+    [computerShips, state.playerShots],
+  );
 
-  const computerSunkShipIds = useMemo<ReadonlySet<ShipType>>(() => {
-    const sunk = new Set<ShipType>();
-    for (const ship of playerShips) {
-      if (isShipSunk(ship, state.computerShots)) sunk.add(ship.id);
-    }
-    return sunk;
-  }, [playerShips, state.computerShots]);
+  const computerSunkShipIds = useMemo(
+    () => selectSunkShipIds(playerShips, state.computerShots),
+    [playerShips, state.computerShots],
+  );
 
   // 2. Game-over flags
   const playerIsGameOver = useMemo(
@@ -231,11 +131,10 @@ export function useVsComputerGame(
   );
 
   // 3. Vs-computer-level derived values
-  const winner = useMemo<PlayerId | null>(() => {
-    if (playerIsGameOver) return "player";
-    if (computerIsGameOver) return "computer";
-    return null;
-  }, [playerIsGameOver, computerIsGameOver]);
+  const winner = useMemo(
+    () => selectWinner(playerIsGameOver, computerIsGameOver),
+    [playerIsGameOver, computerIsGameOver],
+  );
 
   const isAiThinking = state.activeTurn === "computer" && winner === null;
 

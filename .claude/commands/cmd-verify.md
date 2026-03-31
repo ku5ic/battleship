@@ -6,9 +6,10 @@ Run after `/cmd-implement`. Catches violations before they reach CI.
 
 ### Architecture
 
-- [ ] Every new function is in the correct layer (service, hook, component, util, data)
+- [ ] Every new function is in the correct layer (engine, service, hook, component, util, data, cli)
 - [ ] No game rules inside components or hooks
-- [ ] No React imports in `services/` or `utils/`
+- [ ] No React imports in `engine/`, `services/`, or `utils/`
+- [ ] Engine reducers are pure `(state, action) => state` — no side effects, no async
 - [ ] No `RawCoordinate` tuples escaping `data/` or `utils/`
 - [ ] `toKey()` is the only site producing `CoordinateKey` strings
 - [ ] Module-scope constants are not recreated inside hook bodies
