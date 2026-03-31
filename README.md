@@ -66,7 +66,7 @@ Full reasoning — including what is persisted vs derived, why `useReducer` was 
 
 ```
 src/
-  app/                        # Entry point and mode toggle
+  app/                        # Sticky header (h1, controls, status slot) and mode routing
   components/
     board/                    # Board and Cell — generic grid rendering
     game/                     # Wiring components — hooks called here only
