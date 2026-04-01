@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { parseLayout } from "@/features/battleship/data/layout";
-import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
-import { COLUMN_LABELS } from "@/features/battleship/constants";
-import { selectSunkShipIds } from "@/features/battleship/services/engine";
+import { parseLayout } from "@/battleship/data/layout";
+import { RAW_GAME_CONFIG } from "@/battleship/data/config";
+import { COLUMN_LABELS } from "@/battleship/constants";
+import { selectSunkShipIds } from "@/battleship/services/engine";
 import type {
   BoardState,
   CellStatus,
@@ -10,7 +10,7 @@ import type {
   Ship,
   ShotResult,
   VsComputerBoards,
-} from "@/features/battleship/types";
+} from "@/battleship/types";
 import {
   cellSymbol,
   renderBoard,

@@ -6,12 +6,8 @@ import {
   GameStatus,
   VsComputerGameStatus,
   PlacementScreen,
-} from "@/features/battleship/components";
-import type {
-  Difficulty,
-  HeaderGameStatus,
-  Ship,
-} from "@/features/battleship/types";
+} from "@/battleship/components";
+import type { Difficulty, HeaderGameStatus, Ship } from "@/battleship/types";
 
 type Mode = "single" | "vsComputer";
 type VsComputerPhase = "placement" | "battle";

@@ -1,12 +1,9 @@
 import { useEffect } from "react";
 import { Board } from "@/components/board";
 import { Button, Stack } from "@/components/ui";
-import {
-  ShipStatusList,
-  ShotResultAnnouncer,
-} from "@/features/battleship/components";
-import { useSinglePlayerGame } from "@/features/battleship/hooks/useSinglePlayerGame";
-import type { Difficulty, HeaderGameStatus } from "@/features/battleship/types";
+import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
+import { useSinglePlayerGame } from "@/battleship/hooks/useSinglePlayerGame";
+import type { Difficulty, HeaderGameStatus } from "@/battleship/types";
 
 interface SinglePlayerGameProps {
   difficulty: Difficulty;

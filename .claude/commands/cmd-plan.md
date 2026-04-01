@@ -54,9 +54,9 @@ PLAN
 Task: [one sentence]
 
 Files:
-  CREATE src/features/battleship/services/foo.ts
+  CREATE src/battleship/services/foo.ts
     — pure function resolving X from Y
-  MODIFY src/features/battleship/hooks/useBattleshipGame.ts
+  MODIFY src/battleship/hooks/useBattleshipGame.ts
     — consume foo(), expose result as derived useMemo
 
 Types:
@@ -72,7 +72,7 @@ State: no new persisted state; result derived via useMemo from shots
 Accessibility: no interactive elements affected
 
 Tests:
-  src/test/features/battleship/services/foo.test.ts
+  src/test/battleship/services/foo.test.ts
     — covers: happy path, already-fired guard, boundary coords
 
 Risk flags: none

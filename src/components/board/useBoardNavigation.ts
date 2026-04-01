@@ -1,11 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import { nextUnfiredCoordinate } from "@/features/battleship/services/engine";
-import {
-  allBoardKeys,
-  fromKey,
-  toKey,
-} from "@/features/battleship/utils/coordinates";
-import type { CellStatus, CoordinateKey } from "@/features/battleship/types";
+import { nextUnfiredCoordinate } from "@/battleship/services/engine";
+import { allBoardKeys, fromKey, toKey } from "@/battleship/utils/coordinates";
+import type { CellStatus, CoordinateKey } from "@/battleship/types";
 
 const ARROW_DELTAS: Partial<Record<string, [number, number]>> = {
   ArrowUp: [0, -1],

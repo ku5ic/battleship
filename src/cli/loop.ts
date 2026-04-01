@@ -5,22 +5,22 @@ import type {
   Ship,
   ShotResult,
   VsComputerBoards,
-} from "@/features/battleship/types";
+} from "@/battleship/types";
 import {
   buildPositionIndex,
   isGameOver,
   selectSunkShipIds,
-} from "@/features/battleship/services/engine";
+} from "@/battleship/services/engine";
 import {
   createSinglePlayerInitialState,
   createSinglePlayerReducer,
-} from "@/features/battleship/engine/singlePlayer";
+} from "@/battleship/engine/singlePlayer";
 import {
   createVsComputerInitialState,
   createVsComputerReducer,
   selectWinner,
-} from "@/features/battleship/engine/vsComputer";
-import { chooseRandomUnfiredCoordinate } from "@/features/battleship/services/ai";
+} from "@/battleship/engine/vsComputer";
+import { chooseRandomUnfiredCoordinate } from "@/battleship/services/ai";
 import {
   renderBoard,
   renderGameOver,

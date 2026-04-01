@@ -38,20 +38,19 @@ Full reasoning — including what is persisted vs derived, why `useReducer` was 
 ```
 src/
   app/                        # Entry point — mode toggle, sticky header, status slot
+  battleship/
+    components/               # Presentational feature components — props in, callbacks out
+    constants/                # Board size, difficulty config, column labels, ship display names
+    data/                     # Raw config and layout parsing
+    engine/                   # Pure (state, action) => state reducers — no React
+    hooks/                    # useSinglePlayerGame, useVsComputerGame — wiring over engine
+    services/                 # Pure rule evaluation and AI coordinate selection
+    types/                    # All domain types — single source of truth
+    utils/                    # Coordinate helpers — toKey, fromKey, allBoardKeys, and related utilities
   cli/                        # Terminal runner — drives engine directly, no React
   components/
     board/                    # Board and Cell — generic grid rendering, keyboard navigation
     game/                     # Wiring components — hooks called here only
-  features/
-    battleship/
-      components/             # Presentational feature components — props in, callbacks out
-      constants/              # Board size, difficulty config, column labels, ship display names
-      data/                   # Raw config and layout parsing
-      engine/                 # Pure (state, action) => state reducers — no React
-      hooks/                  # useSinglePlayerGame, useVsComputerGame — wiring over engine
-      services/               # Pure rule evaluation and AI coordinate selection
-      types/                  # All domain types — single source of truth
-      utils/                  # Coordinate helpers — toKey, fromKey, allBoardKeys, and related utilities
   lib/                        # Shared utilities (cn)
   test/                       # Mirrors src/ — one test file per source file
 ```

@@ -1,10 +1,10 @@
 import { createInterface } from "node:readline";
 import { stdin, stdout } from "node:process";
-import type { Difficulty } from "@/features/battleship/types";
+import type { Difficulty } from "@/battleship/types";
 import type { LineReader } from "@/cli/input";
-import { DIFFICULTY_CONFIG } from "@/features/battleship/constants";
-import { RAW_GAME_CONFIG } from "@/features/battleship/data/config";
-import { generateRandomLayout } from "@/features/battleship/services/placement";
+import { DIFFICULTY_CONFIG } from "@/battleship/constants";
+import { RAW_GAME_CONFIG } from "@/battleship/data/config";
+import { generateRandomLayout } from "@/battleship/services/placement";
 import { runSinglePlayer, runVsComputer } from "@/cli/loop";
 
 // ---------------------------------------------------------------------------

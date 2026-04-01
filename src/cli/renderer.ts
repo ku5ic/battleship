@@ -6,9 +6,9 @@ import type {
   Ship,
   ShotResult,
   VsComputerBoards,
-} from "@/features/battleship/types";
-import { fromKey, toKey } from "@/features/battleship/utils/coordinates";
-import { SHIP_DISPLAY_NAMES } from "@/features/battleship/constants";
+} from "@/battleship/types";
+import { fromKey, toKey } from "@/battleship/utils/coordinates";
+import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 
 // ---------------------------------------------------------------------------
 // Cell symbols

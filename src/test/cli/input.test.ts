@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseCoordinateInput } from "@/cli/input";
-import {
-  COLUMN_LABELS,
-  DIFFICULTY_CONFIG,
-} from "@/features/battleship/constants";
+import { COLUMN_LABELS, DIFFICULTY_CONFIG } from "@/battleship/constants";
 
 const boardSize = 10;
 const moderateLabels = DIFFICULTY_CONFIG.moderate.columnLabels;
