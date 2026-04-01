@@ -2,9 +2,9 @@
 
 ## Overview
 
-This document describes the architecture of a Battleship game built to demonstrate how I make structural decisions in frontend code. The game is a pretext. The actual subject is layer separation, state design, and the discipline of keeping domain logic independent of the framework that renders it.
+The game is a pretext. The actual subject is layer separation, state design, and the discipline of keeping domain logic independent of the framework that renders it.
 
-The domain layer contains no React imports. Game rules are plain TypeScript functions. State transitions live in a dedicated engine layer — pure `(state, action) => state` reducers consumed by two independent callers: React hooks via `useReducer`, and a standalone CLI runner via direct function calls. The CLI was not added as a demonstration. It was added because the layer boundaries made it trivial, and its existence is the proof those boundaries are real. A second game mode (vs-computer) was added without modifying any existing service, utility, or type — only a new engine module, a new hook, and a new wiring component.
+The domain layer contains no React imports. Game rules are plain TypeScript functions. State transitions live in a dedicated engine layer: pure `(state, action) => state` reducers consumed by two independent callers, React hooks via `useReducer` and a standalone CLI runner via direct function calls. The CLI was not added as a demonstration. It was added because the layer boundaries made it trivial, and its existence is the proof those boundaries are real. A second game mode (vs-computer) was added by creating a new engine module, a new hook, a new wiring component, a new AI service, and new type definitions. No existing rule evaluation logic was modified in the process. Services, utilities, and the original single-player engine were extended, not rewritten.
 
 ---
 
@@ -41,7 +41,7 @@ The `battleship` feature folder owns everything domain-specific. The top-level `
 
 The single source of truth for all domain concepts. No logic, no imports from other layers. Adding a concept to the domain means defining a type here first — this is the entry point for any new feature.
 
-`any` is forbidden throughout the codebase (ESLint enforces this). Where the shape is genuinely unknown, `unknown` with a type guard is used. The alternative — permitting `any` at boundaries and casting later — was rejected because it defers type errors to runtime and makes refactoring unsafe.
+`any` is forbidden throughout the codebase (ESLint enforces this). Where the shape is genuinely unknown, `unknown` with a type guard is used. The alternative, permitting `any` at boundaries and casting later, was rejected because it defers type errors to runtime and makes refactoring unsafe.
 
 Key types include `CoordinateKey`, `Ship`, `CellStatus`, `ShotResult`, `GameState`, `BoardState`, `VsComputerBoards`, `PlayerId`, `Difficulty`, `DifficultyConfig`, and `HeaderGameStatus`. `HeaderGameStatus` is a discriminated union on `mode` (`"single" | "vsComputer"`) carrying the props required to render the correct status component in the App header.
 
@@ -55,7 +55,7 @@ Owns the raw ship configuration (`RAW_GAME_CONFIG`). `parseLayout` validates a r
 
 Pure functions only. `toKey(col, row)` is the single production site for `CoordinateKey` strings. No other code constructs `"col,row"` strings by interpolation — this is enforced by convention and code review. `fromKey` is the single parse site. `RawCoordinate` tuples do not escape this layer or the data layer.
 
-The point of having a single production site is that if the key format ever changes, there is exactly one place to change it. The alternative — allowing inline interpolation — would scatter format knowledge across every file that constructs a coordinate key, making a format change a codebase-wide find-and-replace exercise.
+The point of having a single production site is that if the key format ever changes, there is exactly one place to change it. The alternative, allowing inline interpolation, would scatter format knowledge across every file that constructs a coordinate key, making a format change a codebase-wide find-and-replace exercise.
 
 ### `services/`
 
@@ -63,13 +63,13 @@ Pure functions only — no React imports, no hooks, no side effects. Own all rul
 
 Key functions in `services/engine.ts`:
 
-- `resolveShot(coord, positionIndex, shots)` — determines the outcome of a single shot
+- `resolveShot(coordinate, shots, positionIndex)` — determines the outcome of a single shot
 - `isShipSunk(ship, shots)` — checks whether all of a ship's coordinates have been hit
 - `isGameOver(ships, sunkShipIds)` — checks whether every ship in the fleet is sunk
 - `computeShipHitCounts(ships, shots)` — returns a map of ship id to hit count
 - `nextUnfiredCoordinate(allKeys, shots, fromIndex)` — returns the next unfired coordinate in row-major order after `fromIndex`, wrapping around; returns `null` if all coordinates are fired
 
-Services own rule evaluation but not state transitions — that responsibility belongs to `engine/`. This separation exists so that rules can be tested without constructing reducer state, and reducer tests can verify transitions without re-testing the rules. Each layer has one job.
+Services own rule evaluation but not state transitions; that responsibility belongs to `engine/`. Rules can then be tested without constructing reducer state, and reducer tests can verify transitions without re-testing the rules.
 
 ### `engine/`
 
@@ -78,15 +78,15 @@ Pure `(state, action) => state` reducer factories and selectors. No React import
 - `engine/singlePlayer.ts` — `createSinglePlayerReducer(ships, positionIndex)` returns a reducer handling `FIRE` and `RESET`. Exports `SinglePlayerState`, `SinglePlayerAction`, and `createSinglePlayerInitialState()`.
 - `engine/vsComputer.ts` — `createVsComputerReducer(playerPositionIndex, computerPositionIndex)` returns a reducer handling `PLAYER_FIRE`, `COMPUTER_FIRE`, and `RESET`. Exports `VsComputerState`, `VsComputerAction`, `createVsComputerInitialState()`, and `selectWinner()`.
 
-The engine layer was extracted specifically because reducer logic is consumed by two independent callers — React hooks (via `useReducer`) and the CLI runner (via direct function calls). Without this extraction, the reducer would live inline in the hook, and the CLI would need to either import React or duplicate the logic. Both alternatives are worse: importing React in a terminal program is wrong; duplicating logic creates two sources of truth that can diverge. The engine layer eliminates both problems.
+The engine layer was extracted specifically because reducer logic is consumed by two independent callers — React hooks (via `useReducer`) and the CLI runner (via direct function calls). Without this extraction, the reducer would live inline in the hook, and the CLI would need to either import React or duplicate the logic. Both alternatives are worse: importing React in a terminal program is wrong, and duplicating logic creates two sources of truth that can diverge.
 
-State and action types are co-located with their reducer in `engine/`, not in `types/index.ts`. They are internal to the state machine rather than shared domain concepts. The alternative — putting all types in `types/` — was rejected because it would couple unrelated consumers to engine internals and obscure which types belong to which reducer.
+State and action types are co-located with their reducer in `engine/`, not in `types/index.ts`. They are internal to the state machine rather than shared domain concepts. Putting all types in `types/` was rejected because it would couple unrelated consumers to engine internals and obscure which types belong to which reducer.
 
 ### `hooks/`
 
 React wiring over `engine/`. Each hook imports a reducer factory from `engine/`, passes it to `useReducer`, and derives view-ready data via `useMemo`. The hook body contains no reducer logic — only side-effect coordination (AI timing via `useEffect`) and derived value assembly.
 
-Two hooks exist: `useSinglePlayerGame` for single-player, `useVsComputerGame` for vs-computer. Neither calls the other. The alternative — a single hook with a mode parameter — was rejected because the two modes have different state shapes, different action types, and different side effects. Combining them would mean the hook always carries the complexity of both modes, branching internally on the mode parameter. Two focused hooks are simpler to read, test, and extend independently.
+Two hooks exist: `useSinglePlayerGame` for single-player, `useVsComputerGame` for vs-computer. Neither calls the other. A single hook with a mode parameter was rejected because the two modes have different state shapes, different action types, and different side effects. Combining them would mean the hook always carries the complexity of both modes, branching internally on the mode parameter. Two focused hooks are simpler to read, test, and extend independently.
 
 ### `components/`
 
@@ -132,16 +132,16 @@ State types (`SinglePlayerState`, `VsComputerState`) and action types are define
 
 ## Why `useReducer` Over `useState`
 
-Firing a shot must update two values atomically: the shots map and the last result. With two separate `useState` calls, there is a window between the first and second `setState` where the component has an inconsistent state — the shot is recorded but the result is still the previous one, or vice versa. A consumer of that state (an `aria-live` region, for example) could render during that window and announce the wrong result.
+Firing a shot must update two values atomically: the shots map and the last result. With two separate `useState` calls, there is a window between the first and second `setState` where the component has an inconsistent state: the shot is recorded but the result is still the previous one, or vice versa. A consumer of that state (an `aria-live` region, for example) could render during that window and announce the wrong result.
 
 `useReducer` eliminates this: a single dispatch produces a single new state object. The component never sees an intermediate.
 
-The reducer (in `engine/`) delegates rule evaluation to pure service functions — it calls `isShipSunk` and `isGameOver` from `services/engine.ts` as guards rather than implementing the checks inline. This keeps rules testable in isolation and the reducer focused on state transitions.
+The single-player reducer (in `engine/`) delegates rule evaluation to pure service functions, calling `isGameOver` and `selectSunkShipIds` from `services/engine.ts` as a game-over guard rather than implementing the checks inline. The vs-computer reducer delegates that guard to the hook layer. In both cases, rules stay testable in isolation and reducers stay focused on state transitions.
 
 **Alternatives considered:**
 
 - `useState` with a combined object (`{ shots, lastResult }`). This would enforce atomicity but push transition logic into event handlers as inline object spreads. The logic becomes harder to locate, harder to audit, and impossible to share with the CLI runner without extraction. `useReducer` makes transition logic explicit, locatable in one file, and shareable.
-- Context or Zustand for global state management. Rejected because no genuine cross-cutting state need exists at this scope. Each game mode is self-contained. Introducing a global store would add indirection without solving a real problem — the kind of abstraction that exists to satisfy a pattern rather than a requirement.
+- Context or Zustand for global state management. Rejected because no genuine cross-cutting state need exists at this scope. Each game mode is self-contained. Introducing a global store would add indirection without solving a real problem. That kind of abstraction exists to satisfy a pattern, not a requirement.
 
 ---
 
@@ -157,9 +157,9 @@ The approach: the reducer handles `PLAYER_FIRE` and `COMPUTER_FIRE` synchronousl
 
 ## CLI Runner
 
-A standalone terminal interface in `src/cli/` that drives the same engine reducers and service functions that the React hooks consume. The CLI uses `engine/`, `services/`, `utils/`, `constants/`, and `data/` with zero modification and zero React dependency. No adapter layer, no abstraction — the same function calls, the same state shapes, the same rule evaluation.
+A standalone terminal interface in `src/cli/` that drives the same engine reducers and service functions that the React hooks consume. The CLI uses `engine/`, `services/`, `utils/`, `constants/`, and `data/` with zero modification and zero React dependency. No adapter layer, no abstraction. The same function calls, the same state shapes, the same rule evaluation.
 
-This is the strongest evidence that the layer boundaries are real: a second consumer in a completely different runtime environment (Node terminal vs browser DOM) works without changing a single line of domain code.
+That the CLI works at all is the strongest evidence the layer boundaries are real: a second consumer in a completely different runtime environment (Node terminal vs browser DOM) works without changing a single line of domain code.
 
 ### Structure
 
@@ -198,7 +198,7 @@ Single-player and vs-computer share no state. Each mode has its own engine modul
 
 `Board` and `Cell` are shared rendering primitives — they know nothing about game mode. The `disabled` prop on `Board` prevents interaction: the player's own board passes `disabled` (always true, since you observe it but do not fire at it); the opponent's board passes `disabled={activeTurn !== "player" || winner !== null}`.
 
-Adding a third mode would require a new engine module, a new hook, and a new wiring component. No existing code would need to change. This extensibility is not speculative — it is demonstrated by the fact that vs-computer was added this way.
+Adding a third mode would require a new engine module, a new hook, and a new wiring component. No existing code would need to change. The extensibility is not speculative; it is demonstrated by the fact that vs-computer was added this way.
 
 ---
 
@@ -208,9 +208,9 @@ Prioritised by the cost of a regression.
 
 **Domain (engine, services, utils, data)** — thorough unit coverage. Pure functions, zero dependencies. Every rule, every guard condition, every edge case. The test suite here is the specification. A failure in this layer means a game rule is broken, which affects every consumer.
 
-**Hooks** — `renderHook` with deterministic collaborators. `chooseRandomUnfiredCoordinate` is mocked to a fixed coordinate so AI-turn tests are predictable. `AI_SHOT_DELAY_MS` is exported and overridden to `0` in tests. The alternative — `vi.useFakeTimers()` — was rejected because it conflicts with `userEvent`'s internal timing, producing flaky tests that pass in isolation but fail in suite runs.
+**Hooks** — `renderHook` with deterministic collaborators. `chooseRandomUnfiredCoordinate` is mocked to a fixed coordinate so AI-turn tests are predictable. `AI_SHOT_DELAY_MS` is exported and overridden to `0` in tests. `vi.useFakeTimers()` was rejected because it conflicts with `userEvent`'s internal timing, producing flaky tests that pass in isolation but fail in suite runs.
 
-**Components** — rendering, interaction, hit/miss states, sunk messaging, game-over display. Cells targeted by `data-coord` attribute rather than `aria-label` regex to avoid false matches against row-10 cells (e.g. `/B1/` matches `B10`). This is a concrete example of choosing a test strategy that avoids a known class of bugs rather than fixing them one at a time.
+**Components** — rendering, interaction, hit/miss states, sunk messaging, game-over display. Cells targeted by `data-coord` attribute rather than `aria-label` regex to avoid false matches against row-10 cells (e.g. `/B1/` matches `B10`). Choosing a test strategy that avoids a known class of bugs beats fixing them one at a time.
 
 ---
 
@@ -218,29 +218,29 @@ Prioritised by the cost of a regression.
 
 Each omission is a decision, not an oversight. The extension point is noted where relevant.
 
-**Player ship placement in single-player mode.** Vs-computer mode has a `PlacementScreen` that lets the player manually position ships before battle begins. Single-player mode does not — ships are placed via `generateRandomLayout` on mount. The placement UI already exists and could be reused with minimal wiring. It was omitted to keep the single-player experience focused on the firing mechanic.
+**Player ship placement in single-player mode.** Vs-computer mode has a `PlacementScreen` that lets the player manually position ships before battle begins. Single-player mode does not; ships are placed via `generateRandomLayout` on mount. The placement UI already exists and could be reused with minimal wiring. It was omitted to keep the single-player experience focused on the firing mechanic.
 
-**Animations.** Not justified by the requirements. Animations on shot results could improve feedback, but they also risk being disruptive for users with `prefers-reduced-motion`. If added, they would live in the component layer — CSS transitions on cell state changes — with no impact on engine or services.
+**Animations.** Not justified by the requirements. Animations on shot results could improve feedback, but they also risk being disruptive for users with `prefers-reduced-motion`. If added, they would be CSS transitions on cell state changes in the component layer.
 
-**Global state library.** No Redux, Zustand, or Context provider. Each hook is self-contained: it owns its own reducer and derives its own view-ready data. There is no state that needs to be shared across components that are not in the same render tree. Introducing a global store would add indirection without solving a real problem. If a future feature genuinely required cross-cutting state (e.g. a shared settings panel affecting multiple game instances), Context would be the first option to evaluate — it is built in and sufficient for low-frequency updates.
+**Global state library.** No Redux, Zustand, or Context provider. Each hook is self-contained: it owns its own reducer and derives its own view-ready data. There is no state that needs to be shared across components that are not in the same render tree. If a future feature genuinely required cross-cutting state (e.g. a shared settings panel affecting multiple game instances), Context would be the first option to evaluate.
 
-**Smarter AI.** The computer fires randomly. A hunt-and-target or probability-map strategy would only touch `services/ai.ts` — the hook, reducer, engine, and every component are unaffected. This is the cleanest possible extension point: swap one pure function, change zero interfaces.
+**Smarter AI.** The computer fires randomly. A hunt-and-target or probability-map strategy would only touch `services/ai.ts`. The hook, reducer, engine, and every component would be unaffected. Swap one pure function, change zero interfaces.
 
-**Multiplayer / networked play.** The engine layer is already consumer-agnostic. A networked mode would require a new consumer (WebSocket handler) that dispatches actions to the same reducers. The state transitions would not change. The main new concerns would be action validation (preventing illegal moves from a remote peer) and state synchronisation, both of which would live outside the engine.
+**Multiplayer / networked play.** The engine layer is already consumer-agnostic. A networked mode would require a new consumer (WebSocket handler) dispatching actions to the same reducers. The main new concerns would be action validation (preventing illegal moves from a remote peer) and state synchronisation, both outside the engine.
 
 ---
 
 ## With More Time
 
-**AI difficulty levels.** The current AI is stateless and random. A probability-map approach — tracking which cells are consistent with the remaining ships — would be a meaningful improvement. It would fit entirely within `services/ai.ts` as a new function with the same signature as the current one. The hook would select which AI function to use based on difficulty; the engine would not change.
+**AI difficulty levels.** The current AI is stateless and random. A probability-map approach, tracking which cells are consistent with the remaining ships, would be a meaningful improvement. It would fit entirely within `services/ai.ts` as a new function with the same signature as the current one. The hook would select which AI function to use based on difficulty.
 
 **Keyboard shortcut for firing.** Space fires the focused cell. A global shortcut (e.g. Enter from anywhere) would be a small accessibility improvement, implemented in `useBoardNavigation`.
 
-**Persistent high score or replay.** The architecture supports this: the shots map is serialisable. Persistence would be a new concern at the app layer — `localStorage` or IndexedDB — not a change to the domain.
+**Persistent high score or replay.** The shots map is serialisable, so persistence would be a new concern at the app layer (`localStorage` or IndexedDB) without touching the domain.
 
-**Visual board analysis after game over.** Revealing the full layout and highlighting the shot sequence would be a rendering concern — a new display mode for `Board`, not a change to state or services.
+**Visual board analysis after game over.** Revealing the full layout and highlighting the shot sequence would be a new display mode for `Board`, purely a rendering concern.
 
-**Smarter default ship placement.** `generateRandomLayout` could prefer more spread-out placements to make games more interesting. The function's interface would not change — only its internal heuristic.
+**Smarter default ship placement.** `generateRandomLayout` could prefer more spread-out placements to make games more interesting. Only the internal heuristic would change; the function's interface stays the same.
 
 ---
 
@@ -249,25 +249,25 @@ Each omission is a decision, not an oversight. The extension point is noted wher
 Questions a technical reviewer might ask about this codebase, with the reasoning behind each decision.
 
 **Q: Why extract an engine layer instead of keeping reducer logic in the hooks?**
-A: The engine exists because two independent consumers need the same state transitions — React hooks via `useReducer` and the CLI runner via direct calls. Without the extraction, the CLI would either import React (wrong) or duplicate the logic (two sources of truth). The engine eliminates both problems and costs one additional directory.
+A: Two independent consumers need the same state transitions: React hooks via `useReducer` and the CLI runner via direct calls. Without the extraction, the CLI would either import React (wrong) or duplicate the logic (two sources of truth). One additional directory eliminates both problems.
 
 **Q: Why `useReducer` rather than `useState`?**
 A: Firing a shot updates the shots map and the last result atomically. Two `useState` calls would allow an intermediate render with inconsistent state. `useReducer` produces a single new state object per dispatch, so no consumer ever sees a partial update.
 
 **Q: Why derive state with `useMemo` instead of persisting it in the reducer?**
-A: Persisting derived values (e.g. a `sunkShipIds` set) creates a second source of truth that must stay consistent with the shots map. Deriving from the shots map is consistent by construction. The recomputation cost is negligible for a grid of at most 400 cells.
+A: Persisting derived values (e.g. a `sunkShipIds` set) creates a second source of truth that must stay consistent with the shots map. Deriving is consistent by construction, and the recomputation cost is negligible for a grid of at most 400 cells.
 
 **Q: Why two separate hooks instead of one hook with a mode parameter?**
-A: The two modes have different state shapes, different action types, and different side effects. A combined hook would branch internally on every operation, carrying the complexity of both modes at all times. Two focused hooks are simpler to read, test, and extend. The vs-computer hook was added without touching the single-player hook — that is the validation.
+A: Different state shapes, different action types, different side effects. A combined hook would branch internally on every operation. The vs-computer hook was added without touching the single-player hook, which is the validation that two focused hooks scale better.
 
 **Q: Why no Context or global state management?**
-A: No state needs to cross component boundaries that are not already in the same render tree. Introducing a global store would add indirection without solving a problem that exists. If a future feature required cross-cutting state, Context would be evaluated first.
+A: No state crosses component boundaries that are not already in the same render tree. If a future feature required cross-cutting state, Context would be evaluated first.
 
 **Q: How would you add a smarter AI?**
-A: Replace the body of the AI selection function in `services/ai.ts`. The function signature stays the same — it takes the set of unfired coordinates and returns one. No hook, reducer, engine, or component changes. This is by design: the AI strategy is a rule, and rules live in services.
+A: Replace the body of the AI selection function in `services/ai.ts`. It takes the shots-received map and the board size, computes the unfired set internally, and returns one coordinate. The function signature stays the same, so no hook, reducer, engine, or component changes.
 
 **Q: Why throw on invalid layout data instead of returning an error type?**
-A: The layout is static data compiled into the bundle. An invalid layout is a programming mistake, not a user error or a network failure. Throwing fails loudly during development. An error return type would force every call site to handle a condition that cannot occur in production, adding ceremony without safety.
+A: The layout is static data compiled into the bundle. An invalid layout is a programming mistake, not a user error or a network failure. Throwing fails loudly during development; an error return type would force every call site to handle a condition that cannot occur in production.
 
 **Q: How confident are you that the layer boundaries hold?**
-A: The CLI runner is the proof. It imports engine, services, utils, constants, and data — the same modules the React hooks import — and runs in a Node terminal with no React dependency and no adapter layer. If the boundaries leaked, the CLI would not compile.
+A: The CLI runner is the proof. It imports engine, services, utils, constants, and data, the same modules the React hooks import, and runs in a Node terminal with no React dependency. If the boundaries leaked, the CLI would not compile.
