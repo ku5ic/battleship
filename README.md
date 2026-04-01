@@ -1,6 +1,6 @@
 # Battleship
 
-A Battleship game built in React and TypeScript — not as an end in itself, but as a vehicle for demonstrating how I think about frontend architecture. The interesting part is not the game. It is where the logic lives, how state is shaped, how layer boundaries are enforced, and how accessibility is treated as a constraint from day one rather than retrofitted later.
+A Battleship game built in React and TypeScript. Not as an end in itself, but as a vehicle for demonstrating how I think about frontend architecture. The interesting part is not the game. It is where the logic lives, how state is shaped, how layer boundaries are enforced, and how accessibility is treated as a constraint from day one rather than retrofitted later.
 
 **[Play it live →](https://ku5ic.github.io/battleship/)**
 
@@ -11,10 +11,10 @@ A Battleship game built in React and TypeScript — not as an end in itself, but
 Five claims. Each is verifiable by opening the referenced files.
 
 **1. Domain logic is fully decoupled from React.**
-Game rules — hit detection, sunk ship resolution, turn management, game-over detection — live in pure TypeScript functions under `engine/` and `services/`. They have no React imports. The same engine reducers power both the browser UI and a standalone CLI runner (`src/cli/`) with zero modifications. The CLI is not a demo — it is proof that the layer boundaries are real.
+Game rules (hit detection, sunk ship resolution, turn management, game-over detection) live in pure TypeScript functions under `engine/` and `services/`. They have no React imports. The same engine reducers power both the browser UI and a standalone CLI runner (`src/cli/`) with zero modifications. The CLI is not a demo — it is proof that the layer boundaries are real.
 
 **2. State is minimal and derived, not duplicated.**
-Each game hook persists only what cannot be computed: the shots map, the last shot result, and (in vs-computer mode) the active turn. Everything else — whether a cell is hit, whether a ship is sunk, whether the game is over, who won — is derived via `useMemo`. There is one source of truth per fact. Open any hook in `hooks/` and look for `useState` calls: you will find two or three, not ten.
+Each game hook persists only what cannot be computed: the shots map, the last shot result, and (in vs-computer mode) the active turn. Everything else — whether a cell is hit, whether a ship is sunk, whether the game is over, who won — is derived via `useMemo`. There is one source of truth per fact. Open any hook in `hooks/` and look for persisted state: you will find `useReducer` with two or three fields, not ten.
 
 **3. Atomic state transitions prevent inconsistent renders.**
 Firing a shot updates the shots map and the last result in a single `useReducer` dispatch. Two separate `useState` calls would create a frame where the shot count and the result disagree. The reducer is synchronous and pure — `(state, action) => state` — with side effects (AI delay, focus management) handled outside the reducer in `useEffect`.
@@ -51,7 +51,7 @@ src/
       hooks/                  # useSinglePlayerGame, useVsComputerGame — wiring over engine
       services/               # Pure rule evaluation and AI coordinate selection
       types/                  # All domain types — single source of truth
-      utils/                  # Coordinate helpers — toKey, fromKey, and nothing else
+      utils/                  # Coordinate helpers — toKey, fromKey, allBoardKeys, and related utilities
   lib/                        # Shared utilities (cn)
   test/                       # Mirrors src/ — one test file per source file
 ```
@@ -65,12 +65,12 @@ Each layer has a single responsibility. `services/` owns rules but not state tra
 | Layer       | Technology                                                     |
 | ----------- | -------------------------------------------------------------- |
 | UI          | React 19                                                       |
-| Language    | TypeScript — strict mode, `any` forbidden                      |
+| Language    | TypeScript (strict mode, `any` forbidden)                      |
 | Build       | Vite                                                           |
 | Styling     | Tailwind CSS v4 via `@tailwindcss/vite`                        |
 | Testing     | Vitest + Testing Library                                       |
-| Linting     | ESLint 9 — flat config, `strictTypeChecked`, `jsx-a11y` plugin |
-| Formatting  | Prettier — enforced in CI                                      |
+| Linting     | ESLint 9 with flat config, `strictTypeChecked`, and `jsx-a11y` |
+| Formatting  | Prettier, enforced in CI                                       |
 
 ---
 
@@ -102,7 +102,7 @@ A terminal interface that drives the same engine reducers as the React frontend.
 npm run cli
 ```
 
-The CLI omits colours, ANSI formatting, game persistence, and the AI shot delay (a UI affordance for the browser — in a terminal, results print synchronously). Both modes use randomly generated fleets; there is no placement phase.
+The CLI omits colours, ANSI formatting, game persistence, and the AI shot delay. In a terminal, results print synchronously, so the delay serves no purpose. Both modes use randomly generated fleets; there is no placement phase.
 
 ---
 
