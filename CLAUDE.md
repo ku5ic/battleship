@@ -18,20 +18,19 @@ This file governs how Claude Code operates in this repository. Read it in full b
 ```
 src/
   app/                          # App.tsx — entry point and mode toggle only
+  battleship/
+    components/                 # Presentational feature components, props-in/callbacks-out
+    constants/                  # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
+    data/                       # config.ts (RAW_GAME_CONFIG), layout.ts (parseLayout — test-only)
+    engine/                     # Pure (state, action) => state reducers and selectors — no React
+    hooks/                      # useSinglePlayerGame, useVsComputerGame — wiring over engine/
+    services/                   # Pure rule evaluation and AI functions — no React
+    types/                      # All domain types — single source of truth
+    utils/                      # Pure coordinate helpers
   cli/                          # Terminal runner — index.ts (entry), loop.ts, renderer.ts, input.ts
   components/
     board/                      # Board, Cell, useBoardNavigation — generic grid rendering + keyboard navigation, no domain knowledge
     game/                       # SinglePlayerGame, VsComputerGame — wiring only
-  features/
-    battleship/
-      components/               # Presentational feature components, props-in/callbacks-out
-      constants/                # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
-      data/                     # config.ts (RAW_GAME_CONFIG), layout.ts (parseLayout — test-only)
-      engine/                   # Pure (state, action) => state reducers and selectors — no React
-      hooks/                    # useSinglePlayerGame, useVsComputerGame — wiring over engine/
-      services/                 # Pure rule evaluation and AI functions — no React
-      types/                    # All domain types — single source of truth
-      utils/                    # Pure coordinate helpers
   lib/                          # Shared utilities — cn() only
   test/                         # Mirrors src/ — one test file per source file
 ```
@@ -99,7 +98,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 - `SinglePlayerGame` and `VsComputerGame` are wiring components — the only place hooks are called. They pass results down as props; they contain no logic of their own.
 - Wiring components are the sole callers of their respective hooks.
 
-### `features/battleship/components/`
+### `battleship/components/`
 
 - Presentational only: receive props, render UI, emit callbacks.
 - No game rules, no direct hook calls, no data parsing, no domain calculations.

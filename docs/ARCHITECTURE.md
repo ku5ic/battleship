@@ -13,25 +13,24 @@ The domain layer contains no React imports. Game rules are plain TypeScript func
 ```
 src/
   app/                        # Sticky header (h1, controls, status slot) and mode routing
+  battleship/
+    components/               # Presentational feature components, props in / callbacks out
+    constants/                # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
+    data/                     # Raw config (RAW_GAME_CONFIG)
+    engine/                   # Pure (state, action) => state reducers and selectors — no React
+    hooks/                    # useSinglePlayerGame, useVsComputerGame — wiring over engine/
+    services/                 # Pure rule evaluation and AI helper — no React
+    types/                    # All domain types — single source of truth
+    utils/                    # Coordinate utilities
   cli/                        # Terminal runner — index.ts (entry), loop.ts, renderer.ts, input.ts
   components/
     board/                    # Board, Cell, useBoardNavigation — generic grid rendering + keyboard navigation, no domain knowledge
     game/                     # SinglePlayerGame, VsComputerGame — wiring only
-  features/
-    battleship/
-      components/             # Presentational feature components, props in / callbacks out
-      constants/              # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
-      data/                   # Raw config (RAW_GAME_CONFIG)
-      engine/                 # Pure (state, action) => state reducers and selectors — no React
-      hooks/                  # useSinglePlayerGame, useVsComputerGame — wiring over engine/
-      services/               # Pure rule evaluation and AI helper — no React
-      types/                  # All domain types — single source of truth
-      utils/                  # Coordinate utilities
   lib/                        # Shared utilities — cn() only
   test/                       # Mirrors src/ — one test file per source file
 ```
 
-The `battleship` feature folder owns everything domain-specific. The top-level `components/` folder holds components that are domain-aware by props but not by logic — `Board` and `Cell` know how to render a grid, not what a ship or a shot is. This distinction matters: `Board` could render a Minesweeper grid or a crossword without changing its implementation.
+The `battleship/` folder owns everything domain-specific. The top-level `components/` folder holds components that are domain-aware by props but not by logic — `Board` and `Cell` know how to render a grid, not what a ship or a shot is. This distinction matters: `Board` could render a Minesweeper grid or a crossword without changing its implementation.
 
 ---
 

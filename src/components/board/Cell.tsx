@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
-import type { CellStatus, CoordinateKey } from "@/features/battleship/types";
-import { fromKey } from "@/features/battleship/utils/coordinates";
+import type { CellStatus, CoordinateKey } from "@/battleship/types";
+import { fromKey } from "@/battleship/utils/coordinates";
 
 interface CellProps {
   coord: CoordinateKey;

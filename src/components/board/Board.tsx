@@ -1,5 +1,5 @@
 import { cn } from "@/lib/cn";
-import type { CellStatus, CoordinateKey } from "@/features/battleship/types";
+import type { CellStatus, CoordinateKey } from "@/battleship/types";
 import { Cell } from "@/components/board/Cell";
 import { useBoardNavigation } from "@/components/board/useBoardNavigation";
 

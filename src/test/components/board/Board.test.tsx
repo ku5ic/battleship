@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { Board } from "@/components/board/Board";
-import type { CellStatus, CoordinateKey } from "@/features/battleship/types";
+import type { CellStatus, CoordinateKey } from "@/battleship/types";
 
 const noShots = new Map<CoordinateKey, CellStatus>();
 

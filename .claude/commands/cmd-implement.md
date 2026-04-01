@@ -19,7 +19,7 @@ Requires `/plan` to have been approved.
 For each file, output the complete file content with its relative path as a header:
 
 ```
-### src/features/battleship/services/foo.ts
+### src/battleship/services/foo.ts
 
 [complete file content]
 ```
@@ -27,7 +27,7 @@ For each file, output the complete file content with its relative path as a head
 Then:
 
 ```
-### src/test/features/battleship/services/foo.test.ts
+### src/test/battleship/services/foo.test.ts
 
 [complete file content]
 ```

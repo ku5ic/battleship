@@ -2,16 +2,16 @@ import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { VsComputerGame } from "@/components/game/VsComputerGame";
-import { AI_SHOT_DELAY_MS } from "@/features/battleship/hooks/useVsComputerGame";
+import { AI_SHOT_DELAY_MS } from "@/battleship/hooks/useVsComputerGame";
 
 // ---------------------------------------------------------------------------
 // Mock placement to return the same deterministic layout used by the
 // original static config. This keeps all existing coordinate-based
 // assertions valid after the switch to randomised placement.
 // ---------------------------------------------------------------------------
-vi.mock("@/features/battleship/services/placement", async () => {
-  const { parseLayout } = await import("@/features/battleship/data/layout");
-  const { RAW_GAME_CONFIG } = await import("@/features/battleship/data/config");
+vi.mock("@/battleship/services/placement", async () => {
+  const { parseLayout } = await import("@/battleship/data/layout");
+  const { RAW_GAME_CONFIG } = await import("@/battleship/data/config");
   return {
     generateRandomLayout: vi.fn(() => parseLayout(RAW_GAME_CONFIG, 10)),
   };
@@ -24,7 +24,7 @@ vi.mock("@/features/battleship/services/placement", async () => {
 // "9,8" is used — it is never a ship coordinate in either fleet, so it will
 // always be a miss, returning the turn to the player after the delay.
 // ---------------------------------------------------------------------------
-vi.mock("@/features/battleship/services/ai", () => ({
+vi.mock("@/battleship/services/ai", () => ({
   chooseRandomUnfiredCoordinate: vi.fn(() => "9,8" as const),
 }));
 

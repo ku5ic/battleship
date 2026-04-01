@@ -30,9 +30,9 @@ Summary:
   [one paragraph]
 
 Files changed:
-  CREATE src/features/battleship/services/foo.ts
-  MODIFY src/features/battleship/hooks/useBattleshipGame.ts
-  CREATE src/test/features/battleship/services/foo.test.ts
+  CREATE src/battleship/services/foo.ts
+  MODIFY src/battleship/hooks/useBattleshipGame.ts
+  CREATE src/test/battleship/services/foo.test.ts
 
 Key decisions:
   1. Used satisfies for FooResult literal — avoids widening while keeping inference

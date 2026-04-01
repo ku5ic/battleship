@@ -29,7 +29,7 @@ src/test/
   cli/
     input.test.ts
     renderer.test.ts
-  features/battleship/
+  battleship/
     engine/singlePlayer.test.ts
     engine/vsComputer.test.ts
     services/engine.test.ts
@@ -98,7 +98,7 @@ Use `renderHook` from `@testing-library/react`:
 
 ```ts
 import { renderHook, act } from "@testing-library/react";
-import { useSinglePlayerGame } from "@/features/battleship/hooks/useSinglePlayerGame";
+import { useSinglePlayerGame } from "@/battleship/hooks/useSinglePlayerGame";
 
 it("increments shot count after firing", () => {
   const { result } = renderHook(() => useSinglePlayerGame("easy"));
@@ -124,7 +124,7 @@ Wrap all state-triggering calls in `act()`. Use `rerender` from `renderHook` whe
 export const AI_SHOT_DELAY_MS = 600;
 
 // In the test
-vi.mock("@/features/battleship/hooks/useVsComputerGame", async () => {
+vi.mock("@/battleship/hooks/useVsComputerGame", async () => {
   const actual = await vi.importActual("...");
   return { ...actual, AI_SHOT_DELAY_MS: 0 };
 });
@@ -145,7 +145,7 @@ await waitFor(() => {
 Engine files (`engine/singlePlayer.ts`, `engine/vsComputer.ts`) export pure reducer factories and selectors. Test them as plain function calls — no `renderHook`, no React dependency:
 
 ```ts
-import { createSinglePlayerReducer, createSinglePlayerInitialState } from "@/features/battleship/engine/singlePlayer";
+import { createSinglePlayerReducer, createSinglePlayerInitialState } from "@/battleship/engine/singlePlayer";
 
 it("records a miss", () => {
   const reducer = createSinglePlayerReducer(ships, positionIndex);
@@ -164,7 +164,7 @@ Engine tests are the highest-value tests in the codebase — they verify the sta
 Mock `chooseRandomUnfiredCoordinate` to a fixed coordinate so AI-turn tests are deterministic:
 
 ```ts
-vi.mock("@/features/battleship/services/ai", () => ({
+vi.mock("@/battleship/services/ai", () => ({
   chooseRandomUnfiredCoordinate: vi.fn().mockReturnValue("5,5"),
 }));
 ```

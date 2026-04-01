@@ -30,16 +30,16 @@ Run this before every task. No code generation until preflight passes.
 PREFLIGHT REPORT
 ─────────────────
 Relevant existing code:
-  - src/features/battleship/utils/coordinates.ts — toKey, fromKey, allBoardKeys
-  - src/features/battleship/types/index.ts — CoordinateKey, Ship, CellStatus
+  - src/battleship/utils/coordinates.ts — toKey, fromKey, allBoardKeys
+  - src/battleship/types/index.ts — CoordinateKey, Ship, CellStatus
 
 Correct layer for this task: services/
 
 Duplicates found: none
 
 Delta:
-  - CREATE src/features/battleship/services/newThing.ts
-  - MODIFY src/features/battleship/hooks/useBattleshipGame.ts
+  - CREATE src/battleship/services/newThing.ts
+  - MODIFY src/battleship/hooks/useBattleshipGame.ts
 
 CI status: passing (confirm before proceeding)
 ─────────────────

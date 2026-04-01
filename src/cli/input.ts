@@ -1,5 +1,5 @@
-import type { CoordinateKey } from "@/features/battleship/types";
-import { toKey } from "@/features/battleship/utils/coordinates";
+import type { CoordinateKey } from "@/battleship/types";
+import { toKey } from "@/battleship/utils/coordinates";
 
 /** Minimal subset of readline.Interface needed by promptCoordinate. */
 export interface LineReader {

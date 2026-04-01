@@ -2,17 +2,14 @@ import { useEffect } from "react";
 import { Board } from "@/components/board";
 import { Button, Stack, Text } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import {
-  ShipStatusList,
-  ShotResultAnnouncer,
-} from "@/features/battleship/components";
-import { useVsComputerGame } from "@/features/battleship/hooks/useVsComputerGame";
+import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
+import { useVsComputerGame } from "@/battleship/hooks/useVsComputerGame";
 import type {
   CoordinateKey,
   Difficulty,
   HeaderGameStatus,
   Ship,
-} from "@/features/battleship/types";
+} from "@/battleship/types";
 
 interface VsComputerGameProps {
   difficulty: Difficulty;
