@@ -4,11 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { SinglePlayerGame } from "@/components/game/SinglePlayerGame";
 import type { UserEvent } from "@testing-library/user-event";
 
-// ---------------------------------------------------------------------------
 // Mock placement to return the same deterministic layout used by the
 // original static config. This keeps all existing coordinate-based
 // assertions valid after the switch to randomised placement.
-// ---------------------------------------------------------------------------
 vi.mock("@/battleship/services/placement", async () => {
   const { parseLayout } = await import("@/battleship/data/layout");
   const { RAW_GAME_CONFIG } = await import("@/battleship/data/config");
@@ -17,7 +15,7 @@ vi.mock("@/battleship/services/placement", async () => {
   };
 });
 
-// Known ship positions from RAW_GAME_CONFIG — these coordinates are stable
+// Known ship positions from RAW_GAME_CONFIG: these coordinates are stable
 // for the lifetime of the assignment. Using them directly keeps tests readable
 // and avoids re-importing the raw config just to derive what we already know.
 //
@@ -43,7 +41,7 @@ async function fireCoords(user: UserEvent, coords: string[]): Promise<void> {
   }
 }
 
-// All 17 ship cells in order — used by game-over tests.
+// All 17 ship cells in order, used by game-over tests.
 const ALL_SHIP_COORDS = [
   "0,0",
   "1,0", // destroyer
@@ -65,10 +63,6 @@ const ALL_SHIP_COORDS = [
 ];
 
 describe("SinglePlayerGame", () => {
-  // ---------------------------------------------------------------------------
-  // Difficulty — grid dimensions
-  // ---------------------------------------------------------------------------
-
   it("renders a 15×15 grid for moderate difficulty", () => {
     render(<SinglePlayerGame difficulty="moderate" onStatusChange={vi.fn()} />);
     const grid = screen.getByRole("grid", { name: /Battleship board/i });
@@ -76,10 +70,6 @@ describe("SinglePlayerGame", () => {
     expect(grid).toHaveAttribute("aria-colcount", "15");
     expect(screen.getAllByRole("button")).toHaveLength(225);
   });
-
-  // ---------------------------------------------------------------------------
-  // Initial render
-  // ---------------------------------------------------------------------------
 
   it("renders the game board", () => {
     render(<SinglePlayerGame difficulty="easy" onStatusChange={vi.fn()} />);
@@ -102,10 +92,6 @@ describe("SinglePlayerGame", () => {
     ).not.toBeInTheDocument();
   });
 
-  // ---------------------------------------------------------------------------
-  // Miss
-  // ---------------------------------------------------------------------------
-
   it("marks an empty cell as miss after firing", async () => {
     const user = userEvent.setup();
     render(<SinglePlayerGame difficulty="easy" onStatusChange={vi.fn()} />);
@@ -115,14 +101,10 @@ describe("SinglePlayerGame", () => {
     expect(cellByCoord("9,9")).toHaveAccessibleName(/miss/i);
   });
 
-  // ---------------------------------------------------------------------------
-  // Hit
-  // ---------------------------------------------------------------------------
-
   it("marks a ship cell as hit after firing", async () => {
     const user = userEvent.setup();
     render(<SinglePlayerGame difficulty="easy" onStatusChange={vi.fn()} />);
-    // A1 (0,0) — destroyer bow
+    // A1 (0,0): destroyer bow
     await user.click(cellByCoord("0,0"));
     expect(cellByCoord("0,0")).toBeDisabled();
     expect(cellByCoord("0,0")).toHaveAccessibleName(/hit/i);
@@ -134,10 +116,6 @@ describe("SinglePlayerGame", () => {
     await user.click(cellByCoord("0,0"));
     expect(screen.getByLabelText(/Destroyer: 1 of 2 hit/i)).toBeInTheDocument();
   });
-
-  // ---------------------------------------------------------------------------
-  // Sunk ship
-  // ---------------------------------------------------------------------------
 
   it("marks a ship as sunk once all its cells are hit", async () => {
     const user = userEvent.setup();
@@ -153,10 +131,6 @@ describe("SinglePlayerGame", () => {
     await user.click(cellByCoord("0,0")); // one of two destroyer cells
     expect(screen.queryByText("Sunk")).not.toBeInTheDocument();
   });
-
-  // ---------------------------------------------------------------------------
-  // Game over
-  // ---------------------------------------------------------------------------
 
   it("shows the Play again button after all ships are sunk", async () => {
     const user = userEvent.setup();
@@ -176,10 +150,6 @@ describe("SinglePlayerGame", () => {
       screen.getAllByRole("button").filter((b) => !b.hasAttribute("disabled")),
     ).toHaveLength(100);
   });
-
-  // ---------------------------------------------------------------------------
-  // onStatusChange callback
-  // ---------------------------------------------------------------------------
 
   it("calls onStatusChange with initial status on mount", () => {
     const onStatusChange = vi.fn();

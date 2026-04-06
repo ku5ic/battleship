@@ -186,7 +186,7 @@ describe("PlacementScreen", () => {
       />,
     );
 
-    // Select the first ship manually — after that, auto-select kicks in
+    // Select the first ship manually; after that, auto-select kicks in
     const carrierBtn = screen.getByLabelText(
       "Carrier, 5 cells. Select to place.",
     );

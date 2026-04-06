@@ -7,7 +7,7 @@ This file governs how Claude Code operates in this repository. Read it in full b
 ## Read before touching code
 
 1. Search the existing codebase before writing anything. Do not reinvent types, utilities, or logic that already exist.
-2. Produce only the delta — the minimum change that satisfies the task.
+2. Produce only the delta: the minimum change that satisfies the task.
 3. If a task is ambiguous, ask one focused clarification question. Do not guess.
 4. If a request conflicts with the rules below, explain why and propose the correct approach instead of complying.
 
@@ -17,22 +17,22 @@ This file governs how Claude Code operates in this repository. Read it in full b
 
 ```
 src/
-  app/                          # App.tsx — entry point and mode toggle only
+  app/                          # App.tsx: entry point and mode toggle only
   battleship/
     components/                 # Presentational feature components, props-in/callbacks-out
     constants/                  # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
-    data/                       # config.ts (RAW_GAME_CONFIG), layout.ts (parseLayout — test-only)
-    engine/                     # Pure (state, action) => state reducers and selectors — no React
-    hooks/                      # useSinglePlayerGame, useVsComputerGame — wiring over engine/
-    services/                   # Pure rule evaluation and AI functions — no React
-    types/                      # All domain types — single source of truth
+    data/                       # config.ts (RAW_GAME_CONFIG), layout.ts (parseLayout, test-only)
+    engine/                     # Pure (state, action) => state reducers and selectors, no React
+    hooks/                      # useSinglePlayerGame, useVsComputerGame: wiring over engine/
+    services/                   # Pure rule evaluation and AI functions, no React
+    types/                      # All domain types: single source of truth
     utils/                      # Pure coordinate helpers
-  cli/                          # Terminal runner — index.ts (entry), loop.ts, renderer.ts, input.ts
+  cli/                          # Terminal runner: index.ts (entry), loop.ts, renderer.ts, input.ts
   components/
-    board/                      # Board, Cell, useBoardNavigation — generic grid rendering + keyboard navigation, no domain knowledge
-    game/                       # SinglePlayerGame, VsComputerGame — wiring only
-  lib/                          # Shared utilities — cn() only
-  test/                         # Mirrors src/ — one test file per source file
+    board/                      # Board, Cell, useBoardNavigation: generic grid rendering + keyboard navigation, no domain knowledge
+    game/                       # SinglePlayerGame, VsComputerGame: wiring only
+  lib/                          # Shared utilities: cn() only
+  test/                         # Mirrors src/: one test file per source file
 ```
 
 Every new file must land in the correct layer. If the right layer is ambiguous, ask before creating.
@@ -51,7 +51,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 ### `data/`
 
 - Parses and validates raw input once at module load.
-- `parseLayout` throws on invalid input — this is intentional. The layout is static; an error is a programming mistake, not a runtime condition.
+- `parseLayout` throws on invalid input. This is intentional. The layout is static; an error is a programming mistake, not a runtime condition.
 - Parsed output is exported as a module-scope constant. Nothing re-parses at runtime.
 - No React, no hooks, no side effects beyond the initial parse.
 
@@ -66,8 +66,8 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 - Pure functions only. No React imports, no hooks, no `useEffect`.
 - Own all rule evaluation: hit detection, miss detection, sunk logic, game-over logic, AI coordinate selection, random fleet generation.
 - Independently unit testable with no React dependency.
-- Never call `toKey()` inline — import from `utils/`. Never reconstruct a `CoordinateKey` by string interpolation outside `toKey`.
-- Services own rules but not state transitions — that belongs in `engine/`.
+- Never call `toKey()` inline; import from `utils/`. Never reconstruct a `CoordinateKey` by string interpolation outside `toKey`.
+- Services own rules but not state transitions. That belongs in `engine/`.
 
 ### `engine/`
 
@@ -80,7 +80,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 ### `hooks/`
 
 - React wiring over `engine/`. Import a reducer factory from `engine/`, pass it to `useReducer`.
-- Hook bodies contain no reducer logic — only side-effect coordination and derived value assembly.
+- Hook bodies contain no reducer logic, only side-effect coordination and derived value assembly.
 - Derive values with `useMemo`. Do not persist what can be derived.
 - When values depend on a stable prop (e.g. `boardSize` from `difficulty`), compute them inside the hook via `useMemo`. Module-scope constants are only appropriate when the value is truly static.
 - Hooks expose typed, view-ready data. They do not expose raw state slices.
@@ -90,19 +90,19 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 - I/O bootstrap and terminal rendering. No React, no game rules, no domain calculations.
 - Drives engine reducers directly as `(state, action) => state` functions.
 - `LineReader` interface abstracts Node's readline to avoid importing Node types under the `vite/client` type scope.
-- No tests — all meaningful logic is covered by engine, services, renderer, and input tests.
+- No tests. All meaningful logic is covered by engine, services, renderer, and input tests.
 
 ### `components/board/` and `components/game/`
 
 - `Board` and `Cell` render a grid. They have no knowledge of ships, fleets, or game rules.
-- `SinglePlayerGame` and `VsComputerGame` are wiring components — the only place hooks are called. They pass results down as props; they contain no logic of their own.
+- `SinglePlayerGame` and `VsComputerGame` are wiring components. They are the only place hooks are called. They pass results down as props; they contain no logic of their own.
 - Wiring components are the sole callers of their respective hooks.
 
 ### `battleship/components/`
 
 - Presentational only: receive props, render UI, emit callbacks.
 - No game rules, no direct hook calls, no data parsing, no domain calculations.
-- Derive nothing from raw state — receive only what the hook has already prepared.
+- Derive nothing from raw state. Receive only what the hook has already prepared.
 
 ### `app/`
 
@@ -151,7 +151,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 
 ## Coordinate rules
 
-- `CoordinateKey` is `${number},${number}` — a template literal type, not a plain string.
+- `CoordinateKey` is `${number},${number}`, a template literal type, not a plain string.
 - `toKey(col, row)` is the only legal production site. No inline string interpolation.
 - `RawCoordinate` `[col, row]` tuples exist only in `data/` and are converted immediately on parse.
 - `fromKey` is the only legal parse site. No manual splitting of key strings.
@@ -170,7 +170,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 
 ---
 
-## Accessibility rules (WCAG 2.2 AA — non-negotiable)
+## Accessibility rules (WCAG 2.2 AA, non-negotiable)
 
 - Interactive cells must be `<button>` elements. No `div` click handlers.
 - Every cell must have a computed accessible name encoding: column letter + row number + current state. Fireable cells must append a hint (`"Press Space to fire"`).
@@ -188,18 +188,18 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 
 ### Domain (engine, services, utils, data)
 
-- Thorough unit coverage. Pure functions with no dependencies — test every rule, edge case, and guard.
+- Thorough unit coverage. Pure functions with no dependencies. Test every rule, edge case, and guard.
 - A test failure here means a game rule is broken.
 
 ### Hooks
 
 - Test with `renderHook`.
-- Export timing constants (e.g. `AI_SHOT_DELAY_MS`) and override to `0` in tests. Do not use `vi.useFakeTimers()` — it conflicts with `userEvent`.
+- Export timing constants (e.g. `AI_SHOT_DELAY_MS`) and override to `0` in tests. Do not use `vi.useFakeTimers()`. It conflicts with `userEvent`.
 - Mock non-deterministic collaborators (e.g. `chooseRandomUnfiredCoordinate`) to a fixed coordinate.
 
 ### Components
 
-- Use `data-coord` attributes for cell targeting. Do not use `aria-label` regex patterns — they are ambiguous against row-10 variants (e.g. `/B1/` matches `B10`).
+- Use `data-coord` attributes for cell targeting. Do not use `aria-label` regex patterns. They are ambiguous against row-10 variants (e.g. `/B1/` matches `B10`).
 - Use exact rendered strings in assertions. Avoid loose regex patterns.
 - Cover: rendering, user interaction, hit/miss rendering, sunk messaging, game-over display.
 - Include accessibility-relevant assertions where practical.
@@ -215,7 +215,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 
 - Tailwind utility classes for all styling. No inline `style` props without a documented reason.
 - Use `cn()` from `lib/` for conditional class composition.
-- Do not produce long, unreadable class strings on a single element — extract a small presentational component if it aids clarity.
+- Do not produce long, unreadable class strings on a single element. Extract a small presentational component if it aids clarity.
 - No `@apply` unless the use case is explicitly justified.
 
 ---
@@ -224,7 +224,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 
 - Code must read naturally, as though manually written and reviewed by a senior engineer.
 - Names must be meaningful and consistent with existing conventions in the codebase.
-- Avoid generic or obvious comments. Comments explain *why*, not *what*.
+- Avoid generic or obvious comments. Comments explain _why_, not _what_.
 - Avoid unnecessary abstraction. Every abstraction must be justifiable in a code review.
 - Prefer explicit over magical. Prefer pure functions for game rules.
 - Implement only what is needed. Structure for clean extension, but do not build the extension.
@@ -240,4 +240,4 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 4. Verify: does each new function, type, or component have a clear, single responsibility?
 5. Verify: does anything new duplicate something that already exists?
 6. Verify: do all four CI gates still pass after the change?
-7. List every modified file with its relative path. Do not summarise content — show the diff or full file.
+7. List every modified file with its relative path. Do not summarise content. Show the diff or full file.

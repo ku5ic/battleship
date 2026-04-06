@@ -17,7 +17,7 @@ Run after `/cmd-verify` passes.
 
 4. **Deferred observations.** Things noticed during implementation that are worth improving but were out of scope. Frame as future work, not current problems.
 
-5. **Verify status.** Paste the verify report from `/verify`.
+5. **Verify status.** Paste the verify report from `/cmd-verify`.
 
 6. **Review prompts.** Specific questions for the reviewer — things Claude is uncertain about or where human judgement is explicitly needed.
 

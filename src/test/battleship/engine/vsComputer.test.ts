@@ -9,7 +9,6 @@ import {
 } from "@/battleship/engine/vsComputer";
 import type { CoordinateKey, Ship } from "@/battleship/types";
 
-// ---------------------------------------------------------------------------
 // Deterministic fleet from the static config. Both boards use the same
 // layout so that coordinate assertions are predictable.
 //
@@ -18,17 +17,12 @@ import type { CoordinateKey, Ship } from "@/battleship/types";
 //   cruiser:    [8,1] [8,2] [8,3]
 //   battleship: [5,2] [5,3] [5,4] [5,5]
 //   carrier:    [2,9] [3,9] [4,9] [5,9] [6,9]
-// ---------------------------------------------------------------------------
 
 const ships: Ship[] = parseLayout(RAW_GAME_CONFIG, 10);
 const positionIndex = buildPositionIndex(ships);
 
 // Both boards share the same position index for test simplicity.
 const reducer = createVsComputerReducer(positionIndex, positionIndex);
-
-// ---------------------------------------------------------------------------
-// createVsComputerInitialState
-// ---------------------------------------------------------------------------
 
 describe("createVsComputerInitialState", () => {
   it("returns empty maps, null results, and player turn", () => {
@@ -49,11 +43,7 @@ describe("createVsComputerInitialState", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// createVsComputerReducer — PLAYER_FIRE
-// ---------------------------------------------------------------------------
-
-describe("createVsComputerReducer — PLAYER_FIRE", () => {
+describe("createVsComputerReducer: PLAYER_FIRE", () => {
   it("records a miss and switches turn to computer", () => {
     const state = reducer(createVsComputerInitialState(), {
       type: "PLAYER_FIRE",
@@ -102,11 +92,7 @@ describe("createVsComputerReducer — PLAYER_FIRE", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// createVsComputerReducer — COMPUTER_FIRE
-// ---------------------------------------------------------------------------
-
-describe("createVsComputerReducer — COMPUTER_FIRE", () => {
+describe("createVsComputerReducer: COMPUTER_FIRE", () => {
   // Helper: put the reducer into computer's turn.
   function computerTurnState() {
     return reducer(createVsComputerInitialState(), {
@@ -148,11 +134,7 @@ describe("createVsComputerReducer — COMPUTER_FIRE", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// createVsComputerReducer — RESET
-// ---------------------------------------------------------------------------
-
-describe("createVsComputerReducer — RESET", () => {
+describe("createVsComputerReducer: RESET", () => {
   it("returns a fresh initial state", () => {
     let state = createVsComputerInitialState();
     state = reducer(state, { type: "PLAYER_FIRE", coordinate: "0,0" });
@@ -166,11 +148,7 @@ describe("createVsComputerReducer — RESET", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// createVsComputerReducer — immutability
-// ---------------------------------------------------------------------------
-
-describe("createVsComputerReducer — immutability", () => {
+describe("createVsComputerReducer: immutability", () => {
   it("does not mutate the previous state on PLAYER_FIRE", () => {
     const before = createVsComputerInitialState();
     reducer(before, { type: "PLAYER_FIRE", coordinate: "9,9" });
@@ -197,11 +175,7 @@ describe("createVsComputerReducer — immutability", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// createVsComputerReducer — sunk outcome
-// ---------------------------------------------------------------------------
-
-describe("createVsComputerReducer — sunk outcome", () => {
+describe("createVsComputerReducer: sunk outcome", () => {
   it("records a sunk outcome when the last cell of a ship is hit", () => {
     let state = createVsComputerInitialState();
     state = reducer(state, { type: "PLAYER_FIRE", coordinate: "0,0" });
@@ -215,11 +189,7 @@ describe("createVsComputerReducer — sunk outcome", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// createVsComputerReducer — full game
-// ---------------------------------------------------------------------------
-
-describe("createVsComputerReducer — game-over guard is external", () => {
+describe("createVsComputerReducer: game-over guard is external", () => {
   it("reducer does not block shots after all ships are sunk (guard lives in hook)", () => {
     const allPositions: CoordinateKey[] = [
       "2,9",
@@ -247,17 +217,13 @@ describe("createVsComputerReducer — game-over guard is external", () => {
     }
 
     // All hits keep the player's turn, so we can still fire.
-    // The reducer itself does NOT guard game-over — that's the hook's job.
+    // The reducer itself does NOT guard game-over: that is the hook's job.
     const shotsAtEnd = state.playerShots.size;
     state = reducer(state, { type: "PLAYER_FIRE", coordinate: "9,9" });
 
     expect(state.playerShots.size).toBe(shotsAtEnd + 1);
   });
 });
-
-// ---------------------------------------------------------------------------
-// selectWinner
-// ---------------------------------------------------------------------------
 
 describe("selectWinner", () => {
   it("returns null when neither player has won", () => {

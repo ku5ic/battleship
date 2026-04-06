@@ -8,7 +8,7 @@ import type {
 /**
  * Converts a [col, row] tuple from the raw layout data into the canonical
  * string key used throughout the app. This is the single point where raw
- * input is normalized — nothing outside this module should produce keys
+ * input is normalized. Nothing outside this module should produce keys
  * by hand.
  */
 export function toKey(col: number, row: number): CoordinateKey {

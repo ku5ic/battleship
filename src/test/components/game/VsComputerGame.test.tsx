@@ -4,11 +4,9 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { VsComputerGame } from "@/components/game/VsComputerGame";
 import { AI_SHOT_DELAY_MS } from "@/battleship/hooks/useVsComputerGame";
 
-// ---------------------------------------------------------------------------
 // Mock placement to return the same deterministic layout used by the
 // original static config. This keeps all existing coordinate-based
 // assertions valid after the switch to randomised placement.
-// ---------------------------------------------------------------------------
 vi.mock("@/battleship/services/placement", async () => {
   const { parseLayout } = await import("@/battleship/data/layout");
   const { RAW_GAME_CONFIG } = await import("@/battleship/data/config");
@@ -17,18 +15,16 @@ vi.mock("@/battleship/services/placement", async () => {
   };
 });
 
-// ---------------------------------------------------------------------------
 // Mock the AI service so the computer always fires at a known empty cell
 // and the shot is deterministic across all tests.
 //
-// "9,8" is used — it is never a ship coordinate in either fleet, so it will
+// "9,8" is used: it is never a ship coordinate in either fleet, so it will
 // always be a miss, returning the turn to the player after the delay.
-// ---------------------------------------------------------------------------
 vi.mock("@/battleship/services/ai", () => ({
   chooseRandomUnfiredCoordinate: vi.fn(() => "9,8" as const),
 }));
 
-// Ship positions — identical on both boards (shared fleet):
+// Ship positions, identical on both boards (shared fleet):
 //   destroyer:  [0,0] [1,0]
 //   submarine:  [3,0] [3,1] [3,2]
 //   cruiser:    [8,1] [8,2] [8,3]
@@ -69,7 +65,6 @@ function cellIn(section: HTMLElement, coord: string): HTMLElement {
   return el;
 }
 
-// ---------------------------------------------------------------------------
 // Timer strategy
 //
 // The vs-computer hook's AI turn fires after a real setTimeout(AI_SHOT_DELAY_MS).
@@ -77,7 +72,6 @@ function cellIn(section: HTMLElement, coord: string): HTMLElement {
 // track wall-clock time so userEvent's internal delays resolve naturally,
 // while still allowing manual advancement via vi.advanceTimersByTime() to
 // flush the AI timer deterministically without waiting the full 1000ms.
-// ---------------------------------------------------------------------------
 
 describe("VsComputerGame", () => {
   beforeEach(() => {
@@ -88,10 +82,6 @@ describe("VsComputerGame", () => {
   afterEach(() => {
     vi.useRealTimers();
   });
-
-  // ---------------------------------------------------------------------------
-  // Initial render
-  // ---------------------------------------------------------------------------
 
   it("renders both board sections", () => {
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
@@ -124,10 +114,6 @@ describe("VsComputerGame", () => {
     expect(buttons.some((b) => !b.hasAttribute("disabled"))).toBe(true);
   });
 
-  // ---------------------------------------------------------------------------
-  // Player fires — hit (keeps turn)
-  // ---------------------------------------------------------------------------
-
   it("marks the opponent cell as hit when the player hits a ship", async () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
@@ -136,10 +122,6 @@ describe("VsComputerGame", () => {
 
     expect(cellIn(opponentBoard(), "0,0")).toHaveAccessibleName(/hit/i);
   });
-
-  // ---------------------------------------------------------------------------
-  // Player fires — miss (hands turn to computer)
-  // ---------------------------------------------------------------------------
 
   it("marks the opponent cell as miss when the player fires at empty water", async () => {
     const user = userEvent.setup();
@@ -161,10 +143,6 @@ describe("VsComputerGame", () => {
     expect(buttons.every((b) => b.hasAttribute("disabled"))).toBe(true);
   });
 
-  // ---------------------------------------------------------------------------
-  // Computer fires (fake timers + manual advancement, coordinate = "9,8")
-  // ---------------------------------------------------------------------------
-
   it("computer fires on the player board after the delay", async () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
@@ -178,10 +156,6 @@ describe("VsComputerGame", () => {
     expect(cellIn(yourBoard(), "9,8")).toHaveAccessibleName(/miss/i);
   });
 
-  // ---------------------------------------------------------------------------
-  // Sunk ship on opponent board
-  // ---------------------------------------------------------------------------
-
   it("marks the destroyer as sunk after both cells are hit", async () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
@@ -193,10 +167,6 @@ describe("VsComputerGame", () => {
       within(opponentBoard()).getByLabelText(/Destroyer: sunk/i),
     ).toBeInTheDocument();
   });
-
-  // ---------------------------------------------------------------------------
-  // Player wins
-  // ---------------------------------------------------------------------------
 
   it("disables all opponent cells after the player wins", async () => {
     const user = userEvent.setup();
@@ -223,10 +193,6 @@ describe("VsComputerGame", () => {
     ).toBeInTheDocument();
   });
 
-  // ---------------------------------------------------------------------------
-  // Reset
-  // ---------------------------------------------------------------------------
-
   it("resets both boards when Restart is clicked", async () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
@@ -241,10 +207,10 @@ describe("VsComputerGame", () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
-    await user.click(cellIn(opponentBoard(), "9,9")); // miss — AI timer starts
+    await user.click(cellIn(opponentBoard(), "9,9")); // miss, AI timer starts
     await user.click(screen.getByRole("button", { name: "Restart" }));
 
-    // Flush the cancelled timer — if the timeout weren't cleared by reset,
+    // Flush the cancelled timer: if the timeout weren't cleared by reset,
     // the AI shot would land and mark a cell on the player board.
     act(() => {
       vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
@@ -256,10 +222,6 @@ describe("VsComputerGame", () => {
 
     expect(firedOnPlayerBoard).toHaveLength(0);
   });
-
-  // ---------------------------------------------------------------------------
-  // onStatusChange callback
-  // ---------------------------------------------------------------------------
 
   it("calls onStatusChange with initial vs-computer status on mount", () => {
     const onStatusChange = vi.fn();
@@ -283,7 +245,7 @@ describe("VsComputerGame", () => {
       <VsComputerGame difficulty="easy" onStatusChange={onStatusChange} />,
     );
 
-    await user.click(cellIn(opponentBoard(), "9,9")); // miss — triggers AI turn
+    await user.click(cellIn(opponentBoard(), "9,9")); // miss, triggers AI turn
 
     expect(onStatusChange.mock.lastCall).toEqual([
       {
@@ -295,14 +257,10 @@ describe("VsComputerGame", () => {
     ]);
   });
 
-  // ---------------------------------------------------------------------------
-  // playerShips prop
-  // ---------------------------------------------------------------------------
-
   it("uses provided playerShips on the player board", async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
-    // Custom layout: single destroyer at 9,8 — exactly where the AI fires
+    // Custom layout: single destroyer at 9,8, exactly where the AI fires
     const customPlayerShips = [
       {
         id: "carrier" as const,
@@ -353,7 +311,7 @@ describe("VsComputerGame", () => {
     });
 
     // The AI fires at "9,8" (our mocked AI target), which is a destroyer
-    // coordinate in our custom layout — should register as a hit
+    // coordinate in our custom layout, so it should register as a hit
     const cell = cellIn(yourBoard(), "9,8");
     expect(cell).toBeDisabled();
   });

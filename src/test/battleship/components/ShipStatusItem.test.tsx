@@ -3,10 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 import { ShipStatusItem } from "@/battleship/components/ShipStatusItem";
 
 describe("ShipStatusItem", () => {
-  // ---------------------------------------------------------------------------
-  // Display name
-  // ---------------------------------------------------------------------------
-
   it("renders the human-readable ship name", () => {
     render(
       <ShipStatusItem id="destroyer" size={2} hitCount={0} isSunk={false} />,
@@ -31,10 +27,6 @@ describe("ShipStatusItem", () => {
     }
   });
 
-  // ---------------------------------------------------------------------------
-  // Pip count
-  // ---------------------------------------------------------------------------
-
   it("renders one pip per ship cell", () => {
     const { container } = render(
       <ShipStatusItem id="carrier" size={5} hitCount={0} isSunk={false} />,
@@ -51,10 +43,6 @@ describe("ShipStatusItem", () => {
     const pipContainer = container.querySelector('[aria-hidden="true"]');
     expect(pipContainer?.children).toHaveLength(2);
   });
-
-  // ---------------------------------------------------------------------------
-  // Accessible label — hit progress
-  // ---------------------------------------------------------------------------
 
   it("accessible label reflects zero hits", () => {
     render(
@@ -77,10 +65,6 @@ describe("ShipStatusItem", () => {
     expect(screen.getByLabelText("Destroyer: sunk")).toBeInTheDocument();
   });
 
-  // ---------------------------------------------------------------------------
-  // Sunk badge
-  // ---------------------------------------------------------------------------
-
   it("shows a Sunk badge when the ship is sunk", () => {
     render(
       <ShipStatusItem id="destroyer" size={2} hitCount={2} isSunk={true} />,
@@ -94,10 +78,6 @@ describe("ShipStatusItem", () => {
     );
     expect(screen.queryByText("Sunk")).not.toBeInTheDocument();
   });
-
-  // ---------------------------------------------------------------------------
-  // Visual sunk state
-  // ---------------------------------------------------------------------------
 
   it("applies strikethrough styling to the ship name when sunk", () => {
     render(
@@ -114,10 +94,6 @@ describe("ShipStatusItem", () => {
     const nameEl = screen.getByText("Destroyer");
     expect(nameEl).not.toHaveClass("line-through");
   });
-
-  // ---------------------------------------------------------------------------
-  // Placement mode — onClick / isPlaced / isSelected
-  // ---------------------------------------------------------------------------
 
   it("renders as div when onClick is absent", () => {
     const { container } = render(

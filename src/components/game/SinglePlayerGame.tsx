@@ -14,7 +14,7 @@ interface SinglePlayerGameProps {
  * Wires the game hook to the presentational layer.
  *
  * This is the only component that calls useSinglePlayerGame. Everything below
- * it receives plain props and emits callbacks — no child is aware the hook
+ * it receives plain props and emits callbacks. No child is aware the hook
  * exists.
  */
 export function SinglePlayerGame({

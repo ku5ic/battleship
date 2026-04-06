@@ -103,7 +103,7 @@ export function App() {
 
             <div className="w-px h-4 bg-slate-600" aria-hidden="true" />
 
-            {/* Difficulty selector — role="group" provides announced context so
+            {/* Difficulty selector: role="group" provides announced context so
                 "Easy / Moderate / Hard" are not ambiguous in isolation. */}
             <div role="group" aria-label="Difficulty" className="flex gap-2">
               <Button

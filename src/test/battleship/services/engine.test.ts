@@ -11,13 +11,11 @@ import {
 import { allBoardKeys } from "@/battleship/utils/coordinates";
 import type { CellStatus, CoordinateKey, Ship } from "@/battleship/types";
 
-// ---------------------------------------------------------------------------
 // Fixtures
 //
 // Minimal fleet that exercises all code paths without carrying the full 5-ship
 // game layout into every test. Ships are typed as the real Ship interface so
 // we catch any future type drift immediately.
-// ---------------------------------------------------------------------------
 
 const destroyer: Ship = {
   id: "destroyer",
@@ -51,10 +49,6 @@ function shotsMap(
   return new Map(keys.map((k) => [k, status]));
 }
 
-// ---------------------------------------------------------------------------
-// buildPositionIndex
-// ---------------------------------------------------------------------------
-
 describe("buildPositionIndex", () => {
   it("maps every ship coordinate to its ship", () => {
     expect(index.get("0,0")).toBe(destroyer);
@@ -79,10 +73,6 @@ describe("buildPositionIndex", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// resolveShot
-// ---------------------------------------------------------------------------
-
 describe("resolveShot", () => {
   it("returns 'miss' for an empty cell", () => {
     const result = resolveShot("9,9", new Map(), index);
@@ -98,7 +88,7 @@ describe("resolveShot", () => {
   });
 
   it("returns 'sunk' when the shot completes a ship", () => {
-    // destroyer: ["0,0", "1,0"] — first cell already hit
+    // destroyer: ["0,0", "1,0"], first cell already hit
     const shots = shotsMap(["0,0"]);
     const result = resolveShot("1,0", shots, index);
     expect(result.outcome).toBe("sunk");
@@ -146,10 +136,6 @@ describe("resolveShot", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// isShipSunk
-// ---------------------------------------------------------------------------
-
 describe("isShipSunk", () => {
   it("returns false when no shots have been fired", () => {
     expect(isShipSunk(destroyer, new Map())).toBe(false);
@@ -171,10 +157,6 @@ describe("isShipSunk", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// isGameOver
-// ---------------------------------------------------------------------------
-
 describe("isGameOver", () => {
   it("returns false when no ships are sunk", () => {
     expect(isGameOver(fleet, new Set())).toBe(false);
@@ -194,10 +176,6 @@ describe("isGameOver", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// outcomeToStatus
-// ---------------------------------------------------------------------------
-
 describe("outcomeToStatus", () => {
   it("maps 'hit' to 'hit'", () => {
     expect(outcomeToStatus("hit")).toBe("hit");
@@ -216,10 +194,6 @@ describe("outcomeToStatus", () => {
     expect(outcomeToStatus("already-fired")).toBeNull();
   });
 });
-
-// ---------------------------------------------------------------------------
-// computeShipHitCounts
-// ---------------------------------------------------------------------------
 
 describe("computeShipHitCounts", () => {
   it("returns zero for every ship when no shots have been fired", () => {
@@ -258,10 +232,6 @@ describe("computeShipHitCounts", () => {
     expect(counts.size).toBe(0);
   });
 });
-
-// ---------------------------------------------------------------------------
-// nextUnfiredCoordinate
-// ---------------------------------------------------------------------------
 
 describe("nextUnfiredCoordinate", () => {
   const keys = allBoardKeys(3); // 9 keys: "0,0" through "2,2"

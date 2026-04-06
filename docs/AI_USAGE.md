@@ -8,7 +8,7 @@ This project was built with AI assistance. This document describes how that assi
 
 AI in this project operates as a capable but supervised collaborator. It generates drafts. I make decisions.
 
-Every architectural choice — what to persist vs derive, where logic lives, how layers interact, what the test strategy is — was made before any code was written and owned throughout. AI did not design the architecture. It implemented a design that already existed as a specification.
+Every architectural choice (what to persist vs derive, where logic lives, how layers interact, what the test strategy is) was made before any code was written and owned throughout. AI did not design the architecture. It implemented a design that already existed as a specification.
 
 ---
 
@@ -17,18 +17,18 @@ Every architectural choice — what to persist vs derive, where logic lives, how
 Development followed a strict phase sequence encoded in `.claude/commands/`:
 
 ```
-/cmd-preflight → /cmd-plan → [approval] → /cmd-implement → /cmd-verify → /cmd-review → [approval]
+/cmd-preflight -> /cmd-plan → [approval] -> /cmd-implement → /cmd-verify -> /cmd-review -> [approval]
 ```
 
-**Preflight** — before any task, audit the existing codebase. Identify relevant types, utilities, and logic. State the delta: what needs to change and why. No code is generated in this phase.
+**Preflight:** before any task, audit the existing codebase. Identify relevant types, utilities, and logic. State the delta: what needs to change and why. No code is generated in this phase.
 
-**Plan** — produce a reviewable implementation plan covering types, function signatures, state shape, accessibility impact, and test strategy. One sentence per file to be created or modified. This plan is a checkpoint, not a suggestion — it requires explicit approval before anything is written.
+**Plan:** produce a reviewable implementation plan covering types, function signatures, state shape, accessibility impact, and test strategy. One sentence per file to be created or modified. This plan is a checkpoint, not a suggestion. It requires explicit approval before anything is written.
 
-**Implement** — write the approved code, one complete file at a time. No scope expansion. No reinventing what already exists.
+**Implement:** write the approved code, one complete file at a time. No scope expansion. No reinventing what already exists.
 
-**Verify** — check every constraint before human review: architecture boundaries, TypeScript correctness, accessibility compliance, test coverage, CI simulation. If anything fails, fix it before proceeding.
+**Verify:** check every constraint before human review: architecture boundaries, TypeScript correctness, accessibility compliance, test coverage, CI simulation. If anything fails, fix it before proceeding.
 
-**Review** — surface the implementation with decisions, tradeoffs, and deferred observations. Explicit review prompts for anything requiring human judgment.
+**Review:** surface the implementation with decisions, tradeoffs, and deferred observations. Explicit review prompts for anything requiring human judgment.
 
 No code was committed that had not passed this sequence. No phase was skipped.
 
@@ -60,4 +60,4 @@ Ad-hoc AI prompting produces inconsistent results. Without a structured workflow
 
 The phase sequence enforces the same discipline I would apply working with a junior engineer: no implementation before the design is agreed, no review request before verification passes, no unexplained decisions in the final output.
 
-The result is a codebase where every file is explainable, every decision is defensible, and the AI's role was to accelerate execution — not to substitute for judgment.
+The result is a codebase where every file is explainable, every decision is defensible, and the AI's role was to accelerate execution, not to substitute for judgment.

@@ -3,10 +3,6 @@ import { describe, expect, it } from "vitest";
 import { GameStatus } from "@/battleship/components/GameStatus";
 
 describe("GameStatus", () => {
-  // ---------------------------------------------------------------------------
-  // In-progress display
-  // ---------------------------------------------------------------------------
-
   it("shows an instruction when no shots have been fired", () => {
     render(<GameStatus isGameOver={false} shotCount={0} />);
     expect(screen.getByText("Select a cell to fire.")).toBeInTheDocument();
@@ -14,7 +10,7 @@ describe("GameStatus", () => {
 
   it("shows a singular shot count after one shot", () => {
     render(<GameStatus isGameOver={false} shotCount={1} />);
-    // Confirm exact singular form — "1 shot fired." not "1 shots fired."
+    // Confirm exact singular form: "1 shot fired." not "1 shots fired."
     expect(screen.getByText("1 shot fired.")).toBeInTheDocument();
   });
 
@@ -27,10 +23,6 @@ describe("GameStatus", () => {
     render(<GameStatus isGameOver={false} shotCount={3} />);
     expect(screen.queryByText("All ships sunk!")).not.toBeInTheDocument();
   });
-
-  // ---------------------------------------------------------------------------
-  // Game-over display
-  // ---------------------------------------------------------------------------
 
   it("shows the victory message when the game is over", () => {
     render(<GameStatus isGameOver={true} shotCount={30} />);
@@ -48,10 +40,6 @@ describe("GameStatus", () => {
     expect(screen.queryByText(/1 shots/)).not.toBeInTheDocument();
   });
 
-  // ---------------------------------------------------------------------------
-  // Accessibility
-  // ---------------------------------------------------------------------------
-
   it("renders a live region when the game is over so assistive tech is notified", () => {
     render(<GameStatus isGameOver={true} shotCount={20} />);
     expect(screen.getByRole("status")).toBeInTheDocument();
@@ -59,7 +47,7 @@ describe("GameStatus", () => {
 
   it("does not replace in-progress text with game-over content before all ships are sunk", () => {
     render(<GameStatus isGameOver={false} shotCount={5} />);
-    // No role="status" wrapping the shot count — that element only appears at game over.
+    // No role="status" wrapping the shot count: that element only appears at game over.
     // The paragraph is present but not wrapped in a live region.
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });

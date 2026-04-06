@@ -43,7 +43,7 @@ Delta:
 
 CI status: passing (confirm before proceeding)
 ─────────────────
-Ready to /plan
+Ready to /cmd-plan
 ```
 
-Do not proceed to `/plan` or `/implement` until this report is complete.
+Do not proceed to `/cmd-plan` or `/cmd-implement` until this report is complete.

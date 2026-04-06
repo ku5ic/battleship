@@ -7,13 +7,11 @@ import type {
 } from "@/battleship/types";
 import { outcomeToStatus, resolveShot } from "@/battleship/services/engine";
 
-// ---------------------------------------------------------------------------
 // State shape
 //
 // Persists only the irreducible minimum for two boards. Everything else
 // (sunkShipIds, isGameOver, winner, isAiThinking) is derived via selectors
 // or inline in the hook body.
-// ---------------------------------------------------------------------------
 
 export interface VsComputerState {
   playerShots: Map<CoordinateKey, CellStatus>;
@@ -30,7 +28,7 @@ export type VsComputerAction =
 
 /**
  * Returns a fresh initial state. A factory is used instead of a shared
- * constant because the state contains mutable Maps — returning a new
+ * constant because the state contains mutable Maps. Returning a new
  * object on each call prevents cross-contamination between hook mounts.
  */
 export function createVsComputerInitialState(): VsComputerState {
@@ -43,17 +41,15 @@ export function createVsComputerInitialState(): VsComputerState {
   };
 }
 
-// ---------------------------------------------------------------------------
 // Reducer factory
 //
 // Accepts the two position indexes the reducer needs for shot resolution.
 // The returned function has the standard (state, action) => state signature
 // expected by React's useReducer.
 //
-// Unlike the single-player reducer, no game-over guard lives here — that
+// Unlike the single-player reducer, no game-over guard lives here. That
 // check is in the hook's playerFireShot callback, which gates on the
 // derived winner value.
-// ---------------------------------------------------------------------------
 
 export function createVsComputerReducer(
   playerPositionIndex: ReadonlyMap<CoordinateKey, Ship>,
@@ -87,7 +83,7 @@ export function createVsComputerReducer(
           ...state,
           playerShots,
           playerLastResult: result,
-          // Player keeps their turn on a hit — computer only fires on a miss.
+          // Player keeps their turn on a hit; computer only fires on a miss.
           activeTurn: result.outcome === "miss" ? "computer" : "player",
         };
       }
@@ -125,9 +121,7 @@ export function createVsComputerReducer(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Selectors — pure derivations from derived game-over flags.
-// ---------------------------------------------------------------------------
+// Selectors: pure derivations from derived game-over flags.
 
 /**
  * Determines the winner from the two game-over flags. Returns null when

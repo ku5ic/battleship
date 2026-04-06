@@ -7,9 +7,7 @@ import { RAW_GAME_CONFIG } from "@/battleship/data/config";
 import { generateRandomLayout } from "@/battleship/services/placement";
 import { runSinglePlayer, runVsComputer } from "@/cli/loop";
 
-// ---------------------------------------------------------------------------
 // Node readline
-// ---------------------------------------------------------------------------
 
 interface ClosableLineReader extends LineReader {
   close: () => void;
@@ -19,9 +17,7 @@ function createLineReader(): ClosableLineReader {
   return createInterface({ input: stdin, output: stdout });
 }
 
-// ---------------------------------------------------------------------------
 // Menu prompt helper
-// ---------------------------------------------------------------------------
 
 interface MenuOption<K extends string> {
   key: K;
@@ -53,9 +49,7 @@ function promptChoice<K extends string>(
   });
 }
 
-// ---------------------------------------------------------------------------
 // Entry point
-// ---------------------------------------------------------------------------
 
 type GameMode = "single" | "vs-computer";
 

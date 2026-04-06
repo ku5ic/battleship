@@ -32,9 +32,7 @@ import {
 import { promptCoordinate } from "@/cli/input";
 import type { LineReader } from "@/cli/input";
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 /**
  * Assembles a BoardState view from raw persisted state and the fleet.
@@ -56,9 +54,7 @@ function toBoardState(
   };
 }
 
-// ---------------------------------------------------------------------------
 // Single-player loop
-// ---------------------------------------------------------------------------
 
 /**
  * Runs a complete single-player game. The loop renders the board, prompts
@@ -98,9 +94,7 @@ export async function runSinglePlayer(
   console.log(renderGameOver(state.shots.size));
 }
 
-// ---------------------------------------------------------------------------
 // Vs-computer loop
-// ---------------------------------------------------------------------------
 
 /**
  * Runs a complete vs-computer game. The player and computer alternate
@@ -165,7 +159,7 @@ export async function runVsComputer(
       if (shotMsg) console.log(shotMsg);
 
       // AI_SHOT_DELAY_MS is intentionally omitted in the CLI.
-      // The delay is a UI affordance for the React frontend — it gives the
+      // The delay is a UI affordance for the React frontend: it gives the
       // player time to register the computer's turn visually. In a terminal
       // the shot result is printed synchronously and no delay is needed.
       const coordinate = chooseRandomUnfiredCoordinate(

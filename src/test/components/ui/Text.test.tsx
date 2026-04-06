@@ -3,10 +3,6 @@ import { describe, expect, it } from "vitest";
 import { Text } from "@/components/ui";
 
 describe("Text", () => {
-  // ---------------------------------------------------------------------------
-  // Element type
-  // ---------------------------------------------------------------------------
-
   it("renders as a span by default", () => {
     const { container } = render(<Text variant="title">Battleship</Text>);
     expect(container.querySelector("span")).toBeInTheDocument();
@@ -39,18 +35,10 @@ describe("Text", () => {
     expect(container.querySelector("p")).toBeInTheDocument();
   });
 
-  // ---------------------------------------------------------------------------
-  // Children
-  // ---------------------------------------------------------------------------
-
   it("renders the text content", () => {
     render(<Text variant="title">Battleship</Text>);
     expect(screen.getByText("Battleship")).toBeInTheDocument();
   });
-
-  // ---------------------------------------------------------------------------
-  // Variants
-  // ---------------------------------------------------------------------------
 
   it("title variant applies large text and light color classes", () => {
     const { container } = render(<Text variant="title">Battleship</Text>);
@@ -66,10 +54,6 @@ describe("Text", () => {
       "text-slate-400",
     );
   });
-
-  // ---------------------------------------------------------------------------
-  // className override
-  // ---------------------------------------------------------------------------
 
   it("merges className with variant classes", () => {
     const { container } = render(

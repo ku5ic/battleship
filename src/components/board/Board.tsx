@@ -23,12 +23,12 @@ interface BoardProps {
  *
  * Layout: CSS grid with a dynamic template so the board fills its container
  * at every difficulty. Tailwind cannot generate grid-template-columns for
- * arbitrary runtime values, so the template is set via inline style — the one
+ * arbitrary runtime values, so the template is set via inline style, the one
  * justified exception to the no-inline-style rule.
  *
  * The first column (1.5rem) holds the row number label; the remaining N columns
  * are equal-width cells. role="row" divs act directly as the grid containers so
- * the ARIA ownership chain (grid → row → gridcell) is preserved without an
+ * the ARIA ownership chain (grid, row, gridcell) is preserved without an
  * ARIA-transparent wrapper.
  */
 export function Board({
@@ -59,7 +59,7 @@ export function Board({
       className="w-full select-none"
       tabIndex={0}
     >
-      {/* Column headers — decorative; cell aria-labels encode position */}
+      {/* Column headers: decorative; cell aria-labels encode position */}
       <div
         role="row"
         className="grid mb-0.5"
@@ -87,7 +87,7 @@ export function Board({
           className={cn("grid items-center mb-px")}
           style={{ gridTemplateColumns }}
         >
-          {/* Row number label — decorative; position is in each cell's aria-label */}
+          {/* Row number label: decorative; position is in each cell's aria-label */}
           <div
             aria-hidden="true"
             className="text-right pr-1 text-xs text-slate-400 font-mono"
@@ -97,7 +97,7 @@ export function Board({
 
           {rowKeys.map((coord, colIndex) => (
             // role="gridcell" sits here so the grid ownership chain is correct:
-            // grid → row → gridcell → button. The button retains its implicit role.
+            // grid > row > gridcell > button. The button retains its implicit role.
             <div key={coord} role="gridcell" aria-colindex={colIndex + 1}>
               <Cell
                 coord={coord}

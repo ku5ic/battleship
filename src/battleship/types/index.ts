@@ -48,7 +48,7 @@ export interface RawGameConfig {
 
 /**
  * What a player knows about a given cell at any point in the game.
- * "untouched" is the default — no shot has been fired here yet.
+ * "untouched" is the default: no shot has been fired here yet.
  */
 export type CellStatus = "untouched" | "miss" | "hit";
 
@@ -73,21 +73,19 @@ export interface GameState {
   lastResult: ShotResult | null;
 }
 
-// ---------------------------------------------------------------------------
 // Two-board vs-computer model
 //
 // PlayerId identifies which player owns which board. "player" fires at the
 // "opponent" board; the hook decides whose turn it is and which board to
 // resolve shots against.
 //
-// BoardState is a semantic alias for GameState — the two types are
+// BoardState is a semantic alias for GameState. The two types are
 // structurally identical. The alias signals "this is one player's board"
 // without duplicating the definition or introducing an inheritance hierarchy.
 //
 // The vs-computer hook's internal reducer state is private to the hook file.
 // The public view types below (BoardState, VsComputerBoards) are what
-// components consume — assembled from derived values by the hook.
-// ---------------------------------------------------------------------------
+// components consume, assembled from derived values by the hook.
 
 export type PlayerId = "player" | "computer";
 

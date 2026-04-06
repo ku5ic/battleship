@@ -27,10 +27,6 @@ const LABELS_15 = [
 const LABELS_3 = ["A", "B", "C"];
 
 describe("Board", () => {
-  // ---------------------------------------------------------------------------
-  // Structure
-  // ---------------------------------------------------------------------------
-
   it("renders a grid element", () => {
     render(
       <Board
@@ -100,10 +96,6 @@ describe("Board", () => {
     expect(screen.getAllByRole("row")).toHaveLength(15);
   });
 
-  // ---------------------------------------------------------------------------
-  // Cell state reflection
-  // ---------------------------------------------------------------------------
-
   it("renders all cells as untouched (not disabled) on an empty shot map", () => {
     render(
       <Board
@@ -158,10 +150,6 @@ describe("Board", () => {
     expect(screen.getByRole("button", { name: /B1,/i })).not.toBeDisabled();
   });
 
-  // ---------------------------------------------------------------------------
-  // Firing
-  // ---------------------------------------------------------------------------
-
   it("calls onFire with the cell coordinate when a cell is clicked", async () => {
     const user = userEvent.setup();
     const onFire = vi.fn();
@@ -173,7 +161,7 @@ describe("Board", () => {
         onFire={onFire}
       />,
     );
-    // Use /A1,/ — /A1/i alone also matches "A10, not fired…".
+    // Use /A1,/ because /A1/i alone also matches "A10, not fired...".
     await user.click(screen.getByRole("button", { name: /A1,/i }));
     expect(onFire).toHaveBeenCalledWith("0,0");
   });
@@ -210,10 +198,6 @@ describe("Board", () => {
     expect(onFire).not.toHaveBeenCalled();
   });
 
-  // ---------------------------------------------------------------------------
-  // Disabled state
-  // ---------------------------------------------------------------------------
-
   it("sets aria-readonly to true when disabled", () => {
     render(
       <Board
@@ -238,10 +222,6 @@ describe("Board", () => {
     );
     expect(screen.getByRole("grid")).toHaveAttribute("aria-readonly", "false");
   });
-
-  // ---------------------------------------------------------------------------
-  // Keyboard navigation
-  // ---------------------------------------------------------------------------
 
   it("moves focus right on ArrowRight", async () => {
     const user = userEvent.setup();
@@ -304,14 +284,10 @@ describe("Board", () => {
     expect(screen.getByRole("button", { name: /A1,/i })).toHaveFocus();
   });
 
-  // ---------------------------------------------------------------------------
-  // Focus advancement
-  // ---------------------------------------------------------------------------
-
   it("advances focus to the next unfired cell after firing", async () => {
     const user = userEvent.setup();
     // "0,0" is already in shots so the hook's search skips it correctly.
-    // Click "1,0" (B1) — the first enabled cell. Focus should advance to "2,0" (C1).
+    // Click "1,0" (B1), the first enabled cell. Focus should advance to "2,0" (C1).
     const shots = new Map<CoordinateKey, CellStatus>([["0,0", "hit"]]);
     render(
       <Board
@@ -334,7 +310,7 @@ describe("Board", () => {
   it("wraps focus to the first unfired cell when firing near the end", async () => {
     const user = userEvent.setup();
     // All cells fired except "0,0" (A1) and "2,2" (C3).
-    // Click "2,2" — focus should wrap to "0,0".
+    // Click "2,2": focus should wrap to "0,0".
     const shots = new Map<CoordinateKey, CellStatus>([
       ["1,0", "miss"],
       ["2,0", "miss"],

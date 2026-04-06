@@ -11,12 +11,10 @@ import {
   selectSunkShipIds,
 } from "@/battleship/services/engine";
 
-// ---------------------------------------------------------------------------
 // State shape
 //
 // Only the two values that change over time are persisted. Everything else
 // (sunkShipIds, isGameOver) is derived from shots alone via selectors.
-// ---------------------------------------------------------------------------
 
 export interface SinglePlayerState {
   shots: Map<CoordinateKey, CellStatus>;
@@ -29,20 +27,18 @@ export type SinglePlayerAction =
 
 /**
  * Returns a fresh initial state. A factory is used instead of a shared
- * constant because the Map inside the state is mutable — returning a new
+ * constant because the Map inside the state is mutable. Returning a new
  * object on each call prevents cross-contamination between hook mounts.
  */
 export function createSinglePlayerInitialState(): SinglePlayerState {
   return { shots: new Map(), lastResult: null };
 }
 
-// ---------------------------------------------------------------------------
 // Reducer factory
 //
 // Accepts the fleet and position index that the reducer needs for shot
 // resolution and game-over guards. The returned function has the standard
 // (state, action) => state signature expected by React's useReducer.
-// ---------------------------------------------------------------------------
 
 export function createSinglePlayerReducer(
   ships: readonly Ship[],

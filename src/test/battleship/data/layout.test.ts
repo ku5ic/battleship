@@ -56,7 +56,7 @@ const validConfig: RawGameConfig = {
   ],
 };
 
-describe("parseLayout — valid config", () => {
+describe("parseLayout: valid config", () => {
   it("parses without throwing", () => {
     expect(() => parseLayout(validConfig, 10)).not.toThrow();
   });
@@ -84,7 +84,7 @@ describe("parseLayout — valid config", () => {
   });
 });
 
-describe("parseLayout — invalid configs", () => {
+describe("parseLayout: invalid configs", () => {
   function withReplacedShip(
     targetShip: string,
     override: Partial<(typeof validConfig.layout)[number]>,

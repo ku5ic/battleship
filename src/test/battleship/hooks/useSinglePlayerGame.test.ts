@@ -3,11 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import { useSinglePlayerGame } from "@/battleship/hooks/useSinglePlayerGame";
 import type { CoordinateKey } from "@/battleship/types";
 
-// ---------------------------------------------------------------------------
 // Mock placement to return the same deterministic layout used by the
 // original static config. This keeps all existing coordinate-based
 // assertions valid after the switch to randomised placement.
-// ---------------------------------------------------------------------------
 vi.mock("@/battleship/services/placement", async () => {
   const { parseLayout } = await import("@/battleship/data/layout");
   const { RAW_GAME_CONFIG } = await import("@/battleship/data/config");

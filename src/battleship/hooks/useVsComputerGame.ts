@@ -26,7 +26,6 @@ import {
 
 export const AI_SHOT_DELAY_MS = 1000;
 
-// ---------------------------------------------------------------------------
 // Naming legend
 //
 //   playerShots    = coordinates the PLAYER fired at the COMPUTER's board
@@ -43,7 +42,6 @@ export const AI_SHOT_DELAY_MS = 1000;
 //   "Enemy fleet" panel:
 //     ships = computerShips, shots = playerShots,
 //     sunkShipIds = playerSunkShipIds, isGameOver = playerIsGameOver
-// ---------------------------------------------------------------------------
 
 export interface UseVsComputerGameReturn {
   board: VsComputerBoards;
@@ -103,12 +101,10 @@ export function useVsComputerGame(
     createVsComputerInitialState,
   );
 
-  // ---------------------------------------------------------------------------
-  // Derivation chain — declared in dependency order so each useMemo can
+  // Derivation chain: declared in dependency order so each useMemo can
   // reference the previous result.
-  // ---------------------------------------------------------------------------
 
-  // 1. Sunk ship IDs — which ships each player has destroyed
+  // 1. Sunk ship IDs: which ships each player has destroyed
   const playerSunkShipIds = useMemo(
     () => selectSunkShipIds(computerShips, state.playerShots),
     [computerShips, state.playerShots],
@@ -149,9 +145,7 @@ export function useVsComputerGame(
     [computerShips, state.playerShots],
   );
 
-  // ---------------------------------------------------------------------------
   // Callbacks
-  // ---------------------------------------------------------------------------
 
   const playerFireShot = useCallback(
     (coordinate: CoordinateKey) => {
@@ -165,10 +159,8 @@ export function useVsComputerGame(
     dispatch({ type: "RESET" });
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // AI turn — fires after a delay when it is the computer's turn.
+  // AI turn: fires after a delay when it is the computer's turn.
   // winner must be fully resolved above before this effect runs.
-  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     if (state.activeTurn !== "computer" || winner !== null) return;
@@ -188,10 +180,8 @@ export function useVsComputerGame(
     };
   }, [state.activeTurn, winner, state.computerShots, boardSize]);
 
-  // ---------------------------------------------------------------------------
-  // Return value — assemble BoardState views from derived values.
+  // Return value: assemble BoardState views from derived values.
   // See naming legend at top of file for the cross-wiring rationale.
-  // ---------------------------------------------------------------------------
 
   return {
     board: {

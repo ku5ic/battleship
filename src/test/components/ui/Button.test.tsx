@@ -5,10 +5,6 @@ import { describe, expect, it, vi } from "vitest";
 import { Button } from "@/components/ui";
 
 describe("Button", () => {
-  // ---------------------------------------------------------------------------
-  // Rendering
-  // ---------------------------------------------------------------------------
-
   it("renders as a button element", () => {
     render(<Button>Click me</Button>);
     expect(screen.getByRole("button")).toBeInTheDocument();
@@ -31,10 +27,6 @@ describe("Button", () => {
     expect(screen.getByRole("button")).toHaveClass("mt-4");
   });
 
-  // ---------------------------------------------------------------------------
-  // Interaction
-  // ---------------------------------------------------------------------------
-
   it("calls onClick when clicked", async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
@@ -55,19 +47,11 @@ describe("Button", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  // ---------------------------------------------------------------------------
-  // Ref forwarding
-  // ---------------------------------------------------------------------------
-
   it("forwards ref to the underlying button element", () => {
     const ref = createRef<HTMLButtonElement>();
     render(<Button ref={ref}>Click me</Button>);
     expect(ref.current).toBe(screen.getByRole("button"));
   });
-
-  // ---------------------------------------------------------------------------
-  // Prop spreading
-  // ---------------------------------------------------------------------------
 
   it("spreads additional props onto the button element", () => {
     render(
@@ -79,10 +63,6 @@ describe("Button", () => {
     expect(btn).toHaveAttribute("aria-pressed", "true");
     expect(btn).toHaveAttribute("data-testid", "toggle-btn");
   });
-
-  // ---------------------------------------------------------------------------
-  // Variants
-  // ---------------------------------------------------------------------------
 
   it("toggle variant applies active classes when active is true", () => {
     render(

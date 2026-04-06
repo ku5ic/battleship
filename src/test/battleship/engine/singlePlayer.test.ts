@@ -11,7 +11,6 @@ import {
 } from "@/battleship/engine/singlePlayer";
 import type { CoordinateKey, Ship } from "@/battleship/types";
 
-// ---------------------------------------------------------------------------
 // Deterministic fleet from the static config.
 //
 //   destroyer:  [0,0] [1,0]
@@ -19,14 +18,9 @@ import type { CoordinateKey, Ship } from "@/battleship/types";
 //   cruiser:    [8,1] [8,2] [8,3]
 //   battleship: [5,2] [5,3] [5,4] [5,5]
 //   carrier:    [2,9] [3,9] [4,9] [5,9] [6,9]
-// ---------------------------------------------------------------------------
 
 const ships: Ship[] = parseLayout(RAW_GAME_CONFIG, 10);
 const positionIndex = buildPositionIndex(ships);
-
-// ---------------------------------------------------------------------------
-// createSinglePlayerInitialState
-// ---------------------------------------------------------------------------
 
 describe("createSinglePlayerInitialState", () => {
   it("returns empty shots and null lastResult", () => {
@@ -42,10 +36,6 @@ describe("createSinglePlayerInitialState", () => {
     expect(a.shots).not.toBe(b.shots);
   });
 });
-
-// ---------------------------------------------------------------------------
-// createSinglePlayerReducer
-// ---------------------------------------------------------------------------
 
 describe("createSinglePlayerReducer", () => {
   const reducer = createSinglePlayerReducer(ships, positionIndex);
@@ -142,10 +132,6 @@ describe("createSinglePlayerReducer", () => {
     expect(state.lastResult).toBeNull();
   });
 });
-
-// ---------------------------------------------------------------------------
-// selectSunkShipIds
-// ---------------------------------------------------------------------------
 
 describe("selectSunkShipIds", () => {
   it("returns an empty set when no shots have been fired", () => {

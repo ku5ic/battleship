@@ -5,7 +5,7 @@ import { Stack } from "@/components/ui";
 describe("Stack", () => {
   it("renders a div", () => {
     render(<Stack>content</Stack>);
-    // No implicit ARIA role for a plain div — query by text.
+    // No implicit ARIA role for a plain div, so query by text.
     expect(screen.getByText("content")).toBeInTheDocument();
   });
 

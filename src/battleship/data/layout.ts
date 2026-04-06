@@ -15,7 +15,7 @@ import type { RawGameConfig, Ship, CoordinateKey } from "@/battleship/types";
  * - No two ships share a coordinate (overlap)
  * - Each ship's positions form a straight, contiguous line
  *
- * Throws on any violation — runs once at startup so failures surface immediately.
+ * Throws on any violation. Runs once at startup so failures surface immediately.
  */
 export function parseLayout(config: RawGameConfig, boardSize: number): Ship[] {
   const occupied = new Set<CoordinateKey>();
@@ -71,7 +71,7 @@ export function parseLayout(config: RawGameConfig, boardSize: number): Ship[] {
 
 /**
  * Asserts that a ship's coordinates form a straight horizontal or vertical
- * line with no gaps. This is a domain invariant — diagonal or discontinuous
+ * line with no gaps. This is a domain invariant: diagonal or discontinuous
  * placement is illegal regardless of how the data is structured.
  */
 function assertAligned(shipId: string, coordinates: CoordinateKey[]): void {
@@ -84,7 +84,7 @@ function assertAligned(shipId: string, coordinates: CoordinateKey[]): void {
 
   if (!uniformCol && !uniformRow) {
     throw new Error(
-      `Ship "${shipId}" is not aligned — positions must be horizontal or vertical.`,
+      `Ship "${shipId}" is not aligned: positions must be horizontal or vertical.`,
     );
   }
 
@@ -94,7 +94,7 @@ function assertAligned(shipId: string, coordinates: CoordinateKey[]): void {
   for (let i = 1; i < sorted.length; i++) {
     if (sorted[i] !== sorted[i - 1] + 1) {
       throw new Error(
-        `Ship "${shipId}" has a gap between positions — all cells must be contiguous.`,
+        `Ship "${shipId}" has a gap between positions: all cells must be contiguous.`,
       );
     }
   }

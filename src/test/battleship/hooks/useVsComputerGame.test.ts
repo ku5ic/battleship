@@ -3,11 +3,9 @@ import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { useVsComputerGame } from "@/battleship/hooks/useVsComputerGame";
 import type { CoordinateKey } from "@/battleship/types";
 
-// ---------------------------------------------------------------------------
 // Mock placement to return the same deterministic layout used by the
 // original static config. This keeps all existing coordinate-based
 // assertions valid after the switch to randomised placement.
-// ---------------------------------------------------------------------------
 vi.mock("@/battleship/services/placement", async () => {
   const { parseLayout } = await import("@/battleship/data/layout");
   const { RAW_GAME_CONFIG } = await import("@/battleship/data/config");
@@ -23,7 +21,7 @@ vi.mock("@/battleship/services/placement", async () => {
 //   battleship: [5,2] [5,3] [5,4] [5,5]
 //   carrier:    [2,9] [3,9] [4,9] [5,9] [6,9]
 
-// All computer ship coordinates in sink order — used to drive player to victory.
+// All computer ship coordinates in sink order, used to drive player to victory.
 const ALL_COMPUTER_SHIP_COORDS: [number, number][] = [
   [0, 0],
   [1, 0], // destroyer
@@ -53,10 +51,6 @@ describe("useVsComputerGame", () => {
     vi.useRealTimers();
   });
 
-  // ---------------------------------------------------------------------------
-  // Initial state
-  // ---------------------------------------------------------------------------
-
   it("initialises boardSize from difficulty", () => {
     const { result } = renderHook(() => useVsComputerGame("moderate"));
     expect(result.current.boardSize).toBe(15);
@@ -74,10 +68,6 @@ describe("useVsComputerGame", () => {
     expect(result.current.board.player.shots.size).toBe(0);
     expect(result.current.board.computer.shots.size).toBe(0);
   });
-
-  // ---------------------------------------------------------------------------
-  // Player fires — miss
-  // ---------------------------------------------------------------------------
 
   it("records a miss on the computer board when the player fires at an empty cell", () => {
     const { result } = renderHook(() => useVsComputerGame("easy"));
@@ -100,10 +90,6 @@ describe("useVsComputerGame", () => {
     expect(result.current.isAiThinking).toBe(true);
   });
 
-  // ---------------------------------------------------------------------------
-  // Player fires — hit
-  // ---------------------------------------------------------------------------
-
   it("records a hit on the computer board when the player fires at a ship cell", () => {
     const { result } = renderHook(() => useVsComputerGame("easy"));
 
@@ -125,10 +111,6 @@ describe("useVsComputerGame", () => {
     expect(result.current.isAiThinking).toBe(false);
   });
 
-  // ---------------------------------------------------------------------------
-  // Turn guards
-  // ---------------------------------------------------------------------------
-
   it("ignores playerFireShot when it is the computer's turn", () => {
     const { result } = renderHook(() => useVsComputerGame("easy"));
 
@@ -145,10 +127,6 @@ describe("useVsComputerGame", () => {
 
     expect(result.current.board.computer.shots.size).toBe(shotsBefore);
   });
-
-  // ---------------------------------------------------------------------------
-  // AI turn
-  // ---------------------------------------------------------------------------
 
   it("computer fires after the delay when it is its turn", () => {
     const { result } = renderHook(() => useVsComputerGame("easy"));
@@ -204,14 +182,10 @@ describe("useVsComputerGame", () => {
     if (activeTurn === "player") {
       expect(isAiThinking).toBe(false);
     } else {
-      // Computer hit — another timeout is pending.
+      // Computer hit: another timeout is pending.
       expect(isAiThinking).toBe(true);
     }
   });
-
-  // ---------------------------------------------------------------------------
-  // Victory
-  // ---------------------------------------------------------------------------
 
   it("sets winner to player when all computer ships are sunk", () => {
     const { result } = renderHook(() => useVsComputerGame("easy"));
@@ -248,10 +222,6 @@ describe("useVsComputerGame", () => {
     expect(result.current.board.computer.shots.size).toBe(shotsBefore);
   });
 
-  // ---------------------------------------------------------------------------
-  // Reset
-  // ---------------------------------------------------------------------------
-
   it("restores initial state on reset", () => {
     const { result } = renderHook(() => useVsComputerGame("easy"));
 
@@ -284,7 +254,7 @@ describe("useVsComputerGame", () => {
       result.current.reset();
     });
 
-    // Flush any pending timers — should be a no-op after reset.
+    // Flush any pending timers: should be a no-op after reset.
     act(() => {
       vi.runAllTimers();
     });

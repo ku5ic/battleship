@@ -13,7 +13,7 @@ const MAX_ATTEMPTS = 100;
 /**
  * Generates a valid random fleet layout for the given config and board size.
  * Places ships largest-first. Restarts from scratch on exhaustion.
- * Throws after MAX_ATTEMPTS full restarts — this signals a programming error
+ * Throws after MAX_ATTEMPTS full restarts. This signals a programming error
  * (e.g. board too small for the fleet), not a runtime condition.
  */
 export function generateRandomLayout(
@@ -29,9 +29,7 @@ export function generateRandomLayout(
   );
 }
 
-// ---------------------------------------------------------------------------
 // Private helpers
-// ---------------------------------------------------------------------------
 
 function tryPlaceAll(config: RawGameConfig, boardSize: number): Ship[] | null {
   const entries = (
@@ -120,7 +118,7 @@ function hasOverlap(
 /**
  * Returns the coordinate keys a ship would occupy starting at anchor,
  * or null if any cell falls outside [0, boardSize).
- * Does not check overlaps — that is the caller's responsibility.
+ * Does not check overlaps; that is the caller's responsibility.
  */
 export function computeShipPreview(
   anchor: CoordinateKey,

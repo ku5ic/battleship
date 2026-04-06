@@ -3,10 +3,6 @@ import { describe, expect, it } from "vitest";
 import { ShipStatusList } from "@/battleship/components/ShipStatusList";
 import type { Ship, ShipType } from "@/battleship/types";
 
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
-
 const twoShipFleet: readonly Ship[] = [
   {
     id: "destroyer",
@@ -28,10 +24,6 @@ const zeroCounts = new Map<ShipType, number>([
 ]);
 
 describe("ShipStatusList", () => {
-  // ---------------------------------------------------------------------------
-  // Structure
-  // ---------------------------------------------------------------------------
-
   it("renders a labelled section for fleet status", () => {
     render(
       <ShipStatusList
@@ -67,10 +59,6 @@ describe("ShipStatusList", () => {
     );
     expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
   });
-
-  // ---------------------------------------------------------------------------
-  // List accessible label — sunk count
-  // ---------------------------------------------------------------------------
 
   it("labels the list with zero sunk ships initially", () => {
     render(
@@ -110,10 +98,6 @@ describe("ShipStatusList", () => {
       screen.getByRole("list", { name: "2 of 2 ships sunk" }),
     ).toBeInTheDocument();
   });
-
-  // ---------------------------------------------------------------------------
-  // Hit count display
-  // ---------------------------------------------------------------------------
 
   it("shows zero hit count when provided", () => {
     render(
@@ -156,10 +140,6 @@ describe("ShipStatusList", () => {
     expect(screen.getByLabelText("Destroyer: 0 of 2 hit")).toBeInTheDocument();
     expect(screen.getByLabelText("Submarine: 2 of 3 hit")).toBeInTheDocument();
   });
-
-  // ---------------------------------------------------------------------------
-  // Sunk state propagation
-  // ---------------------------------------------------------------------------
 
   it("marks a ship as sunk when its id is in sunkShipIds", () => {
     render(

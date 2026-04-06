@@ -2,7 +2,7 @@
 
 Produce a reviewable implementation plan. No code written yet — this is the design checkpoint.
 
-Requires `/preflight` to have run first.
+Requires `/cmd-preflight` to have run first.
 
 ## Steps
 
@@ -77,7 +77,7 @@ Tests:
 
 Risk flags: none
 ─────────────────
-Awaiting approval to /implement
+Awaiting approval to /cmd-implement
 ```
 
-Wait for explicit approval before proceeding to `/implement`.
+Wait for explicit approval before proceeding to `/cmd-implement`.

@@ -21,7 +21,7 @@ interface VsComputerGameProps {
  * Wires the vs-computer hook to the presentational layer.
  *
  * This is the only component that calls useVsComputerGame. Everything
- * below it receives plain props and emits callbacks — no child is aware the
+ * below it receives plain props and emits callbacks. No child is aware the
  * hook exists.
  */
 export function VsComputerGame({
@@ -52,12 +52,12 @@ export function VsComputerGame({
 
   return (
     <Stack className="w-full max-w-5xl mx-auto">
-      {/* Announcers — visually hidden, one per board so events don't collide */}
+      {/* Announcers: visually hidden, one per board so events don't collide */}
       <ShotResultAnnouncer result={computerLastResult} />
       <ShotResultAnnouncer result={playerLastResult} />
 
       {/* Boards */}
-      {/* Side-by-side only at easy — moderate and hard grids are too wide
+      {/* Side-by-side only at easy. Moderate and hard grids are too wide
            to share a row without sub-pixel cells and unreadable labels. */}
       <div
         className={cn(
@@ -66,7 +66,7 @@ export function VsComputerGame({
             "lg:flex-row lg:justify-center lg:items-start",
         )}
       >
-        {/* Player board — read-only, shows what the computer fired at */}
+        {/* Player board: read-only, shows what the computer fired at */}
         <section
           aria-label="Your board"
           className={cn(
@@ -92,7 +92,7 @@ export function VsComputerGame({
           </div>
         </section>
 
-        {/* Opponent board — interactive, player fires here */}
+        {/* Opponent board: interactive, player fires here */}
         <section
           aria-label="Opponent's board"
           className={cn(
@@ -122,7 +122,7 @@ export function VsComputerGame({
         </section>
       </div>
 
-      {/* Reset — always available */}
+      {/* Reset: always available */}
       <Button onClick={reset}>{gameOver ? "Play again" : "Restart"}</Button>
     </Stack>
   );

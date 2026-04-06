@@ -21,7 +21,6 @@ import {
   renderVsComputerGameOver,
 } from "@/cli/renderer";
 
-// ---------------------------------------------------------------------------
 // Deterministic fleet from the static config.
 //
 //   destroyer:  [0,0] [1,0]
@@ -29,7 +28,6 @@ import {
 //   cruiser:    [8,1] [8,2] [8,3]
 //   battleship: [5,2] [5,3] [5,4] [5,5]
 //   carrier:    [2,9] [3,9] [4,9] [5,9] [6,9]
-// ---------------------------------------------------------------------------
 
 const ships: Ship[] = parseLayout(RAW_GAME_CONFIG, 10);
 const columnLabels = COLUMN_LABELS;
@@ -57,10 +55,6 @@ function makeBoardState(overrides: Partial<BoardState> = {}): BoardState {
     ...overrides,
   };
 }
-
-// ---------------------------------------------------------------------------
-// cellSymbol
-// ---------------------------------------------------------------------------
 
 describe("cellSymbol", () => {
   it("returns ~ for an untouched cell with no ship", () => {
@@ -90,10 +84,6 @@ describe("cellSymbol", () => {
     expect(cellSymbol("9,9", shots, shipCoords, false)).toBe("○");
   });
 });
-
-// ---------------------------------------------------------------------------
-// renderBoard
-// ---------------------------------------------------------------------------
 
 describe("renderBoard", () => {
   it("renders an empty board with ships visible", () => {
@@ -159,7 +149,7 @@ describe("renderBoard", () => {
 
     // Row 1 (index 1): col A and B should be X (hits on destroyer)
     const row1 = lines[1];
-    // Extract cell symbols from the row — after the row label
+    // Extract cell symbols from the row, after the row label
     const row1Cells = row1.trimStart().replace(/^\d+/, "").trim();
     expect(row1Cells).toMatch(/^X\s+X/);
 
@@ -168,10 +158,6 @@ describe("renderBoard", () => {
     expect(row10).toContain("○");
   });
 });
-
-// ---------------------------------------------------------------------------
-// renderVsComputerBoards
-// ---------------------------------------------------------------------------
 
 describe("renderVsComputerBoards", () => {
   it("renders both boards with section headers", () => {
@@ -211,10 +197,6 @@ describe("renderVsComputerBoards", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// renderLegend
-// ---------------------------------------------------------------------------
-
 describe("renderLegend", () => {
   it("contains all four symbol explanations", () => {
     const legend = renderLegend();
@@ -230,10 +212,6 @@ describe("renderLegend", () => {
     expect(lines).toHaveLength(4);
   });
 });
-
-// ---------------------------------------------------------------------------
-// renderShotResult
-// ---------------------------------------------------------------------------
 
 describe("renderShotResult", () => {
   it("returns empty string for null", () => {
@@ -268,10 +246,6 @@ describe("renderShotResult", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// renderGameOver
-// ---------------------------------------------------------------------------
-
 describe("renderGameOver", () => {
   it("returns a game-over message with the shot count", () => {
     expect(renderGameOver(42)).toBe("Game over! All ships sunk in 42 shots.");
@@ -281,10 +255,6 @@ describe("renderGameOver", () => {
     expect(renderGameOver(17)).toBe("Game over! All ships sunk in 17 shots.");
   });
 });
-
-// ---------------------------------------------------------------------------
-// renderVsComputerGameOver
-// ---------------------------------------------------------------------------
 
 describe("renderVsComputerGameOver", () => {
   it("returns empty string when no winner", () => {

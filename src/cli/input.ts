@@ -6,9 +6,7 @@ export interface LineReader {
   question: (query: string, callback: (answer: string) => void) => void;
 }
 
-// ---------------------------------------------------------------------------
 // Coordinate parser
-// ---------------------------------------------------------------------------
 
 const COORDINATE_RE = /^([A-Z])(\d+)$/;
 
@@ -40,9 +38,7 @@ export function parseCoordinateInput(
   return toKey(col, row);
 }
 
-// ---------------------------------------------------------------------------
 // Readline prompt loop
-// ---------------------------------------------------------------------------
 
 /**
  * Prompts the user for a valid coordinate, retrying on bad input.

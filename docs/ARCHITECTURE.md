@@ -17,20 +17,20 @@ src/
     components/               # Presentational feature components, props in / callbacks out
     constants/                # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
     data/                     # Raw config (RAW_GAME_CONFIG)
-    engine/                   # Pure (state, action) => state reducers and selectors — no React
-    hooks/                    # useSinglePlayerGame, useVsComputerGame — wiring over engine/
-    services/                 # Pure rule evaluation and AI helper — no React
-    types/                    # All domain types — single source of truth
+    engine/                   # Pure (state, action) => state reducers and selectors, no React
+    hooks/                    # useSinglePlayerGame, useVsComputerGame: wiring over engine/
+    services/                 # Pure rule evaluation and AI helper, no React
+    types/                    # All domain types: single source of truth
     utils/                    # Coordinate utilities
-  cli/                        # Terminal runner — index.ts (entry), loop.ts, renderer.ts, input.ts
+  cli/                        # Terminal runner: index.ts (entry), loop.ts, renderer.ts, input.ts
   components/
-    board/                    # Board, Cell, useBoardNavigation — generic grid rendering + keyboard navigation, no domain knowledge
-    game/                     # SinglePlayerGame, VsComputerGame — wiring only
-  lib/                        # Shared utilities — cn() only
-  test/                       # Mirrors src/ — one test file per source file
+    board/                    # Board, Cell, useBoardNavigation: generic grid rendering + keyboard navigation, no domain knowledge
+    game/                     # SinglePlayerGame, VsComputerGame: wiring only
+  lib/                        # Shared utilities: cn() only
+  test/                       # Mirrors src/: one test file per source file
 ```
 
-The `battleship/` folder owns everything domain-specific. The top-level `components/` folder holds components that are domain-aware by props but not by logic — `Board` and `Cell` know how to render a grid, not what a ship or a shot is. This distinction matters: `Board` could render a Minesweeper grid or a crossword without changing its implementation.
+The `battleship/` folder owns everything domain-specific. The top-level `components/` folder holds components that are domain-aware by props but not by logic. `Board` and `Cell` know how to render a grid, not what a ship or a shot is. This distinction matters: `Board` could render a Minesweeper grid or a crossword without changing its implementation.
 
 ---
 
@@ -38,7 +38,7 @@ The `battleship/` folder owns everything domain-specific. The top-level `compone
 
 ### `types/`
 
-The single source of truth for all domain concepts. No logic, no imports from other layers. Adding a concept to the domain means defining a type here first — this is the entry point for any new feature.
+The single source of truth for all domain concepts. No logic, no imports from other layers. Adding a concept to the domain means defining a type here first. This is the entry point for any new feature.
 
 `any` is forbidden throughout the codebase (ESLint enforces this). Where the shape is genuinely unknown, `unknown` with a type guard is used. The alternative, permitting `any` at boundaries and casting later, was rejected because it defers type errors to runtime and makes refactoring unsafe.
 
@@ -46,27 +46,27 @@ Key types include `CoordinateKey`, `Ship`, `CellStatus`, `ShotResult`, `GameStat
 
 ### `data/`
 
-Owns the raw ship configuration (`RAW_GAME_CONFIG`). `parseLayout` validates a raw config into typed `Ship` records and throws on any violation. Throwing was chosen over returning an error type because the layout is static data — an invalid layout is a programming mistake, not a runtime condition, and should fail loudly during development.
+Owns the raw ship configuration (`RAW_GAME_CONFIG`). `parseLayout` validates a raw config into typed `Ship` records and throws on any violation. Throwing was chosen over returning an error type because the layout is static data. An invalid layout is a programming mistake, not a runtime condition, and should fail loudly during development.
 
-`parseLayout` is currently used only by test files to build deterministic fleets from the static layout. Production code generates fleets via `generateRandomLayout` in `services/placement.ts`. `parseLayout` is a candidate for removal if no production consumer is added — keeping dead code is a cost, and this function earns its place only as long as the test suite needs it.
+`parseLayout` is currently used only by test files to build deterministic fleets from the static layout. Production code generates fleets via `generateRandomLayout` in `services/placement.ts`. `parseLayout` is a candidate for removal if no production consumer is added. Keeping dead code is a cost, and this function earns its place only as long as the test suite needs it.
 
 ### `utils/`
 
-Pure functions only. `toKey(col, row)` is the single production site for `CoordinateKey` strings. No other code constructs `"col,row"` strings by interpolation — this is enforced by convention and code review. `fromKey` is the single parse site. `RawCoordinate` tuples do not escape this layer or the data layer.
+Pure functions only. `toKey(col, row)` is the single production site for `CoordinateKey` strings. No other code constructs `"col,row"` strings by interpolation. This is enforced by convention and code review. `fromKey` is the single parse site. `RawCoordinate` tuples do not escape this layer or the data layer.
 
 The point of having a single production site is that if the key format ever changes, there is exactly one place to change it. The alternative, allowing inline interpolation, would scatter format knowledge across every file that constructs a coordinate key, making a format change a codebase-wide find-and-replace exercise.
 
 ### `services/`
 
-Pure functions only — no React imports, no hooks, no side effects. Own all rule evaluation: hit detection, miss detection, sunk logic, game-over logic, AI coordinate selection, random fleet generation. Independently unit-testable with no setup beyond function arguments.
+Pure functions only. No React imports, no hooks, no side effects. Own all rule evaluation: hit detection, miss detection, sunk logic, game-over logic, AI coordinate selection, random fleet generation. Independently unit-testable with no setup beyond function arguments.
 
 Key functions in `services/engine.ts`:
 
-- `resolveShot(coordinate, shots, positionIndex)` — determines the outcome of a single shot
-- `isShipSunk(ship, shots)` — checks whether all of a ship's coordinates have been hit
-- `isGameOver(ships, sunkShipIds)` — checks whether every ship in the fleet is sunk
-- `computeShipHitCounts(ships, shots)` — returns a map of ship id to hit count
-- `nextUnfiredCoordinate(allKeys, shots, fromIndex)` — returns the next unfired coordinate in row-major order after `fromIndex`, wrapping around; returns `null` if all coordinates are fired
+- `resolveShot(coordinate, shots, positionIndex)`: determines the outcome of a single shot
+- `isShipSunk(ship, shots)`: checks whether all of a ship's coordinates have been hit
+- `isGameOver(ships, sunkShipIds)`: checks whether every ship in the fleet is sunk
+- `computeShipHitCounts(ships, shots)`: returns a map of ship id to hit count
+- `nextUnfiredCoordinate(allKeys, shots, fromIndex)`: returns the next unfired coordinate in row-major order after `fromIndex`, wrapping around; returns `null` if all coordinates are fired
 
 Services own rule evaluation but not state transitions; that responsibility belongs to `engine/`. Rules can then be tested without constructing reducer state, and reducer tests can verify transitions without re-testing the rules.
 
@@ -74,22 +74,22 @@ Services own rule evaluation but not state transitions; that responsibility belo
 
 Pure `(state, action) => state` reducer factories and selectors. No React imports, no hooks, no side effects. Each module exports a factory function that closes over fleet data (position indexes) and returns a standard reducer:
 
-- `engine/singlePlayer.ts` — `createSinglePlayerReducer(ships, positionIndex)` returns a reducer handling `FIRE` and `RESET`. Exports `SinglePlayerState`, `SinglePlayerAction`, and `createSinglePlayerInitialState()`.
-- `engine/vsComputer.ts` — `createVsComputerReducer(playerPositionIndex, computerPositionIndex)` returns a reducer handling `PLAYER_FIRE`, `COMPUTER_FIRE`, and `RESET`. Exports `VsComputerState`, `VsComputerAction`, `createVsComputerInitialState()`, and `selectWinner()`.
+- `engine/singlePlayer.ts`: `createSinglePlayerReducer(ships, positionIndex)` returns a reducer handling `FIRE` and `RESET`. Exports `SinglePlayerState`, `SinglePlayerAction`, and `createSinglePlayerInitialState()`.
+- `engine/vsComputer.ts`: `createVsComputerReducer(playerPositionIndex, computerPositionIndex)` returns a reducer handling `PLAYER_FIRE`, `COMPUTER_FIRE`, and `RESET`. Exports `VsComputerState`, `VsComputerAction`, `createVsComputerInitialState()`, and `selectWinner()`.
 
-The engine layer was extracted specifically because reducer logic is consumed by two independent callers — React hooks (via `useReducer`) and the CLI runner (via direct function calls). Without this extraction, the reducer would live inline in the hook, and the CLI would need to either import React or duplicate the logic. Both alternatives are worse: importing React in a terminal program is wrong, and duplicating logic creates two sources of truth that can diverge.
+The engine layer was extracted specifically because reducer logic is consumed by two independent callers: React hooks (via `useReducer`) and the CLI runner (via direct function calls). Without this extraction, the reducer would live inline in the hook, and the CLI would need to either import React or duplicate the logic. Both alternatives are worse: importing React in a terminal program is wrong, and duplicating logic creates two sources of truth that can diverge.
 
 State and action types are co-located with their reducer in `engine/`, not in `types/index.ts`. They are internal to the state machine rather than shared domain concepts. Putting all types in `types/` was rejected because it would couple unrelated consumers to engine internals and obscure which types belong to which reducer.
 
 ### `hooks/`
 
-React wiring over `engine/`. Each hook imports a reducer factory from `engine/`, passes it to `useReducer`, and derives view-ready data via `useMemo`. The hook body contains no reducer logic — only side-effect coordination (AI timing via `useEffect`) and derived value assembly.
+React wiring over `engine/`. Each hook imports a reducer factory from `engine/`, passes it to `useReducer`, and derives view-ready data via `useMemo`. The hook body contains no reducer logic. It handles only side-effect coordination (AI timing via `useEffect`) and derived value assembly.
 
 Two hooks exist: `useSinglePlayerGame` for single-player, `useVsComputerGame` for vs-computer. Neither calls the other. A single hook with a mode parameter was rejected because the two modes have different state shapes, different action types, and different side effects. Combining them would mean the hook always carries the complexity of both modes, branching internally on the mode parameter. Two focused hooks are simpler to read, test, and extend independently.
 
 ### `components/`
 
-Receive props, render UI, emit typed callbacks. No game rules, no domain calculations, no direct hook calls. The sole exception is the wiring layer (`SinglePlayerGame`, `VsComputerGame`) — these are the only components that call hooks, and they contain no logic of their own.
+Receive props, render UI, emit typed callbacks. No game rules, no domain calculations, no direct hook calls. The sole exception is the wiring layer (`SinglePlayerGame`, `VsComputerGame`). These are the only components that call hooks, and they contain no logic of their own.
 
 `SinglePlayerGame` accepts an `onStatusChange` prop and calls it via `useEffect` when `isGameOver` or `shots.size` changes, reporting `{ mode: "single", isGameOver, shotCount }`. `VsComputerGame` accepts an `onStatusChange` prop and calls it via `useEffect` when `winner`, `activeTurn`, or `isAiThinking` changes, reporting `{ mode: "vsComputer", winner, activeTurn, isAiThinking }`.
 
@@ -101,31 +101,31 @@ Receive props, render UI, emit typed callbacks. No game rules, no domain calcula
 
 `App.tsx` renders a sticky `<header>` containing the `<h1>Battleship</h1>` landmark, mode toggle (`aria-pressed` buttons), difficulty selector (`role="group" aria-label="Difficulty"`), and an inline status slot.
 
-The status slot renders `<GameStatus>` or `<VsComputerGameStatus>` conditionally based on `headerGameStatus.mode`. `headerGameStatus` is `useState<HeaderGameStatus | null>(null)` — the discriminated union drives which status component appears. It resets to `null` on mode or difficulty change so stale status from the previous game is never displayed.
+The status slot renders `<GameStatus>` or `<VsComputerGameStatus>` conditionally based on `headerGameStatus.mode`. `headerGameStatus` is `useState<HeaderGameStatus | null>(null)`. The discriminated union drives which status component appears. It resets to `null` on mode or difficulty change so stale status from the previous game is never displayed.
 
-Each wiring component receives a typed `onStatusChange` callback. These callbacks are stabilised with `useCallback(fn, [])` to prevent an infinite render loop — without stabilisation, the wiring component's `useEffect` would re-fire on every render because `onStatusChange` would be a new reference each time.
+Each wiring component receives a typed `onStatusChange` callback. These callbacks are stabilised with `useCallback(fn, [])` to prevent an infinite render loop. Without stabilisation, the wiring component's `useEffect` would re-fire on every render because `onStatusChange` would be a new reference each time.
 
 ---
 
 ## State Design
 
-**What is persisted** — only what cannot be derived from other persisted state plus constants:
+**What is persisted:** only what cannot be derived from other persisted state plus constants:
 
-- `shots: Map<CoordinateKey, CellStatus>` — the record of every shot fired
-- `lastResult: ShotResult | null` — drives `aria-live` announcements
+- `shots: Map<CoordinateKey, CellStatus>`: the record of every shot fired
+- `lastResult: ShotResult | null`: drives `aria-live` announcements
 - Vs-computer additionally persists: `playerShots`, `computerShots`, `playerLastResult`, `computerLastResult`, and `activeTurn`
 
 **What is derived via `useMemo`**:
 
 - Whether a specific cell is hit or missed (lookup in the shots map)
-- Whether a ship is sunk (all its cells are in the shots map as hits) — via `isShipSunk` from services
-- Whether the game is over (all ship IDs are in the sunk set) — via `isGameOver` from services
+- Whether a ship is sunk (all its cells are in the shots map as hits), via `isShipSunk` from services
+- Whether the game is over (all ship IDs are in the sunk set), via `isGameOver` from services
 - Vs-computer: `winner`, `isAiThinking`, `sunkShipIds` (per board), `shipHitCounts` (per board)
 - Status labels and counts
 
-State types (`SinglePlayerState`, `VsComputerState`) and action types are defined in `engine/` alongside their reducers. `BoardState` objects are assembled in the hook's return value (or by the CLI loop's `toBoardState` helper) from persisted state and derived values — they are not stored in the reducer.
+State types (`SinglePlayerState`, `VsComputerState`) and action types are defined in `engine/` alongside their reducers. `BoardState` objects are assembled in the hook's return value (or by the CLI loop's `toBoardState` helper) from persisted state and derived values. They are not stored in the reducer.
 
-**Why this shape.** The alternative is to persist derived values — maintain a `sunkShipIds` set by updating it on every shot. That creates a second source of truth that must be kept consistent with the shots map. If the two ever diverge, the UI shows an incorrect game state. Deriving from the shots map is always consistent by construction. The cost is recomputation on every render, but `useMemo` ensures this happens only when the shots map actually changes, and for a grid of at most 400 cells, the computation is negligible.
+**Why this shape.** The alternative is to persist derived values: maintain a `sunkShipIds` set by updating it on every shot. That creates a second source of truth that must be kept consistent with the shots map. If the two ever diverge, the UI shows an incorrect game state. Deriving from the shots map is always consistent by construction. The cost is recomputation on every render, but `useMemo` ensures this happens only when the shots map actually changes, and for a grid of at most 400 cells, the computation is negligible.
 
 ---
 
@@ -146,9 +146,9 @@ The single-player reducer (in `engine/`) delegates rule evaluation to pure servi
 
 ## AI Timing in vs-Computer Mode
 
-The AI fires after a configurable delay. That delay is a side effect — it involves `setTimeout`, which is not a pure computation and cannot live inside a reducer.
+The AI fires after a configurable delay. That delay is a side effect. It involves `setTimeout`, which is not a pure computation and cannot live inside a reducer.
 
-The approach: the reducer handles `PLAYER_FIRE` and `COMPUTER_FIRE` synchronously. A `useEffect` watches for `activeTurn === "computer"` and schedules a `setTimeout`. When the timeout fires, it calls `chooseRandomUnfiredCoordinate` (the AI service function) and dispatches `COMPUTER_FIRE` with the result. The reducer never sees the async operation — only the resolved value.
+The approach: the reducer handles `PLAYER_FIRE` and `COMPUTER_FIRE` synchronously. A `useEffect` watches for `activeTurn === "computer"` and schedules a `setTimeout`. When the timeout fires, it calls `chooseRandomUnfiredCoordinate` (the AI service function) and dispatches `COMPUTER_FIRE` with the result. The reducer never sees the async operation, only the resolved value.
 
 **Alternative considered:** async thunks or a middleware layer. Rejected because a `useEffect` is the idiomatic React mechanism for scheduling a side effect in response to a state change, and it requires no additional infrastructure. A middleware layer would be justified if there were multiple async workflows to coordinate. There is one. Adding infrastructure for one use case is overhead that makes the codebase harder to follow for anyone reading it for the first time.
 
@@ -162,18 +162,18 @@ That the CLI works at all is the strongest evidence the layer boundaries are rea
 
 ### Structure
 
-- `index.ts` — entry point. Mode and difficulty menus, readline lifecycle, fleet generation via `generateRandomLayout`. Run with `npm run cli` (uses `tsx`).
-- `loop.ts` — game loops for both modes. Calls engine reducer factories directly as `(state, action) => state` functions. Derives `BoardState` snapshots for the renderer using the same derivation logic the hooks use.
-- `renderer.ts` — pure string rendering. Board grids, shot results, game-over messages.
-- `input.ts` — coordinate parser (`parseCoordinateInput`) and readline prompt loop. Exports a `LineReader` interface to avoid importing Node's `readline` types (which are unavailable under the `vite/client` type scope).
+- `index.ts`: entry point. Mode and difficulty menus, readline lifecycle, fleet generation via `generateRandomLayout`. Run with `npm run cli` (uses `tsx`).
+- `loop.ts`: game loops for both modes. Calls engine reducer factories directly as `(state, action) => state` functions. Derives `BoardState` snapshots for the renderer using the same derivation logic the hooks use.
+- `renderer.ts`: pure string rendering. Board grids, shot results, game-over messages.
+- `input.ts`: coordinate parser (`parseCoordinateInput`) and readline prompt loop. Exports a `LineReader` interface to avoid importing Node's `readline` types (which are unavailable under the `vite/client` type scope).
 
 ### AI delay omission
 
-`AI_SHOT_DELAY_MS` is intentionally not used in the CLI. The delay is a UI affordance for the React frontend — it gives the player time to register the computer's turn visually. In a terminal, the shot result is printed synchronously and no delay is needed. The delay constant exists in `hooks/` rather than `engine/` precisely because it is a presentation concern, not a domain concern.
+`AI_SHOT_DELAY_MS` is intentionally not used in the CLI. The delay is a UI affordance for the React frontend. It gives the player time to register the computer's turn visually. In a terminal, the shot result is printed synchronously and no delay is needed. The delay constant exists in `hooks/` rather than `engine/` precisely because it is a presentation concern, not a domain concern.
 
 ### What the CLI deliberately does not support
 
-No colours or ANSI formatting. No game persistence or replay. No placement phase — both modes use `generateRandomLayout`. These are deliberate scope constraints. Adding any of them would be a CLI-layer change; none would require modifying engine, services, or types.
+No colours or ANSI formatting. No game persistence or replay. No placement phase; both modes use `generateRandomLayout`. These are deliberate scope constraints. Adding any of them would be a CLI-layer change; none would require modifying engine, services, or types.
 
 ---
 
@@ -181,11 +181,11 @@ No colours or ANSI formatting. No game persistence or replay. No placement phase
 
 Three representations exist for different layers:
 
-- `RawCoordinate` — `[col, row]` tuple, only in `data/` and `utils/`
-- `Coordinate` — `{ col: number; row: number }`, structured object for internal use
-- `CoordinateKey` — `${number},${number}` template literal, used as Map keys throughout
+- `RawCoordinate`: `[col, row]` tuple, only in `data/` and `utils/`
+- `Coordinate`: `{ col: number; row: number }`, structured object for internal use
+- `CoordinateKey`: `${number},${number}` template literal, used as Map keys throughout
 
-Having three is a deliberate choice, not an accident. The alternative — using a single representation everywhere — was considered and rejected. Tuples are compact for data definition but lack named fields. Objects are readable but not usable as Map keys. Template literal strings are usable as Map keys and carry type-level format information, but are not convenient for arithmetic. Each representation exists because it serves a specific purpose in its layer.
+Having three is a deliberate choice, not an accident. The alternative, using a single representation everywhere, was considered and rejected. Tuples are compact for data definition but lack named fields. Objects are readable but not usable as Map keys. Template literal strings are usable as Map keys and carry type-level format information, but are not convenient for arithmetic. Each representation exists because it serves a specific purpose in its layer.
 
 `toKey()` is the only legal production site for `CoordinateKey`. `fromKey()` is the only legal parse site. This is enforced by convention and code review. The constraint means coordinate format knowledge lives in exactly one place.
 
@@ -195,7 +195,7 @@ Having three is a deliberate choice, not an accident. The alternative — using 
 
 Single-player and vs-computer share no state. Each mode has its own engine module, its own hook, and its own wiring component. `useVsComputerGame` uses a flat reducer state (`playerShots`, `computerShots`, `playerLastResult`, `computerLastResult`, `activeTurn`) and assembles `BoardState` objects in the return value for each player.
 
-`Board` and `Cell` are shared rendering primitives — they know nothing about game mode. The `disabled` prop on `Board` prevents interaction: the player's own board passes `disabled` (always true, since you observe it but do not fire at it); the opponent's board passes `disabled={activeTurn !== "player" || winner !== null}`.
+`Board` and `Cell` are shared rendering primitives. They know nothing about game mode. The `disabled` prop on `Board` prevents interaction: the player's own board passes `disabled` (always true, since you observe it but do not fire at it); the opponent's board passes `disabled={activeTurn !== "player" || winner !== null}`.
 
 Adding a third mode would require a new engine module, a new hook, and a new wiring component. No existing code would need to change. The extensibility is not speculative; it is demonstrated by the fact that vs-computer was added this way.
 
@@ -205,11 +205,11 @@ Adding a third mode would require a new engine module, a new hook, and a new wir
 
 Prioritised by the cost of a regression.
 
-**Domain (engine, services, utils, data)** — thorough unit coverage. Pure functions, zero dependencies. Every rule, every guard condition, every edge case. The test suite here is the specification. A failure in this layer means a game rule is broken, which affects every consumer.
+**Domain (engine, services, utils, data):** thorough unit coverage. Pure functions, zero dependencies. Every rule, every guard condition, every edge case. The test suite here is the specification. A failure in this layer means a game rule is broken, which affects every consumer.
 
-**Hooks** — `renderHook` with deterministic collaborators. `chooseRandomUnfiredCoordinate` is mocked to a fixed coordinate so AI-turn tests are predictable. `AI_SHOT_DELAY_MS` is exported and overridden to `0` in tests. `vi.useFakeTimers()` was rejected because it conflicts with `userEvent`'s internal timing, producing flaky tests that pass in isolation but fail in suite runs.
+**Hooks:** `renderHook` with deterministic collaborators. `chooseRandomUnfiredCoordinate` is mocked to a fixed coordinate so AI-turn tests are predictable. `AI_SHOT_DELAY_MS` is exported and overridden to `0` in tests. `vi.useFakeTimers()` was rejected because it conflicts with `userEvent`'s internal timing, producing flaky tests that pass in isolation but fail in suite runs.
 
-**Components** — rendering, interaction, hit/miss states, sunk messaging, game-over display. Cells targeted by `data-coord` attribute rather than `aria-label` regex to avoid false matches against row-10 cells (e.g. `/B1/` matches `B10`). Choosing a test strategy that avoids a known class of bugs beats fixing them one at a time.
+**Components:** rendering, interaction, hit/miss states, sunk messaging, game-over display. Cells targeted by `data-coord` attribute rather than `aria-label` regex to avoid false matches against row-10 cells (e.g. `/B1/` matches `B10`). Choosing a test strategy that avoids a known class of bugs beats fixing them one at a time.
 
 ---
 

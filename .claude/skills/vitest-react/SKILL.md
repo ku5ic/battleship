@@ -145,11 +145,17 @@ await waitFor(() => {
 Engine files (`engine/singlePlayer.ts`, `engine/vsComputer.ts`) export pure reducer factories and selectors. Test them as plain function calls — no `renderHook`, no React dependency:
 
 ```ts
-import { createSinglePlayerReducer, createSinglePlayerInitialState } from "@/battleship/engine/singlePlayer";
+import {
+  createSinglePlayerReducer,
+  createSinglePlayerInitialState,
+} from "@/battleship/engine/singlePlayer";
 
 it("records a miss", () => {
   const reducer = createSinglePlayerReducer(ships, positionIndex);
-  const state = reducer(createSinglePlayerInitialState(), { type: "FIRE", coordinate: "9,9" });
+  const state = reducer(createSinglePlayerInitialState(), {
+    type: "FIRE",
+    coordinate: "9,9",
+  });
   expect(state.shots.get("9,9")).toBe("miss");
   expect(state.lastResult?.outcome).toBe("miss");
 });

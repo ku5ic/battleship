@@ -3,10 +3,6 @@ import { describe, expect, it } from "vitest";
 import { ShotResultAnnouncer } from "@/battleship/components/ShotResultAnnouncer";
 
 describe("ShotResultAnnouncer", () => {
-  // ---------------------------------------------------------------------------
-  // Live region presence
-  // ---------------------------------------------------------------------------
-
   it("always renders the live region so assistive tech can observe updates", () => {
     render(<ShotResultAnnouncer result={null} />);
     expect(screen.getByRole("status")).toBeInTheDocument();
@@ -16,10 +12,6 @@ describe("ShotResultAnnouncer", () => {
     render(<ShotResultAnnouncer result={null} />);
     expect(screen.getByRole("status")).toHaveTextContent("");
   });
-
-  // ---------------------------------------------------------------------------
-  // Outcome announcements
-  // ---------------------------------------------------------------------------
 
   it("announces a miss", () => {
     render(

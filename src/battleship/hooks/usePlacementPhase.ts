@@ -15,9 +15,7 @@ import {
 } from "@/battleship/services/placement";
 import { toKey } from "@/battleship/utils/coordinates";
 
-// ---------------------------------------------------------------------------
 // Reducer
-// ---------------------------------------------------------------------------
 
 interface PlacementState {
   placedShips: Ship[];
@@ -101,9 +99,7 @@ function reducer(
   }
 }
 
-// ---------------------------------------------------------------------------
 // Hook
-// ---------------------------------------------------------------------------
 
 export interface UsePlacementPhaseReturn {
   boardSize: number;
@@ -129,9 +125,7 @@ export function usePlacementPhase(
   const { boardSize, columnLabels } = DIFFICULTY_CONFIG[difficulty];
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
-  // ---------------------------------------------------------------------------
   // Derived values
-  // ---------------------------------------------------------------------------
 
   const occupiedCoords = useMemo(() => {
     const set = new Set<CoordinateKey>();
@@ -197,9 +191,7 @@ export function usePlacementPhase(
     return map;
   }, [boardSize, previewCoords, isPreviewValid, occupiedCoords]);
 
-  // ---------------------------------------------------------------------------
   // Callbacks
-  // ---------------------------------------------------------------------------
 
   const selectShip = useCallback((type: ShipType) => {
     dispatch({ type: "SELECT_SHIP", shipType: type });

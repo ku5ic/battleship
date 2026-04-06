@@ -26,7 +26,7 @@ function buildAriaLabel(
   };
 
   const base = `${columnLabel}${rowLabel}, ${statusLabel[status]}`;
-  // Append a brief activation hint only for fireable cells — this supplements
+  // Append a brief activation hint only for fireable cells. This supplements
   // the board-level instruction without duplicating it on every already-fired cell.
   return isFireable ? `${base}. Press Space to fire` : base;
 }
@@ -59,7 +59,7 @@ export function Cell({
       className={cn(
         "group relative flex items-center justify-center",
         // Touch targets on mobile are met by the scale-up on hover/focus
-        // (scale-125), not by minimum height — aspect-square keeps cells
+        // (scale-125), not by minimum height. aspect-square keeps cells
         // square at all breakpoints without causing overflow on dense grids.
         "w-full aspect-square",
         "border border-slate-600",
@@ -70,7 +70,7 @@ export function Cell({
         status === "untouched" &&
           !disabled &&
           "bg-slate-700 hover:bg-slate-600 cursor-pointer",
-        // Scale and z-index are only meaningful for fireable targets — disabled
+        // Scale and z-index are only meaningful for fireable targets. Disabled
         // and already-fired buttons cannot receive focus, so the guard is
         // structurally redundant but makes the intent explicit.
         status === "untouched" &&
@@ -86,7 +86,7 @@ export function Cell({
     >
       {status === "hit" && <HitMarker />}
       {status === "miss" && <MissMarker />}
-      {/* Coordinate tooltip — purely visual; the accessible name already
+      {/* Coordinate tooltip: purely visual; the accessible name already
           encodes the position. Known limitation: on row 0 the tooltip may
           clip above the column header since it always renders above the cell. */}
       {isFireable && (

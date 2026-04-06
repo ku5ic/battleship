@@ -41,9 +41,7 @@ export function PlacementScreen({
     confirm,
   } = usePlacementPhase(difficulty);
 
-  // ---------------------------------------------------------------------------
-  // aria-live announcements — key-remount drives re-announcement
-  // ---------------------------------------------------------------------------
+  // aria-live announcements: key-remount drives re-announcement
 
   const [announcement, setAnnouncement] = useState("");
   const [announcementKey, setAnnouncementKey] = useState(0);
@@ -53,9 +51,7 @@ export function PlacementScreen({
     setAnnouncementKey((k) => k + 1);
   }
 
-  // ---------------------------------------------------------------------------
   // Handlers
-  // ---------------------------------------------------------------------------
 
   function handlePlaceShip(coord: CoordinateKey) {
     const previewStatus = cellStatusMap.get(coord);
@@ -94,9 +90,7 @@ export function PlacementScreen({
     onConfirm(ships);
   }
 
-  // ---------------------------------------------------------------------------
   // R key shortcut for orientation toggle
-  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -116,9 +110,7 @@ export function PlacementScreen({
     };
   });
 
-  // ---------------------------------------------------------------------------
   // Render
-  // ---------------------------------------------------------------------------
 
   const gridTemplateColumns = `repeat(${String(boardSize)}, 1fr)`;
   const orientationLabel = pendingShip
@@ -174,7 +166,7 @@ export function PlacementScreen({
             aria-label="Select a ship to place"
             className="divide-y divide-slate-700/50"
           >
-            {/* Unplaced ships — selectable */}
+            {/* Unplaced ships: selectable */}
             {remainingShipTypes.map((type) => (
               <div
                 key={type}
@@ -194,7 +186,7 @@ export function PlacementScreen({
                 />
               </div>
             ))}
-            {/* Placed ships — re-placeable */}
+            {/* Placed ships: re-placeable */}
             {placedShips.map((ship) => (
               <div key={ship.id} role="option" aria-selected={false}>
                 <ShipStatusItem
@@ -246,9 +238,7 @@ export function PlacementScreen({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Placement cell — inline sub-component, single consumer
-// ---------------------------------------------------------------------------
+// Placement cell: inline sub-component, single consumer
 
 interface PlacementCellProps {
   coord: CoordinateKey;

@@ -19,12 +19,10 @@ import type {
   ShipType,
 } from "@/battleship/types";
 
-// ---------------------------------------------------------------------------
 // Public interface
 //
 // GameState carries the read-only view of the world. The two action callbacks
 // are added alongside it so consumers get everything from one hook call.
-// ---------------------------------------------------------------------------
 
 export interface UseSinglePlayerGameReturn extends GameState {
   boardSize: number;
@@ -39,8 +37,8 @@ export function useSinglePlayerGame(
 ): UseSinglePlayerGameReturn {
   const { boardSize, columnLabels } = DIFFICULTY_CONFIG[difficulty];
 
-  // Ships and their position index are stable for this hook's lifetime —
-  // difficulty changes are handled by remounting the hook via key prop.
+  // Ships and their position index are stable for this hook's lifetime.
+  // Difficulty changes are handled by remounting the hook via key prop.
   const { ships, positionIndex } = useMemo(() => {
     const generated = generateRandomLayout(RAW_GAME_CONFIG, boardSize);
     return { ships: generated, positionIndex: buildPositionIndex(generated) };

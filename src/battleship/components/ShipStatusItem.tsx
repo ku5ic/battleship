@@ -24,17 +24,17 @@ function buildLabel(
   isPlaced: boolean | undefined,
   isSelected: boolean | undefined,
 ): string {
-  // Game mode — onClick absent
+  // Game mode: onClick absent
   if (onClick === undefined) {
     return isSunk
       ? `${name}: sunk`
       : `${name}: ${String(hitCount)} of ${String(size)} hit`;
   }
-  // Placement mode — placed
+  // Placement mode: placed
   if (isPlaced) {
     return `${name}: placed. Click to re-place.`;
   }
-  // Placement mode — selected or awaiting selection
+  // Placement mode: selected or awaiting selection
   return isSelected
     ? `${name}, ${String(size)} cells. Selected.`
     : `${name}, ${String(size)} cells. Select to place.`;

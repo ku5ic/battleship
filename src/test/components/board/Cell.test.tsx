@@ -4,10 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import { Cell } from "@/components/board/Cell";
 
 describe("Cell", () => {
-  // ---------------------------------------------------------------------------
-  // Rendering
-  // ---------------------------------------------------------------------------
-
   it("renders as a button element", () => {
     render(
       <Cell
@@ -82,10 +78,6 @@ describe("Cell", () => {
     expect(screen.getByRole("button")).not.toHaveAccessibleName(/Press Space/i);
   });
 
-  // ---------------------------------------------------------------------------
-  // Disabled state
-  // ---------------------------------------------------------------------------
-
   it("is not disabled for an untouched cell", () => {
     render(
       <Cell
@@ -122,10 +114,6 @@ describe("Cell", () => {
     );
     expect(screen.getByRole("button")).toBeDisabled();
   });
-
-  // ---------------------------------------------------------------------------
-  // Interaction
-  // ---------------------------------------------------------------------------
 
   it("calls onFire with the cell's coordinate when clicked", async () => {
     const user = userEvent.setup();
@@ -173,10 +161,6 @@ describe("Cell", () => {
     expect(screen.getByRole("button")).toHaveAttribute("data-coord", "4,7");
   });
 
-  // ---------------------------------------------------------------------------
-  // Scale on hover/focus
-  // ---------------------------------------------------------------------------
-
   it("applies scale class to an unfired enabled cell", () => {
     render(
       <Cell
@@ -219,10 +203,6 @@ describe("Cell", () => {
       "hover:scale-125",
     );
   });
-
-  // ---------------------------------------------------------------------------
-  // Coordinate tooltip
-  // ---------------------------------------------------------------------------
 
   it("renders a tooltip span for an untouched enabled cell", () => {
     render(

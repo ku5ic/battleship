@@ -37,7 +37,7 @@ describe("chooseRandomUnfiredCoordinate", () => {
     expect(chooseRandomUnfiredCoordinate(shots, 10)).toBe(lastKey);
   });
 
-  it("returns null for an empty board is not triggered — full board returns null", () => {
+  it("returns null for an empty board is not triggered: full board returns null", () => {
     // Sanity check: empty shots means all 100 cells are available.
     const result = chooseRandomUnfiredCoordinate(new Map(), 10);
     expect(result).not.toBeNull();

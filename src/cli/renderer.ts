@@ -10,9 +10,7 @@ import type {
 import { fromKey, toKey } from "@/battleship/utils/coordinates";
 import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 
-// ---------------------------------------------------------------------------
 // Cell symbols
-// ---------------------------------------------------------------------------
 
 export type CellSymbol = "~" | "■" | "X" | "○";
 
@@ -36,9 +34,7 @@ export function cellSymbol(
   return "~";
 }
 
-// ---------------------------------------------------------------------------
 // Board rendering
-// ---------------------------------------------------------------------------
 
 function buildShipCoordinateSet(
   ships: readonly Ship[],
@@ -92,9 +88,7 @@ export function renderBoard(
   return rows.join("\n");
 }
 
-// ---------------------------------------------------------------------------
 // Symbol legend
-// ---------------------------------------------------------------------------
 
 /**
  * Returns a compact legend explaining board symbols.
@@ -105,9 +99,7 @@ export function renderLegend(): string {
   );
 }
 
-// ---------------------------------------------------------------------------
 // Vs-computer two-board rendering
-// ---------------------------------------------------------------------------
 
 /**
  * Renders both boards stacked vertically with section headers.
@@ -142,9 +134,7 @@ export function renderVsComputerBoards(
   ].join("\n");
 }
 
-// ---------------------------------------------------------------------------
 // Shot result formatting
-// ---------------------------------------------------------------------------
 
 /**
  * Formats a shot result as a human-readable string.
@@ -175,9 +165,7 @@ export function renderShotResult(
   }
 }
 
-// ---------------------------------------------------------------------------
 // Game-over formatting
-// ---------------------------------------------------------------------------
 
 /**
  * Returns a game-over message for single-player mode.

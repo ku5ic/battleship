@@ -5,7 +5,7 @@ import { cn } from "@/lib/cn";
 type ButtonVariant = "outline" | "toggle";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Visual variant — "outline" for action buttons, "toggle" for mode selectors. */
+  /** Visual variant: "outline" for action buttons, "toggle" for mode selectors. */
   variant?: ButtonVariant;
   /** Active state for the "toggle" variant; ignored for other variants. */
   active?: boolean;
