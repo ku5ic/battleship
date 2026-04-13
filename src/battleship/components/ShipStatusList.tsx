@@ -1,4 +1,4 @@
-import { Text } from "@/components/ui";
+import { Heading } from "@nuka-ui/core";
 import type { Ship, ShipType } from "@/battleship/types";
 import { ShipStatusItem } from "@/battleship/components/ShipStatusItem";
 
@@ -22,9 +22,14 @@ export function ShipStatusList({
 }: ShipStatusListProps) {
   return (
     <section aria-label="Fleet status">
-      <Text as="h2" variant="label" className="mb-2">
+      <Heading
+        as="h2"
+        weight="semibold"
+        color="muted"
+        className="mb-2 text-xs uppercase tracking-widest"
+      >
         Fleet
-      </Text>
+      </Heading>
       <ul
         className="divide-y divide-slate-700/50"
         aria-label={`${String(sunkShipIds.size)} of ${String(ships.length)} ships sunk`}

@@ -1,7 +1,21 @@
 import { useCallback, useState } from "react";
 import { SinglePlayerGame } from "@/components/game/SinglePlayerGame";
 import { VsComputerGame } from "@/components/game/VsComputerGame";
-import { Button, Text } from "@/components/ui";
+import {
+  AppShell,
+  AppShellBody,
+  AppShellHeader,
+  AppShellMain,
+  Divider,
+  Heading,
+  Radio,
+  RadioGroup,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Toaster,
+} from "@nuka-ui/core";
 import {
   GameStatus,
   VsComputerGameStatus,
@@ -52,128 +66,104 @@ export function App() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col">
-      <header className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700">
-        <div className="flex items-center justify-between gap-4 px-4 py-2 max-w-screen-xl mx-auto w-full flex-wrap">
-          <Text as="h1" variant="title">
-            Battleship
-          </Text>
+    <AppShell className="bg-slate-900 text-white">
+      <Tabs
+        value={mode}
+        onValueChange={(v) => {
+          handleModeChange(v as Mode);
+        }}
+      >
+        <AppShellHeader border className="backdrop-blur-sm bg-slate-900/95">
+          <div className="flex items-center justify-between gap-4 px-4 py-2 max-w-screen-xl mx-auto w-full flex-wrap">
+            <Heading
+              as="h1"
+              size="xl"
+              weight="semibold"
+              className="tracking-wide"
+            >
+              Battleship
+            </Heading>
 
-          <div className="flex-1 flex justify-center px-4 min-w-0">
-            {headerGameStatus?.mode === "single" && (
-              <GameStatus
-                isGameOver={headerGameStatus.isGameOver}
-                shotCount={headerGameStatus.shotCount}
-              />
-            )}
-            {headerGameStatus?.mode === "vsComputer" && (
-              <VsComputerGameStatus
-                winner={headerGameStatus.winner}
-                activeTurn={headerGameStatus.activeTurn}
-                isAiThinking={headerGameStatus.isAiThinking}
-              />
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex gap-2">
-              <Button
-                variant="toggle"
-                active={mode === "single"}
-                aria-pressed={mode === "single"}
-                className="py-1 px-3 text-sm"
-                onClick={() => {
-                  handleModeChange("single");
-                }}
-              >
-                Single player
-              </Button>
-              <Button
-                variant="toggle"
-                active={mode === "vsComputer"}
-                aria-pressed={mode === "vsComputer"}
-                className="py-1 px-3 text-sm"
-                onClick={() => {
-                  handleModeChange("vsComputer");
-                }}
-              >
-                vs Computer
-              </Button>
+            <div className="flex-1 flex justify-center px-4 min-w-0">
+              {headerGameStatus?.mode === "single" && (
+                <GameStatus
+                  isGameOver={headerGameStatus.isGameOver}
+                  shotCount={headerGameStatus.shotCount}
+                />
+              )}
+              {headerGameStatus?.mode === "vsComputer" && (
+                <VsComputerGameStatus
+                  winner={headerGameStatus.winner}
+                  activeTurn={headerGameStatus.activeTurn}
+                  isAiThinking={headerGameStatus.isAiThinking}
+                />
+              )}
             </div>
 
-            <div className="w-px h-4 bg-slate-600" aria-hidden="true" />
+            <div className="flex items-center gap-2 flex-wrap">
+              <TabsList variant="pill">
+                <TabsTrigger value="single">Single player</TabsTrigger>
+                <TabsTrigger value="vsComputer">vs Computer</TabsTrigger>
+              </TabsList>
 
-            {/* Difficulty selector: role="group" provides announced context so
-                "Easy / Moderate / Hard" are not ambiguous in isolation. */}
-            <div role="group" aria-label="Difficulty" className="flex gap-2">
-              <Button
-                variant="toggle"
-                active={difficulty === "easy"}
-                aria-pressed={difficulty === "easy"}
-                className="py-1 px-3 text-sm"
-                onClick={() => {
-                  handleDifficultyChange("easy");
+              <Divider orientation="vertical" />
+
+              <RadioGroup
+                name="difficulty"
+                orientation="horizontal"
+                value={difficulty}
+                onChange={(v) => {
+                  handleDifficultyChange(v as Difficulty);
                 }}
               >
-                Easy
-              </Button>
-              <Button
-                variant="toggle"
-                active={difficulty === "moderate"}
-                aria-pressed={difficulty === "moderate"}
-                className="py-1 px-3 text-sm"
-                onClick={() => {
-                  handleDifficultyChange("moderate");
-                }}
-              >
-                Moderate
-              </Button>
-              <Button
-                variant="toggle"
-                active={difficulty === "hard"}
-                aria-pressed={difficulty === "hard"}
-                className="py-1 px-3 text-sm"
-                onClick={() => {
-                  handleDifficultyChange("hard");
-                }}
-              >
-                Hard
-              </Button>
+                <Radio value="easy">Easy</Radio>
+                <Radio value="moderate">Moderate</Radio>
+                <Radio value="hard">Hard</Radio>
+              </RadioGroup>
             </div>
           </div>
-        </div>
-      </header>
+        </AppShellHeader>
 
-      <main className="flex-1 flex flex-col items-center justify-start pt-6 pb-8 px-2 sm:px-4">
-        {mode === "single" && (
-          <SinglePlayerGame
-            key={`${mode}-${difficulty}`}
-            difficulty={difficulty}
-            onStatusChange={handleSingleStatusChange}
-          />
-        )}
-        {mode === "vsComputer" && vsComputerPhase === "placement" && (
-          <PlacementScreen
-            difficulty={difficulty}
-            onConfirm={(ships) => {
-              setConfirmedPlayerShips(ships);
-              setVsComputerPhase("battle");
-            }}
-            onRandomise={() => {
-              setConfirmedPlayerShips(null);
-              setVsComputerPhase("battle");
-            }}
-          />
-        )}
-        {mode === "vsComputer" && vsComputerPhase === "battle" && (
-          <VsComputerGame
-            key={`${mode}-${difficulty}`}
-            difficulty={difficulty}
-            playerShips={confirmedPlayerShips ?? undefined}
-            onStatusChange={handleVsComputerStatusChange}
-          />
-        )}
-      </main>
-    </div>
+        <AppShellBody>
+          <AppShellMain
+            padded={false}
+            className="flex flex-col items-center justify-start pt-6 pb-8 px-2 sm:px-4"
+          >
+            <TabsContent value="single" className="mt-0 w-full">
+              <SinglePlayerGame
+                key={`single-${difficulty}`}
+                difficulty={difficulty}
+                onStatusChange={handleSingleStatusChange}
+              />
+            </TabsContent>
+
+            <TabsContent value="vsComputer" className="mt-0 w-full">
+              {vsComputerPhase === "placement" && (
+                <PlacementScreen
+                  difficulty={difficulty}
+                  onConfirm={(ships) => {
+                    setConfirmedPlayerShips(ships);
+                    setVsComputerPhase("battle");
+                  }}
+                  onRandomise={() => {
+                    setConfirmedPlayerShips(null);
+                    setVsComputerPhase("battle");
+                  }}
+                />
+              )}
+              {vsComputerPhase === "battle" && (
+                <VsComputerGame
+                  key={`vsComputer-${difficulty}`}
+                  difficulty={difficulty}
+                  playerShips={confirmedPlayerShips ?? undefined}
+                  onStatusChange={handleVsComputerStatusChange}
+                />
+              )}
+            </TabsContent>
+          </AppShellMain>
+        </AppShellBody>
+      </Tabs>
+      <Toaster position="bottom-right" />
+    </AppShell>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
-import { Button, Text } from "@/components/ui";
+import { Button, Heading, Text } from "@nuka-ui/core";
 import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import { ShipStatusItem } from "@/battleship/components/ShipStatusItem";
 import { usePlacementPhase } from "@/battleship/hooks/usePlacementPhase";
@@ -132,9 +132,14 @@ export function PlacementScreen({
       <div className="w-full flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center">
         {/* Placement grid */}
         <section aria-label="Place your fleet" className="w-full lg:flex-1">
-          <Text as="h2" variant="label" className="mb-2">
+          <Heading
+            as="h2"
+            weight="semibold"
+            color="muted"
+            className="mb-2 text-xs uppercase tracking-widest"
+          >
             Place your fleet
-          </Text>
+          </Heading>
           <div className="grid w-full" style={{ gridTemplateColumns }}>
             {Array.from(cellStatusMap.entries()).map(([coord, status]) => (
               <PlacementCell
@@ -158,9 +163,14 @@ export function PlacementScreen({
 
         {/* Ship palette + controls */}
         <section aria-label="Your fleet" className="w-full lg:w-72">
-          <Text as="h2" variant="label" className="mb-2">
+          <Heading
+            as="h2"
+            weight="semibold"
+            color="muted"
+            className="mb-2 text-xs uppercase tracking-widest"
+          >
             Your fleet
-          </Text>
+          </Heading>
           <div
             role="listbox"
             aria-label="Select a ship to place"
@@ -206,6 +216,7 @@ export function PlacementScreen({
           {/* Orientation toggle */}
           <div className="mt-4">
             <Button
+              variant="outline"
               aria-disabled={pendingShip === null}
               onClick={handleOrientationToggle}
             >
@@ -213,8 +224,10 @@ export function PlacementScreen({
             </Button>
             <Text
               as="p"
-              variant="label"
-              className="mt-1 text-xs text-slate-400"
+              size="xs"
+              weight="semibold"
+              color="muted"
+              className="mt-1 uppercase tracking-widest"
             >
               Press R to rotate
             </Text>
@@ -222,12 +235,24 @@ export function PlacementScreen({
 
           {/* Action buttons */}
           <div className="mt-4 flex flex-col gap-2">
-            <Button onClick={onRandomise}>Randomise for me</Button>
-            <Button aria-disabled={!isComplete} onClick={handleConfirm}>
+            <Button variant="outline" onClick={onRandomise}>
+              Randomise for me
+            </Button>
+            <Button
+              variant="outline"
+              aria-disabled={!isComplete}
+              onClick={handleConfirm}
+            >
               Start game
             </Button>
             {!isComplete && (
-              <Text as="p" variant="label" className="text-xs text-slate-400">
+              <Text
+                as="p"
+                size="xs"
+                weight="semibold"
+                color="muted"
+                className="uppercase tracking-widest"
+              >
                 Place all ships to continue
               </Text>
             )}

@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { Board } from "@/components/board";
-import { Button, Stack, Text } from "@/components/ui";
+import { Button, Heading, Stack, toast } from "@nuka-ui/core";
 import { cn } from "@/lib/cn";
 import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
+import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import { useVsComputerGame } from "@/battleship/hooks/useVsComputerGame";
 import type {
   CoordinateKey,
@@ -50,8 +51,48 @@ export function VsComputerGame({
     onStatusChange({ mode: "vsComputer", winner, activeTurn, isAiThinking });
   }, [winner, activeTurn, isAiThinking, onStatusChange]);
 
+  useEffect(() => {
+    if (!playerLastResult) return;
+    if (playerLastResult.outcome === "already-fired") return;
+    if (playerLastResult.outcome === "sunk") {
+      const name = playerLastResult.sunkShipId
+        ? SHIP_DISPLAY_NAMES[playerLastResult.sunkShipId]
+        : "Ship";
+      toast(`Hit! You sunk the ${name}!`, {
+        intent: "success",
+        duration: 3000,
+      });
+    } else if (playerLastResult.outcome === "hit") {
+      toast("Hit!", { intent: "success", duration: 2000 });
+    } else {
+      toast("Miss.", { duration: 2000 });
+    }
+  }, [playerLastResult]);
+
+  useEffect(() => {
+    if (!computerLastResult) return;
+    if (computerLastResult.outcome === "already-fired") return;
+    if (computerLastResult.outcome === "sunk") {
+      const name = computerLastResult.sunkShipId
+        ? SHIP_DISPLAY_NAMES[computerLastResult.sunkShipId]
+        : "Ship";
+      toast(`Computer sunk your ${name}!`, {
+        intent: "danger",
+        duration: 3000,
+      });
+    } else if (computerLastResult.outcome === "hit") {
+      toast("Computer hit!", { intent: "danger", duration: 2000 });
+    } else {
+      toast("Computer missed.", { duration: 2000 });
+    }
+  }, [computerLastResult]);
+
   return (
-    <Stack className="w-full max-w-5xl mx-auto">
+    <Stack
+      gap={{ base: "md", sm: "lg" }}
+      align="center"
+      className="w-full max-w-5xl mx-auto"
+    >
       {/* Announcers: visually hidden, one per board so events don't collide */}
       <ShotResultAnnouncer result={computerLastResult} />
       <ShotResultAnnouncer result={playerLastResult} />
@@ -74,9 +115,14 @@ export function VsComputerGame({
             difficulty === "easy" && "lg:w-auto lg:flex-1",
           )}
         >
-          <Text as="h2" variant="label" className="mb-2">
+          <Heading
+            as="h2"
+            weight="semibold"
+            color="muted"
+            className="mb-2 text-xs uppercase tracking-widest"
+          >
             Your fleet
-          </Text>
+          </Heading>
           <Board
             boardSize={boardSize}
             columnLabels={columnLabels}
@@ -100,9 +146,14 @@ export function VsComputerGame({
             difficulty === "easy" && "lg:w-auto lg:flex-1",
           )}
         >
-          <Text as="h2" variant="label" className="mb-2">
+          <Heading
+            as="h2"
+            weight="semibold"
+            color="muted"
+            className="mb-2 text-xs uppercase tracking-widest"
+          >
             Enemy fleet
-          </Text>
+          </Heading>
           <Board
             boardSize={boardSize}
             columnLabels={columnLabels}
@@ -123,7 +174,9 @@ export function VsComputerGame({
       </div>
 
       {/* Reset: always available */}
-      <Button onClick={reset}>{gameOver ? "Play again" : "Restart"}</Button>
+      <Button variant="outline" onClick={reset}>
+        {gameOver ? "Play again" : "Restart"}
+      </Button>
     </Stack>
   );
 }

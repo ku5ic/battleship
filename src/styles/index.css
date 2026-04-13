@@ -1,1 +1,53 @@
 @import "tailwindcss";
+@import "@nuka-ui/core/styles";
+
+[data-theme="dark"] {
+  --nuka-bg-base: #0f172a;
+  --nuka-bg-subtle: #1e293b;
+  --nuka-bg-muted: #1e293b;
+  --nuka-bg-emphasis: #f1f5f9;
+
+  --nuka-border-base: #334155;
+  --nuka-border-strong: #475569;
+  --nuka-border-focus: #facc15;
+  --nuka-border-disabled: #334155;
+
+  --nuka-text-base: #f1f5f9;
+  --nuka-text-muted: #94a3b8;
+  --nuka-text-subtle: #64748b;
+  --nuka-text-inverse: #0f172a;
+  --nuka-text-disabled: #475569;
+
+  --nuka-accent-bg: #475569;
+  --nuka-accent-bg-hover: #475569;
+  --nuka-accent-bg-active: #334155;
+  --nuka-accent-bg-subtle: #1e293b;
+  --nuka-accent-border: #475569;
+  --nuka-accent-text: #f1f5f9;
+  --nuka-accent-fg: #f1f5f9;
+  --nuka-accent-bg-disabled: #334155;
+
+  --nuka-danger-base: #dc2626;
+  --nuka-danger-bg: #991b1b;
+  --nuka-danger-text: #fca5a5;
+  --nuka-danger-border: #dc2626;
+  --nuka-danger-fg: #0f172a;
+
+  --nuka-success-base: #15803d;
+  --nuka-success-bg: #052e16;
+  --nuka-success-text: #4ade80;
+  --nuka-success-border: #15803d;
+  --nuka-success-fg: #0f172a;
+
+  --nuka-input-bg: #1e293b;
+  --nuka-input-border: #334155;
+  --nuka-input-border-hover: #475569;
+
+  --nuka-shadow-card: 0 1px 3px rgb(0 0 0 / 0.4), 0 1px 2px rgb(0 0 0 / 0.24);
+  --nuka-shadow-overlay:
+    0 4px 6px rgb(0 0 0 / 0.4), 0 2px 4px rgb(0 0 0 / 0.24);
+
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+}

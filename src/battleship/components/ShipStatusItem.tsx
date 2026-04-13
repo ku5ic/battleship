@@ -1,3 +1,4 @@
+import { Badge } from "@nuka-ui/core";
 import { cn } from "@/lib/cn";
 import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import type { ShipType } from "@/battleship/types";
@@ -99,15 +100,15 @@ export function ShipStatusItem({
       )}
 
       {isSunk && (
-        <span className="text-xs text-red-400 font-semibold uppercase tracking-wider">
+        <Badge variant="subtle" intent="danger" size="sm">
           Sunk
-        </span>
+        </Badge>
       )}
 
       {showPlacedBadge && (
-        <span className="text-xs text-green-400 font-semibold uppercase tracking-wider">
+        <Badge variant="subtle" intent="success" size="sm">
           Placed
-        </span>
+        </Badge>
       )}
     </>
   );
