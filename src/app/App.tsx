@@ -1,7 +1,13 @@
 import { useCallback, useState } from "react";
 import { SinglePlayerGame } from "@/components/game/SinglePlayerGame";
 import { VsComputerGame } from "@/components/game/VsComputerGame";
-import { Heading } from "@nuka-ui/core";
+import {
+  AppShell,
+  AppShellBody,
+  AppShellHeader,
+  AppShellMain,
+  Heading,
+} from "@nuka-ui/core";
 import { cn } from "@/lib/cn";
 import {
   GameStatus,
@@ -53,8 +59,8 @@ export function App() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col">
-      <header className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700">
+    <AppShell className="bg-slate-900 text-white">
+      <AppShellHeader border className="backdrop-blur-sm bg-slate-900/95">
         <div className="flex items-center justify-between gap-4 px-4 py-2 max-w-screen-xl mx-auto w-full flex-wrap">
           <Heading
             as="h1"
@@ -178,38 +184,43 @@ export function App() {
             </div>
           </div>
         </div>
-      </header>
+      </AppShellHeader>
 
-      <main className="flex-1 flex flex-col items-center justify-start pt-6 pb-8 px-2 sm:px-4">
-        {mode === "single" && (
-          <SinglePlayerGame
-            key={`${mode}-${difficulty}`}
-            difficulty={difficulty}
-            onStatusChange={handleSingleStatusChange}
-          />
-        )}
-        {mode === "vsComputer" && vsComputerPhase === "placement" && (
-          <PlacementScreen
-            difficulty={difficulty}
-            onConfirm={(ships) => {
-              setConfirmedPlayerShips(ships);
-              setVsComputerPhase("battle");
-            }}
-            onRandomise={() => {
-              setConfirmedPlayerShips(null);
-              setVsComputerPhase("battle");
-            }}
-          />
-        )}
-        {mode === "vsComputer" && vsComputerPhase === "battle" && (
-          <VsComputerGame
-            key={`${mode}-${difficulty}`}
-            difficulty={difficulty}
-            playerShips={confirmedPlayerShips ?? undefined}
-            onStatusChange={handleVsComputerStatusChange}
-          />
-        )}
-      </main>
-    </div>
+      <AppShellBody>
+        <AppShellMain
+          padded={false}
+          className="flex flex-col items-center justify-start pt-6 pb-8 px-2 sm:px-4"
+        >
+          {mode === "single" && (
+            <SinglePlayerGame
+              key={`${mode}-${difficulty}`}
+              difficulty={difficulty}
+              onStatusChange={handleSingleStatusChange}
+            />
+          )}
+          {mode === "vsComputer" && vsComputerPhase === "placement" && (
+            <PlacementScreen
+              difficulty={difficulty}
+              onConfirm={(ships) => {
+                setConfirmedPlayerShips(ships);
+                setVsComputerPhase("battle");
+              }}
+              onRandomise={() => {
+                setConfirmedPlayerShips(null);
+                setVsComputerPhase("battle");
+              }}
+            />
+          )}
+          {mode === "vsComputer" && vsComputerPhase === "battle" && (
+            <VsComputerGame
+              key={`${mode}-${difficulty}`}
+              difficulty={difficulty}
+              playerShips={confirmedPlayerShips ?? undefined}
+              onStatusChange={handleVsComputerStatusChange}
+            />
+          )}
+        </AppShellMain>
+      </AppShellBody>
+    </AppShell>
   );
 }
