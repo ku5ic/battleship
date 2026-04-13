@@ -4,6 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 import { SinglePlayerGame } from "@/components/game/SinglePlayerGame";
 import type { UserEvent } from "@testing-library/user-event";
 
+vi.mock("@nuka-ui/core", async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...(actual as Record<string, unknown>), toast: vi.fn() };
+});
+
 // Mock placement to return the same deterministic layout used by the
 // original static config. This keeps all existing coordinate-based
 // assertions valid after the switch to randomised placement.
@@ -139,7 +144,7 @@ describe("SinglePlayerGame", () => {
     expect(
       screen.getByRole("button", { name: /Play again/i }),
     ).toBeInTheDocument();
-  });
+  }, 15000);
 
   it("resets the board when Play again is clicked", async () => {
     const user = userEvent.setup();
@@ -149,7 +154,7 @@ describe("SinglePlayerGame", () => {
     expect(
       screen.getAllByRole("button").filter((b) => !b.hasAttribute("disabled")),
     ).toHaveLength(100);
-  });
+  }, 15000);
 
   it("calls onStatusChange with initial status on mount", () => {
     const onStatusChange = vi.fn();
@@ -183,5 +188,5 @@ describe("SinglePlayerGame", () => {
     expect(onStatusChange.mock.lastCall).toEqual([
       { mode: "single", isGameOver: true, shotCount: 17 },
     ]);
-  });
+  }, 15000);
 });

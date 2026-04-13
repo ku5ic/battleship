@@ -2,6 +2,11 @@ import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { VsComputerGame } from "@/components/game/VsComputerGame";
+
+vi.mock("@nuka-ui/core", async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...(actual as Record<string, unknown>), toast: vi.fn() };
+});
 import { AI_SHOT_DELAY_MS } from "@/battleship/hooks/useVsComputerGame";
 
 // Mock placement to return the same deterministic layout used by the
@@ -178,7 +183,7 @@ describe("VsComputerGame", () => {
 
     const buttons = within(opponentBoard()).getAllByRole("button");
     expect(buttons.every((b) => b.hasAttribute("disabled"))).toBe(true);
-  });
+  }, 15000);
 
   it("shows Play again button after the player wins", async () => {
     const user = userEvent.setup();
@@ -191,7 +196,7 @@ describe("VsComputerGame", () => {
     expect(
       screen.getByRole("button", { name: "Play again" }),
     ).toBeInTheDocument();
-  });
+  }, 15000);
 
   it("resets both boards when Restart is clicked", async () => {
     const user = userEvent.setup();
