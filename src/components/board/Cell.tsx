@@ -1,3 +1,4 @@
+import { Tooltip, TooltipContent, TooltipTrigger } from "@nuka-ui/core";
 import { cn } from "@/lib/cn";
 import type { CellStatus, CoordinateKey } from "@/battleship/types";
 import { fromKey } from "@/battleship/utils/coordinates";
@@ -47,62 +48,43 @@ export function Cell({
   const displayCoord = `${columnLabel}${String(row + 1)}`;
 
   return (
-    <button
-      type="button"
-      data-coord={coord}
-      disabled={isDisabled}
-      tabIndex={isDisabled ? undefined : tabIndex}
-      aria-label={buildAriaLabel(columnLabel, row, status, isFireable)}
-      onClick={() => {
-        onFire(coord);
-      }}
-      className={cn(
-        "group relative flex items-center justify-center",
-        // Touch targets on mobile are met by the scale-up on hover/focus
-        // (scale-125), not by minimum height. aspect-square keeps cells
-        // square at all breakpoints without causing overflow on dense grids.
-        "w-full aspect-square",
-        "border border-slate-600",
-        // Focus ring: yellow to stand out against the dark board at any state.
-        // ring-offset-2 gives a small gap so the ring doesn't blend with neighbors.
-        "focus-visible:outline-none focus-visible:ring-2",
-        "focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
-        status === "untouched" &&
-          !disabled &&
-          "bg-slate-700 hover:bg-slate-600 cursor-pointer",
-        // Scale and z-index are only meaningful for fireable targets. Disabled
-        // and already-fired buttons cannot receive focus, so the guard is
-        // structurally redundant but makes the intent explicit.
-        status === "untouched" &&
-          !disabled && [
-            "hover:scale-125 focus-visible:scale-125",
-            "hover:z-10 focus-visible:z-10",
-            "motion-safe:transition-transform motion-safe:duration-100",
-          ],
-        status === "untouched" && disabled && "bg-slate-700 cursor-default",
-        status === "hit" && "bg-red-800 border-red-600",
-        status === "miss" && "bg-slate-600 border-slate-500",
-      )}
-    >
-      {status === "hit" && <HitMarker />}
-      {status === "miss" && <MissMarker />}
-      {/* Coordinate tooltip: purely visual; the accessible name already
-          encodes the position. Known limitation: on row 0 the tooltip may
-          clip above the column header since it always renders above the cell. */}
-      {isFireable && (
-        <span
-          aria-hidden="true"
+    <Tooltip side="top" delay={200}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          data-coord={coord}
+          disabled={isDisabled}
+          tabIndex={isDisabled ? undefined : tabIndex}
+          aria-label={buildAriaLabel(columnLabel, row, status, isFireable)}
+          onClick={() => {
+            onFire(coord);
+          }}
           className={cn(
-            "pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1",
-            "z-20 rounded bg-gray-900 px-1 text-xs font-mono text-white",
-            "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100",
-            "motion-safe:transition-opacity motion-safe:duration-100",
+            "relative flex items-center justify-center",
+            "w-full aspect-square",
+            "border border-slate-600",
+            "focus-visible:outline-none focus-visible:ring-2",
+            "focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
+            status === "untouched" &&
+              !disabled &&
+              "bg-slate-700 hover:bg-slate-600 cursor-pointer",
+            status === "untouched" &&
+              !disabled && [
+                "hover:scale-125 focus-visible:scale-125",
+                "hover:z-10 focus-visible:z-10",
+                "motion-safe:transition-transform motion-safe:duration-100",
+              ],
+            status === "untouched" && disabled && "bg-slate-700 cursor-default",
+            status === "hit" && "bg-red-800 border-red-600",
+            status === "miss" && "bg-slate-600 border-slate-500",
           )}
         >
-          {displayCoord}
-        </span>
-      )}
-    </button>
+          {status === "hit" && <HitMarker />}
+          {status === "miss" && <MissMarker />}
+        </button>
+      </TooltipTrigger>
+      {isFireable && <TooltipContent>{displayCoord}</TooltipContent>}
+    </Tooltip>
   );
 }
 

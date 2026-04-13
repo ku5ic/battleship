@@ -204,7 +204,8 @@ describe("Cell", () => {
     );
   });
 
-  it("renders a tooltip span for an untouched enabled cell", () => {
+  it("shows tooltip on hover for an untouched enabled cell", async () => {
+    const user = userEvent.setup();
     render(
       <Cell
         coord="0,0"
@@ -214,33 +215,17 @@ describe("Cell", () => {
         tabIndex={0}
       />,
     );
-    const tooltip = screen.getByText("A1");
-    expect(tooltip).toBeInTheDocument();
-    expect(tooltip.tagName).toBe("SPAN");
-    expect(tooltip).toHaveAttribute("aria-hidden", "true");
-  });
-
-  it("tooltip is hidden by default (opacity-0)", () => {
-    render(
-      <Cell
-        coord="2,4"
-        columnLabel="C"
-        status="untouched"
-        onFire={vi.fn()}
-        tabIndex={0}
-      />,
-    );
-    const tooltip = screen.getByText("C5");
-    expect(tooltip.className).toContain("opacity-0");
+    await user.hover(screen.getByRole("button"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("A1");
   });
 
   it("does not render a tooltip for a hit cell", () => {
     render(<Cell coord="0,0" columnLabel="A" status="hit" onFire={vi.fn()} />);
-    expect(screen.queryByText("A1")).not.toBeInTheDocument();
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 
   it("does not render a tooltip for a miss cell", () => {
     render(<Cell coord="0,0" columnLabel="A" status="miss" onFire={vi.fn()} />);
-    expect(screen.queryByText("A1")).not.toBeInTheDocument();
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 });
