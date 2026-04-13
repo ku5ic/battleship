@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { Board } from "@/components/board";
-import { Button, Stack } from "@nuka-ui/core";
+import { Button, Stack, toast } from "@nuka-ui/core";
 import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
+import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import { useSinglePlayerGame } from "@/battleship/hooks/useSinglePlayerGame";
 import type { Difficulty, HeaderGameStatus } from "@/battleship/types";
 
@@ -37,6 +38,24 @@ export function SinglePlayerGame({
   useEffect(() => {
     onStatusChange({ mode: "single", isGameOver, shotCount: shots.size });
   }, [isGameOver, shots.size, onStatusChange]);
+
+  useEffect(() => {
+    if (!lastResult) return;
+    if (lastResult.outcome === "already-fired") return;
+    if (lastResult.outcome === "sunk") {
+      const name = lastResult.sunkShipId
+        ? SHIP_DISPLAY_NAMES[lastResult.sunkShipId]
+        : "Ship";
+      toast(`Hit! You sunk the ${name}!`, {
+        intent: "success",
+        duration: 3000,
+      });
+    } else if (lastResult.outcome === "hit") {
+      toast("Hit!", { intent: "success", duration: 2000 });
+    } else {
+      toast("Miss.", { duration: 2000 });
+    }
+  }, [lastResult]);
 
   return (
     <Stack

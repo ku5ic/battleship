@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { Board } from "@/components/board";
-import { Button, Heading, Stack } from "@nuka-ui/core";
+import { Button, Heading, Stack, toast } from "@nuka-ui/core";
 import { cn } from "@/lib/cn";
 import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
+import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import { useVsComputerGame } from "@/battleship/hooks/useVsComputerGame";
 import type {
   CoordinateKey,
@@ -49,6 +50,42 @@ export function VsComputerGame({
   useEffect(() => {
     onStatusChange({ mode: "vsComputer", winner, activeTurn, isAiThinking });
   }, [winner, activeTurn, isAiThinking, onStatusChange]);
+
+  useEffect(() => {
+    if (!playerLastResult) return;
+    if (playerLastResult.outcome === "already-fired") return;
+    if (playerLastResult.outcome === "sunk") {
+      const name = playerLastResult.sunkShipId
+        ? SHIP_DISPLAY_NAMES[playerLastResult.sunkShipId]
+        : "Ship";
+      toast(`Hit! You sunk the ${name}!`, {
+        intent: "success",
+        duration: 3000,
+      });
+    } else if (playerLastResult.outcome === "hit") {
+      toast("Hit!", { intent: "success", duration: 2000 });
+    } else {
+      toast("Miss.", { duration: 2000 });
+    }
+  }, [playerLastResult]);
+
+  useEffect(() => {
+    if (!computerLastResult) return;
+    if (computerLastResult.outcome === "already-fired") return;
+    if (computerLastResult.outcome === "sunk") {
+      const name = computerLastResult.sunkShipId
+        ? SHIP_DISPLAY_NAMES[computerLastResult.sunkShipId]
+        : "Ship";
+      toast(`Computer sunk your ${name}!`, {
+        intent: "danger",
+        duration: 3000,
+      });
+    } else if (computerLastResult.outcome === "hit") {
+      toast("Computer hit!", { intent: "danger", duration: 2000 });
+    } else {
+      toast("Computer missed.", { duration: 2000 });
+    }
+  }, [computerLastResult]);
 
   return (
     <Stack

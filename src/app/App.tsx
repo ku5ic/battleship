@@ -14,6 +14,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Toaster,
 } from "@nuka-ui/core";
 import {
   GameStatus,
@@ -162,6 +163,7 @@ export function App() {
           </AppShellMain>
         </AppShellBody>
       </Tabs>
+      <Toaster position="bottom-right" />
     </AppShell>
   );
 }
