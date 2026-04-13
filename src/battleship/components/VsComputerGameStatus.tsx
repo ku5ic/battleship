@@ -1,3 +1,4 @@
+import { cn } from "@/lib/cn";
 import type { PlayerId } from "@/battleship/types";
 
 interface VsComputerGameStatusProps {
@@ -33,13 +34,13 @@ export function VsComputerGameStatus({
     <p
       role="status"
       aria-atomic="true"
-      className={
-        isOver
-          ? winner === "player"
-            ? "text-sm font-semibold text-green-400 text-center"
-            : "text-sm font-semibold text-red-400 text-center"
-          : "text-sm text-slate-400 text-center"
-      }
+      className={cn(
+        "text-sm text-center",
+        isOver && "font-semibold",
+        isOver && winner === "player" && "text-green-400",
+        isOver && winner === "computer" && "text-red-400",
+        !isOver && "text-slate-400",
+      )}
     >
       {buildMessage()}
     </p>

@@ -56,18 +56,29 @@ const ALL_COMPUTER_SHIP_COORDS = [
   "6,9",
 ];
 
-function yourBoard() {
-  return screen.getByRole("region", { name: "Your board" });
+// The "Your fleet" tab is active on mount. Most tests need the enemy tab,
+// so they call switchToEnemyTab before interacting with enemyPanel().
+
+function enemyPanel() {
+  return screen.getByRole("tabpanel", { name: "Enemy fleet" });
 }
 
-function opponentBoard() {
-  return screen.getByRole("region", { name: "Opponent's board" });
+function playerPanel() {
+  return screen.getByRole("tabpanel", { name: "Your fleet" });
 }
 
-function cellIn(section: HTMLElement, coord: string): HTMLElement {
-  const el = section.querySelector<HTMLElement>(`[data-coord="${coord}"]`);
-  if (!el) throw new Error(`No cell with data-coord="${coord}" in section`);
+function cellIn(container: HTMLElement, coord: string): HTMLElement {
+  const el = container.querySelector<HTMLElement>(`[data-coord="${coord}"]`);
+  if (!el) throw new Error(`No cell with data-coord="${coord}" in container`);
   return el;
+}
+
+async function switchToEnemyTab(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("tab", { name: "Enemy fleet" }));
+}
+
+async function switchToPlayerTab(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("tab", { name: "Your fleet" }));
 }
 
 // Timer strategy
@@ -88,17 +99,12 @@ describe("VsComputerGame", () => {
     vi.useRealTimers();
   });
 
-  it("renders both board sections", () => {
+  it("renders both board tabs", () => {
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
-    expect(yourBoard()).toBeInTheDocument();
-    expect(opponentBoard()).toBeInTheDocument();
-  });
-
-  it("renders two fleet status panels", () => {
-    render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
+    expect(screen.getByRole("tab", { name: "Your fleet" })).toBeInTheDocument();
     expect(
-      screen.getAllByRole("region", { name: /Fleet status/i }),
-    ).toHaveLength(2);
+      screen.getByRole("tab", { name: "Enemy fleet" }),
+    ).toBeInTheDocument();
   });
 
   it("renders the Restart button on load", () => {
@@ -108,14 +114,19 @@ describe("VsComputerGame", () => {
 
   it("all player board cells are disabled on load", () => {
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
-    const grid = within(yourBoard()).getByRole("grid");
+
+    const grid = within(playerPanel()).getByRole("grid");
     const buttons = within(grid).getAllByRole("button");
     expect(buttons.every((b) => b.hasAttribute("disabled"))).toBe(true);
   });
 
-  it("opponent board cells are enabled on the player's turn", () => {
+  it("opponent board cells are enabled on the player's turn", async () => {
+    const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
-    const buttons = within(opponentBoard()).getAllByRole("button");
+
+    await switchToEnemyTab(user);
+
+    const buttons = within(enemyPanel()).getAllByRole("button");
     expect(buttons.some((b) => !b.hasAttribute("disabled"))).toBe(true);
   });
 
@@ -123,27 +134,30 @@ describe("VsComputerGame", () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
-    await user.click(cellIn(opponentBoard(), "0,0")); // destroyer
+    await switchToEnemyTab(user);
+    await user.click(cellIn(enemyPanel(), "0,0")); // destroyer
 
-    expect(cellIn(opponentBoard(), "0,0")).toHaveAccessibleName(/hit/i);
+    expect(cellIn(enemyPanel(), "0,0")).toHaveAccessibleName(/hit/i);
   });
 
   it("marks the opponent cell as miss when the player fires at empty water", async () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
-    await user.click(cellIn(opponentBoard(), "9,9"));
+    await switchToEnemyTab(user);
+    await user.click(cellIn(enemyPanel(), "9,9"));
 
-    expect(cellIn(opponentBoard(), "9,9")).toHaveAccessibleName(/miss/i);
+    expect(cellIn(enemyPanel(), "9,9")).toHaveAccessibleName(/miss/i);
   });
 
   it("disables all opponent board cells while the computer is thinking", async () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
-    await user.click(cellIn(opponentBoard(), "9,9"));
+    await switchToEnemyTab(user);
+    await user.click(cellIn(enemyPanel(), "9,9"));
 
-    const grid = within(opponentBoard()).getByRole("grid");
+    const grid = within(enemyPanel()).getByRole("grid");
     const buttons = within(grid).getAllByRole("button");
     expect(buttons.every((b) => b.hasAttribute("disabled"))).toBe(true);
   });
@@ -152,24 +166,28 @@ describe("VsComputerGame", () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
-    await user.click(cellIn(opponentBoard(), "9,9")); // miss
+    await switchToEnemyTab(user);
+    await user.click(cellIn(enemyPanel(), "9,9")); // miss
 
     act(() => {
       vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
     });
 
-    expect(cellIn(yourBoard(), "9,8")).toHaveAccessibleName(/miss/i);
+    await switchToPlayerTab(user);
+
+    expect(cellIn(playerPanel(), "9,8")).toHaveAccessibleName(/miss/i);
   });
 
   it("marks the destroyer as sunk after both cells are hit", async () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
-    await user.click(cellIn(opponentBoard(), "0,0"));
-    await user.click(cellIn(opponentBoard(), "1,0"));
+    await switchToEnemyTab(user);
+    await user.click(cellIn(enemyPanel(), "0,0"));
+    await user.click(cellIn(enemyPanel(), "1,0"));
 
     expect(
-      within(opponentBoard()).getByLabelText(/Destroyer: sunk/i),
+      within(enemyPanel()).getByLabelText(/Destroyer: sunk/i),
     ).toBeInTheDocument();
   });
 
@@ -177,11 +195,12 @@ describe("VsComputerGame", () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
+    await switchToEnemyTab(user);
     for (const coord of ALL_COMPUTER_SHIP_COORDS) {
-      await user.click(cellIn(opponentBoard(), coord));
+      await user.click(cellIn(enemyPanel(), coord));
     }
 
-    const buttons = within(opponentBoard()).getAllByRole("button");
+    const buttons = within(enemyPanel()).getAllByRole("button");
     expect(buttons.every((b) => b.hasAttribute("disabled"))).toBe(true);
   }, 15000);
 
@@ -189,8 +208,9 @@ describe("VsComputerGame", () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
+    await switchToEnemyTab(user);
     for (const coord of ALL_COMPUTER_SHIP_COORDS) {
-      await user.click(cellIn(opponentBoard(), coord));
+      await user.click(cellIn(enemyPanel(), coord));
     }
 
     expect(
@@ -202,17 +222,21 @@ describe("VsComputerGame", () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
-    await user.click(cellIn(opponentBoard(), "0,0"));
+    await switchToEnemyTab(user);
+    await user.click(cellIn(enemyPanel(), "0,0"));
     await user.click(screen.getByRole("button", { name: "Restart" }));
 
-    expect(cellIn(opponentBoard(), "0,0")).toHaveAccessibleName(/not fired/i);
+    // After reset the player tab is active; switch back to enemy to verify
+    await switchToEnemyTab(user);
+    expect(cellIn(enemyPanel(), "0,0")).toHaveAccessibleName(/not fired/i);
   });
 
   it("cancels the pending AI shot on reset", async () => {
     const user = userEvent.setup();
     render(<VsComputerGame difficulty="easy" onStatusChange={vi.fn()} />);
 
-    await user.click(cellIn(opponentBoard(), "9,9")); // miss, AI timer starts
+    await switchToEnemyTab(user);
+    await user.click(cellIn(enemyPanel(), "9,9")); // miss, AI timer starts
     await user.click(screen.getByRole("button", { name: "Restart" }));
 
     // Flush the cancelled timer: if the timeout weren't cleared by reset,
@@ -221,7 +245,9 @@ describe("VsComputerGame", () => {
       vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
     });
 
-    const firedOnPlayerBoard = within(yourBoard())
+    await switchToPlayerTab(user);
+
+    const firedOnPlayerBoard = within(playerPanel())
       .getAllByRole("button")
       .filter((b) => /hit|miss/i.test(b.getAttribute("aria-label") ?? ""));
 
@@ -250,7 +276,8 @@ describe("VsComputerGame", () => {
       <VsComputerGame difficulty="easy" onStatusChange={onStatusChange} />,
     );
 
-    await user.click(cellIn(opponentBoard(), "9,9")); // miss, triggers AI turn
+    await switchToEnemyTab(user);
+    await user.click(cellIn(enemyPanel(), "9,9")); // miss, triggers AI turn
 
     expect(onStatusChange.mock.lastCall).toEqual([
       {
@@ -308,16 +335,19 @@ describe("VsComputerGame", () => {
     );
 
     // Fire a miss to trigger the AI turn
-    await user.click(cellIn(opponentBoard(), "9,9"));
+    await switchToEnemyTab(user);
+    await user.click(cellIn(enemyPanel(), "9,9"));
 
     // Advance past AI delay
     act(() => {
       vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
     });
 
+    await switchToPlayerTab(user);
+
     // The AI fires at "9,8" (our mocked AI target), which is a destroyer
     // coordinate in our custom layout, so it should register as a hit
-    const cell = cellIn(yourBoard(), "9,8");
+    const cell = cellIn(playerPanel(), "9,8");
     expect(cell).toBeDisabled();
   });
 });

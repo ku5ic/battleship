@@ -4,25 +4,31 @@ import { ShotResultAnnouncer } from "@/battleship/components/ShotResultAnnouncer
 
 describe("ShotResultAnnouncer", () => {
   it("always renders the live region so assistive tech can observe updates", () => {
-    render(<ShotResultAnnouncer result={null} />);
+    render(<ShotResultAnnouncer result={null} announceKey={0} />);
     expect(screen.getByRole("status")).toBeInTheDocument();
   });
 
   it("is empty when there is no result", () => {
-    render(<ShotResultAnnouncer result={null} />);
+    render(<ShotResultAnnouncer result={null} announceKey={0} />);
     expect(screen.getByRole("status")).toHaveTextContent("");
   });
 
   it("announces a miss", () => {
     render(
-      <ShotResultAnnouncer result={{ coordinate: "9,9", outcome: "miss" }} />,
+      <ShotResultAnnouncer
+        result={{ coordinate: "9,9", outcome: "miss" }}
+        announceKey={0}
+      />,
     );
     expect(screen.getByRole("status")).toHaveTextContent("Miss.");
   });
 
   it("announces a hit", () => {
     render(
-      <ShotResultAnnouncer result={{ coordinate: "0,0", outcome: "hit" }} />,
+      <ShotResultAnnouncer
+        result={{ coordinate: "0,0", outcome: "hit" }}
+        announceKey={0}
+      />,
     );
     expect(screen.getByRole("status")).toHaveTextContent("Hit!");
   });
@@ -31,6 +37,7 @@ describe("ShotResultAnnouncer", () => {
     render(
       <ShotResultAnnouncer
         result={{ coordinate: "0,0", outcome: "already-fired" }}
+        announceKey={0}
       />,
     );
     expect(screen.getByRole("status")).toHaveTextContent(
@@ -42,6 +49,7 @@ describe("ShotResultAnnouncer", () => {
     render(
       <ShotResultAnnouncer
         result={{ coordinate: "1,0", outcome: "sunk", sunkShipId: "destroyer" }}
+        announceKey={0}
       />,
     );
     expect(screen.getByRole("status")).toHaveTextContent(
@@ -61,6 +69,7 @@ describe("ShotResultAnnouncer", () => {
       const { unmount } = render(
         <ShotResultAnnouncer
           result={{ coordinate: "0,0", outcome: "sunk", sunkShipId: id }}
+          announceKey={0}
         />,
       );
       expect(screen.getByRole("status")).toHaveTextContent(
@@ -72,7 +81,10 @@ describe("ShotResultAnnouncer", () => {
 
   it("falls back to a generic ship name when sunkShipId is absent", () => {
     render(
-      <ShotResultAnnouncer result={{ coordinate: "0,0", outcome: "sunk" }} />,
+      <ShotResultAnnouncer
+        result={{ coordinate: "0,0", outcome: "sunk" }}
+        announceKey={0}
+      />,
     );
     expect(screen.getByRole("status")).toHaveTextContent(
       "Hit! You sunk the Ship!",

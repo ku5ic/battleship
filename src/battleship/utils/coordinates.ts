@@ -1,4 +1,3 @@
-import { BOARD_SIZE } from "@/battleship/constants";
 import type {
   Coordinate,
   CoordinateKey,
@@ -30,7 +29,7 @@ export function rawToKey([col, row]: RawCoordinate): CoordinateKey {
 export function isInBounds(
   col: number,
   row: number,
-  boardSize: number = BOARD_SIZE,
+  boardSize: number,
 ): boolean {
   return col >= 0 && col < boardSize && row >= 0 && row < boardSize;
 }
@@ -54,7 +53,7 @@ export function deriveOrientation(
  * Useful for rendering the full grid without coupling board logic
  * to React render loops.
  */
-export function allBoardKeys(boardSize: number = BOARD_SIZE): CoordinateKey[] {
+export function allBoardKeys(boardSize: number): CoordinateKey[] {
   const keys: CoordinateKey[] = [];
   for (let row = 0; row < boardSize; row++) {
     for (let col = 0; col < boardSize; col++) {

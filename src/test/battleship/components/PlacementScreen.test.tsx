@@ -161,7 +161,7 @@ describe("PlacementScreen", () => {
     expect(carrierBtn).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("Start game has aria-disabled when not all ships placed", () => {
+  it("Start game is disabled when not all ships placed", () => {
     render(
       <PlacementScreen
         difficulty="easy"
@@ -171,7 +171,7 @@ describe("PlacementScreen", () => {
     );
 
     const startBtn = screen.getByRole("button", { name: "Start game" });
-    expect(startBtn).toHaveAttribute("aria-disabled", "true");
+    expect(startBtn).toBeDisabled();
     expect(screen.getByText("Place all ships to continue")).toBeInTheDocument();
   });
 
@@ -204,7 +204,7 @@ describe("PlacementScreen", () => {
     }
 
     const startBtn = screen.getByRole("button", { name: "Start game" });
-    expect(startBtn).toHaveAttribute("aria-disabled", "false");
+    expect(startBtn).toBeEnabled();
     await user.click(startBtn);
 
     expect(onConfirm).toHaveBeenCalledTimes(1);

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Board } from "@/components/board";
-import { Button, Stack, toast } from "@nuka-ui/core";
+import { Button, toast } from "@nuka-ui/core";
 import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
 import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import { useSinglePlayerGame } from "@/battleship/hooks/useSinglePlayerGame";
@@ -58,23 +58,19 @@ export function SinglePlayerGame({
   }, [lastResult]);
 
   return (
-    <Stack
-      gap={{ base: "md", sm: "lg" }}
-      align="center"
-      className="w-full max-w-3xl mx-auto"
-    >
+    <div className="flex flex-col md:flex-row md:items-start gap-y-4 md:gap-x-6 w-full">
       {/*
         ShotResultAnnouncer is visually hidden and announces transient shot
         events (hit, miss, sunk, already-fired) via aria-live="polite".
       */}
-      <ShotResultAnnouncer result={lastResult} />
+      <ShotResultAnnouncer result={lastResult} announceKey={shots.size} />
 
       {/*
         On large screens the board and fleet panel sit side-by-side, with the
         fleet aligned to the top of the board. On smaller screens they stack
         vertically, with the fleet centered below the board.
       */}
-      <div className="w-full flex flex-col items-center gap-4 sm:gap-6 lg:flex-row lg:items-start lg:gap-8">
+      <section className="w-full">
         <Board
           boardSize={boardSize}
           columnLabels={columnLabels}
@@ -82,21 +78,23 @@ export function SinglePlayerGame({
           onFire={fireShot}
           disabled={isGameOver}
         />
+      </section>
 
-        <div className="w-full max-w-xs lg:w-48 lg:shrink-0">
-          <ShipStatusList
-            ships={ships}
-            sunkShipIds={sunkShipIds}
-            hitCounts={shipHitCounts}
-          />
-        </div>
-      </div>
+      <section className="w-full md:w-auto">
+        <ShipStatusList
+          ships={ships}
+          sunkShipIds={sunkShipIds}
+          hitCounts={shipHitCounts}
+        />
+      </section>
 
       {isGameOver && (
-        <Button variant="outline" onClick={reset}>
-          Play again
-        </Button>
+        <div className="w-full flex justify-center mt-6">
+          <Button variant="outline" onClick={reset}>
+            Play again
+          </Button>
+        </div>
       )}
-    </Stack>
+    </div>
   );
 }

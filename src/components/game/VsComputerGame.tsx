@@ -1,7 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Board } from "@/components/board";
-import { Button, Heading, Stack, toast } from "@nuka-ui/core";
-import { cn } from "@/lib/cn";
+import {
+  Button,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  toast,
+} from "@nuka-ui/core";
 import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
 import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import { useVsComputerGame } from "@/battleship/hooks/useVsComputerGame";
@@ -47,6 +53,19 @@ export function VsComputerGame({
 
   const gameOver = winner !== null;
 
+  const [activeBoard, setActiveBoard] = useState<"player" | "enemy">("player");
+  const [prevActiveTurn, setPrevActiveTurn] = useState(activeTurn);
+
+  // Surface the board the player needs to act on. Uses the render-time
+  // state adjustment pattern (not useEffect) to avoid the cascading render
+  // lint violation while still responding to activeTurn changes.
+  if (activeTurn !== prevActiveTurn) {
+    setPrevActiveTurn(activeTurn);
+    if (activeTurn === "player" && !gameOver) {
+      setActiveBoard("enemy");
+    }
+  }
+
   useEffect(() => {
     onStatusChange({ mode: "vsComputer", winner, activeTurn, isAiThinking });
   }, [winner, activeTurn, isAiThinking, onStatusChange]);
@@ -87,73 +106,43 @@ export function VsComputerGame({
     }
   }, [computerLastResult]);
 
-  return (
-    <Stack
-      gap={{ base: "md", sm: "lg" }}
-      align="center"
-      className="w-full max-w-5xl mx-auto"
-    >
-      {/* Announcers: visually hidden, one per board so events don't collide */}
-      <ShotResultAnnouncer result={computerLastResult} />
-      <ShotResultAnnouncer result={playerLastResult} />
+  function handleValueChange(value: string) {
+    setActiveBoard(value as "player" | "enemy");
+  }
 
-      {/* Boards */}
-      {/* Side-by-side only at easy. Moderate and hard grids are too wide
-           to share a row without sub-pixel cells and unreadable labels. */}
-      <div
-        className={cn(
-          "w-full flex flex-col items-center gap-8",
-          difficulty === "easy" &&
-            "lg:flex-row lg:justify-center lg:items-start",
-        )}
-      >
-        {/* Player board: read-only, shows what the computer fired at */}
-        <section
-          aria-label="Your board"
-          className={cn(
-            "w-full",
-            difficulty === "easy" && "lg:w-auto lg:flex-1",
-          )}
-        >
-          <Heading
-            as="h2"
-            weight="semibold"
-            color="muted"
-            className="mb-2 text-xs uppercase tracking-widest"
-          >
-            Your fleet
-          </Heading>
+  return (
+    <div className="max-w-lg mx-auto">
+      {/* Announcers: outside tabs so live regions persist across tab switches */}
+      <ShotResultAnnouncer
+        result={computerLastResult}
+        announceKey={board.player.shots.size}
+      />
+      <ShotResultAnnouncer
+        result={playerLastResult}
+        announceKey={board.computer.shots.size}
+      />
+
+      <Tabs value={activeBoard} onValueChange={handleValueChange}>
+        <TabsList variant="pill" className="mb-4">
+          <TabsTrigger value="player">Your fleet</TabsTrigger>
+          <TabsTrigger value="enemy">Enemy fleet</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="player">
           <Board
             boardSize={boardSize}
             columnLabels={columnLabels}
             shots={board.player.shots}
             disabled
           />
-          <div className="mt-2">
-            <ShipStatusList
-              ships={board.player.ships}
-              sunkShipIds={board.player.sunkShipIds}
-              hitCounts={playerShipHitCounts}
-            />
-          </div>
-        </section>
+          <ShipStatusList
+            ships={board.player.ships}
+            sunkShipIds={board.player.sunkShipIds}
+            hitCounts={playerShipHitCounts}
+          />
+        </TabsContent>
 
-        {/* Opponent board: interactive, player fires here */}
-        <section
-          aria-label="Opponent's board"
-          className={cn(
-            "w-full",
-            difficulty === "easy" && "lg:w-auto lg:flex-1",
-          )}
-        >
-          <Heading
-            as="h2"
-            weight="semibold"
-            color="muted"
-            className="mb-2 text-xs uppercase tracking-widest"
-          >
-            Enemy fleet
-          </Heading>
+        <TabsContent value="enemy">
           <Board
             boardSize={boardSize}
             columnLabels={columnLabels}
@@ -163,20 +152,19 @@ export function VsComputerGame({
             }}
             disabled={activeTurn !== "player" || gameOver}
           />
-          <div className="mt-2">
-            <ShipStatusList
-              ships={board.computer.ships}
-              sunkShipIds={board.computer.sunkShipIds}
-              hitCounts={computerShipHitCounts}
-            />
-          </div>
-        </section>
-      </div>
+          <ShipStatusList
+            ships={board.computer.ships}
+            sunkShipIds={board.computer.sunkShipIds}
+            hitCounts={computerShipHitCounts}
+          />
+        </TabsContent>
+      </Tabs>
 
-      {/* Reset: always available */}
-      <Button variant="outline" onClick={reset}>
-        {gameOver ? "Play again" : "Restart"}
-      </Button>
-    </Stack>
+      <div className="w-full flex justify-center mt-6">
+        <Button variant="outline" onClick={reset}>
+          {gameOver ? "Play again" : "Restart"}
+        </Button>
+      </div>
+    </div>
   );
 }

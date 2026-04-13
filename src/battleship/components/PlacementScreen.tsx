@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import { Button, Heading, Text } from "@nuka-ui/core";
 import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
@@ -76,13 +76,13 @@ export function PlacementScreen({
     announce(`${name} removed. Select it to re-place.`);
   }
 
-  function handleOrientationToggle() {
+  const handleOrientationToggle = useCallback(() => {
     if (pendingShip === null) return;
     const newOrientation =
       pendingShip.orientation === "horizontal" ? "vertical" : "horizontal";
     toggleOrientation();
     announce(`Orientation set to ${newOrientation}`);
-  }
+  }, [pendingShip, toggleOrientation]);
 
   function handleConfirm() {
     if (!isComplete) return;
@@ -108,7 +108,7 @@ export function PlacementScreen({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  });
+  }, [handleOrientationToggle]);
 
   // Render
 
@@ -118,7 +118,7 @@ export function PlacementScreen({
     : "Rotate ship (no ship selected)";
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col items-center gap-6">
+    <div className="flex flex-col md:flex-row md:items-start gap-y-4 md:gap-x-6 w-full">
       {/* aria-live region for placement announcements */}
       <div
         key={`${announcement}-${String(announcementKey)}`}
@@ -129,136 +129,134 @@ export function PlacementScreen({
         {announcement}
       </div>
 
-      <div className="w-full flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center">
-        {/* Placement grid */}
-        <section aria-label="Place your fleet" className="w-full lg:flex-1">
-          <Heading
-            as="h2"
-            weight="semibold"
-            color="muted"
-            className="mb-2 text-xs uppercase tracking-widest"
-          >
-            Place your fleet
-          </Heading>
-          <div className="grid w-full" style={{ gridTemplateColumns }}>
-            {Array.from(cellStatusMap.entries()).map(([coord, status]) => (
-              <PlacementCell
-                key={coord}
-                coord={coord}
-                status={status}
-                columnLabels={columnLabels}
-                onPointerEnter={() => {
-                  setHover(coord);
-                }}
-                onPointerLeave={() => {
-                  setHover(null);
-                }}
+      {/* Placement grid */}
+      <section aria-label="Place your fleet" className="w-full">
+        <Heading
+          as="h2"
+          weight="semibold"
+          color="muted"
+          className="mb-2 text-xs uppercase tracking-widest"
+        >
+          Place your fleet
+        </Heading>
+        <div className="grid w-full" style={{ gridTemplateColumns }}>
+          {Array.from(cellStatusMap.entries()).map(([coord, status]) => (
+            <PlacementCell
+              key={coord}
+              coord={coord}
+              status={status}
+              columnLabels={columnLabels}
+              onPointerEnter={() => {
+                setHover(coord);
+              }}
+              onPointerLeave={() => {
+                setHover(null);
+              }}
+              onClick={() => {
+                handlePlaceShip(coord);
+              }}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Ship palette + controls */}
+      <section aria-label="Your fleet" className="w-full md:w-auto">
+        <Heading
+          as="h2"
+          weight="semibold"
+          color="muted"
+          className="mb-2 text-xs uppercase tracking-widest"
+        >
+          Your fleet
+        </Heading>
+        <div
+          role="listbox"
+          aria-label="Select a ship to place"
+          className="divide-y divide-slate-700/50"
+        >
+          {/* Unplaced ships: selectable */}
+          {remainingShipTypes.map((type) => (
+            <div
+              key={type}
+              role="option"
+              aria-selected={pendingShip?.type === type}
+            >
+              <ShipStatusItem
+                id={type}
+                size={RAW_GAME_CONFIG.shipTypes[type].size}
+                hitCount={0}
+                isSunk={false}
+                isPlaced={false}
+                isSelected={pendingShip?.type === type}
                 onClick={() => {
-                  handlePlaceShip(coord);
+                  selectShip(type);
                 }}
               />
-            ))}
-          </div>
-        </section>
+            </div>
+          ))}
+          {/* Placed ships: re-placeable */}
+          {placedShips.map((ship) => (
+            <div key={ship.id} role="option" aria-selected={false}>
+              <ShipStatusItem
+                id={ship.id}
+                size={ship.size}
+                hitCount={0}
+                isSunk={false}
+                isPlaced={true}
+                onClick={() => {
+                  handleRemoveShip(ship.id);
+                }}
+              />
+            </div>
+          ))}
+        </div>
 
-        {/* Ship palette + controls */}
-        <section aria-label="Your fleet" className="w-full lg:w-72">
-          <Heading
-            as="h2"
+        {/* Orientation toggle */}
+        <div className="mt-4">
+          <Button
+            variant="outline"
+            disabled={pendingShip === null}
+            onClick={handleOrientationToggle}
+          >
+            {orientationLabel}
+          </Button>
+          <Text
+            as="p"
+            size="xs"
             weight="semibold"
             color="muted"
-            className="mb-2 text-xs uppercase tracking-widest"
+            className="mt-1 uppercase tracking-widest"
           >
-            Your fleet
-          </Heading>
-          <div
-            role="listbox"
-            aria-label="Select a ship to place"
-            className="divide-y divide-slate-700/50"
-          >
-            {/* Unplaced ships: selectable */}
-            {remainingShipTypes.map((type) => (
-              <div
-                key={type}
-                role="option"
-                aria-selected={pendingShip?.type === type}
-              >
-                <ShipStatusItem
-                  id={type}
-                  size={RAW_GAME_CONFIG.shipTypes[type].size}
-                  hitCount={0}
-                  isSunk={false}
-                  isPlaced={false}
-                  isSelected={pendingShip?.type === type}
-                  onClick={() => {
-                    selectShip(type);
-                  }}
-                />
-              </div>
-            ))}
-            {/* Placed ships: re-placeable */}
-            {placedShips.map((ship) => (
-              <div key={ship.id} role="option" aria-selected={false}>
-                <ShipStatusItem
-                  id={ship.id}
-                  size={ship.size}
-                  hitCount={0}
-                  isSunk={false}
-                  isPlaced={true}
-                  onClick={() => {
-                    handleRemoveShip(ship.id);
-                  }}
-                />
-              </div>
-            ))}
-          </div>
+            Press R to rotate
+          </Text>
+        </div>
 
-          {/* Orientation toggle */}
-          <div className="mt-4">
-            <Button
-              variant="outline"
-              aria-disabled={pendingShip === null}
-              onClick={handleOrientationToggle}
-            >
-              {orientationLabel}
-            </Button>
+        {/* Action buttons */}
+        <div className="mt-4 flex flex-col gap-2">
+          <Button variant="outline" onClick={onRandomise}>
+            Randomise for me
+          </Button>
+          <Button
+            variant="outline"
+            disabled={!isComplete}
+            onClick={handleConfirm}
+          >
+            Start game
+          </Button>
+          {!isComplete && (
             <Text
               as="p"
               size="xs"
               weight="semibold"
               color="muted"
-              className="mt-1 uppercase tracking-widest"
+              className="uppercase tracking-widest"
             >
-              Press R to rotate
+              Place all ships to continue
             </Text>
-          </div>
-
-          {/* Action buttons */}
-          <div className="mt-4 flex flex-col gap-2">
-            <Button variant="outline" onClick={onRandomise}>
-              Randomise for me
-            </Button>
-            <Button
-              variant="outline"
-              aria-disabled={!isComplete}
-              onClick={handleConfirm}
-            >
-              Start game
-            </Button>
-            {!isComplete && (
-              <Text
-                as="p"
-                size="xs"
-                weight="semibold"
-                color="muted"
-                className="uppercase tracking-widest"
-              >
-                Place all ships to continue
-              </Text>
-            )}
-          </div>
-        </section>
-      </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

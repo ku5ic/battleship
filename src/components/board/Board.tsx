@@ -61,7 +61,6 @@ export function Board({
     >
       {/* Column headers: decorative; cell aria-labels encode position */}
       <div
-        role="row"
         className="grid mb-0.5"
         style={{ gridTemplateColumns }}
         aria-hidden="true"
