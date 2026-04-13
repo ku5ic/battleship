@@ -1,7 +1,8 @@
 import { useCallback, useState } from "react";
 import { SinglePlayerGame } from "@/components/game/SinglePlayerGame";
 import { VsComputerGame } from "@/components/game/VsComputerGame";
-import { Button, Text } from "@/components/ui";
+import { Heading } from "@nuka-ui/core";
+import { cn } from "@/lib/cn";
 import {
   GameStatus,
   VsComputerGameStatus,
@@ -55,9 +56,14 @@ export function App() {
     <div className="min-h-screen bg-slate-900 text-white flex flex-col">
       <header className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700">
         <div className="flex items-center justify-between gap-4 px-4 py-2 max-w-screen-xl mx-auto w-full flex-wrap">
-          <Text as="h1" variant="title">
+          <Heading
+            as="h1"
+            size="xl"
+            weight="semibold"
+            className="tracking-wide"
+          >
             Battleship
-          </Text>
+          </Heading>
 
           <div className="flex-1 flex justify-center px-4 min-w-0">
             {headerGameStatus?.mode === "single" && (
@@ -77,28 +83,40 @@ export function App() {
 
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex gap-2">
-              <Button
-                variant="toggle"
-                active={mode === "single"}
+              <button
+                type="button"
                 aria-pressed={mode === "single"}
-                className="py-1 px-3 text-sm"
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded border transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2",
+                  "focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
+                  mode === "single"
+                    ? "border-yellow-400 text-yellow-400"
+                    : "border-slate-500 text-slate-400 hover:border-slate-300 hover:text-slate-300",
+                )}
                 onClick={() => {
                   handleModeChange("single");
                 }}
               >
                 Single player
-              </Button>
-              <Button
-                variant="toggle"
-                active={mode === "vsComputer"}
+              </button>
+              <button
+                type="button"
                 aria-pressed={mode === "vsComputer"}
-                className="py-1 px-3 text-sm"
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded border transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2",
+                  "focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
+                  mode === "vsComputer"
+                    ? "border-yellow-400 text-yellow-400"
+                    : "border-slate-500 text-slate-400 hover:border-slate-300 hover:text-slate-300",
+                )}
                 onClick={() => {
                   handleModeChange("vsComputer");
                 }}
               >
                 vs Computer
-              </Button>
+              </button>
             </div>
 
             <div className="w-px h-4 bg-slate-600" aria-hidden="true" />
@@ -106,39 +124,57 @@ export function App() {
             {/* Difficulty selector: role="group" provides announced context so
                 "Easy / Moderate / Hard" are not ambiguous in isolation. */}
             <div role="group" aria-label="Difficulty" className="flex gap-2">
-              <Button
-                variant="toggle"
-                active={difficulty === "easy"}
+              <button
+                type="button"
                 aria-pressed={difficulty === "easy"}
-                className="py-1 px-3 text-sm"
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded border transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2",
+                  "focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
+                  difficulty === "easy"
+                    ? "border-yellow-400 text-yellow-400"
+                    : "border-slate-500 text-slate-400 hover:border-slate-300 hover:text-slate-300",
+                )}
                 onClick={() => {
                   handleDifficultyChange("easy");
                 }}
               >
                 Easy
-              </Button>
-              <Button
-                variant="toggle"
-                active={difficulty === "moderate"}
+              </button>
+              <button
+                type="button"
                 aria-pressed={difficulty === "moderate"}
-                className="py-1 px-3 text-sm"
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded border transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2",
+                  "focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
+                  difficulty === "moderate"
+                    ? "border-yellow-400 text-yellow-400"
+                    : "border-slate-500 text-slate-400 hover:border-slate-300 hover:text-slate-300",
+                )}
                 onClick={() => {
                   handleDifficultyChange("moderate");
                 }}
               >
                 Moderate
-              </Button>
-              <Button
-                variant="toggle"
-                active={difficulty === "hard"}
+              </button>
+              <button
+                type="button"
                 aria-pressed={difficulty === "hard"}
-                className="py-1 px-3 text-sm"
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded border transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2",
+                  "focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
+                  difficulty === "hard"
+                    ? "border-yellow-400 text-yellow-400"
+                    : "border-slate-500 text-slate-400 hover:border-slate-300 hover:text-slate-300",
+                )}
                 onClick={() => {
                   handleDifficultyChange("hard");
                 }}
               >
                 Hard
-              </Button>
+              </button>
             </div>
           </div>
         </div>

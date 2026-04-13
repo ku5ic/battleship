@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Board } from "@/components/board";
-import { Button, Stack, Text } from "@/components/ui";
+import { Button, Heading, Stack } from "@nuka-ui/core";
 import { cn } from "@/lib/cn";
 import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
 import { useVsComputerGame } from "@/battleship/hooks/useVsComputerGame";
@@ -51,7 +51,11 @@ export function VsComputerGame({
   }, [winner, activeTurn, isAiThinking, onStatusChange]);
 
   return (
-    <Stack className="w-full max-w-5xl mx-auto">
+    <Stack
+      gap={{ base: "md", sm: "lg" }}
+      align="center"
+      className="w-full max-w-5xl mx-auto"
+    >
       {/* Announcers: visually hidden, one per board so events don't collide */}
       <ShotResultAnnouncer result={computerLastResult} />
       <ShotResultAnnouncer result={playerLastResult} />
@@ -74,9 +78,14 @@ export function VsComputerGame({
             difficulty === "easy" && "lg:w-auto lg:flex-1",
           )}
         >
-          <Text as="h2" variant="label" className="mb-2">
+          <Heading
+            as="h2"
+            weight="semibold"
+            color="muted"
+            className="mb-2 text-xs uppercase tracking-widest"
+          >
             Your fleet
-          </Text>
+          </Heading>
           <Board
             boardSize={boardSize}
             columnLabels={columnLabels}
@@ -100,9 +109,14 @@ export function VsComputerGame({
             difficulty === "easy" && "lg:w-auto lg:flex-1",
           )}
         >
-          <Text as="h2" variant="label" className="mb-2">
+          <Heading
+            as="h2"
+            weight="semibold"
+            color="muted"
+            className="mb-2 text-xs uppercase tracking-widest"
+          >
             Enemy fleet
-          </Text>
+          </Heading>
           <Board
             boardSize={boardSize}
             columnLabels={columnLabels}
@@ -123,7 +137,9 @@ export function VsComputerGame({
       </div>
 
       {/* Reset: always available */}
-      <Button onClick={reset}>{gameOver ? "Play again" : "Restart"}</Button>
+      <Button variant="outline" onClick={reset}>
+        {gameOver ? "Play again" : "Restart"}
+      </Button>
     </Stack>
   );
 }

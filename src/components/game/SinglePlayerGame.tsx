@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Board } from "@/components/board";
-import { Button, Stack } from "@/components/ui";
+import { Button, Stack } from "@nuka-ui/core";
 import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
 import { useSinglePlayerGame } from "@/battleship/hooks/useSinglePlayerGame";
 import type { Difficulty, HeaderGameStatus } from "@/battleship/types";
@@ -39,7 +39,11 @@ export function SinglePlayerGame({
   }, [isGameOver, shots.size, onStatusChange]);
 
   return (
-    <Stack className="w-full max-w-3xl mx-auto">
+    <Stack
+      gap={{ base: "md", sm: "lg" }}
+      align="center"
+      className="w-full max-w-3xl mx-auto"
+    >
       {/*
         ShotResultAnnouncer is visually hidden and announces transient shot
         events (hit, miss, sunk, already-fired) via aria-live="polite".
@@ -69,7 +73,11 @@ export function SinglePlayerGame({
         </div>
       </div>
 
-      {isGameOver && <Button onClick={reset}>Play again</Button>}
+      {isGameOver && (
+        <Button variant="outline" onClick={reset}>
+          Play again
+        </Button>
+      )}
     </Stack>
   );
 }
