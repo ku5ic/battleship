@@ -15,8 +15,8 @@ src/
   app/                        # Sticky header (h1, controls, status slot) and mode routing
   battleship/
     components/               # Presentational feature components, props in / callbacks out
-    constants/                # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
-    data/                     # Raw config (RAW_GAME_CONFIG)
+    constants/                # DIFFICULTY_CONFIG, ship display names, shot outcome labels
+    data/                     # Raw config (RAW_GAME_CONFIG), layout parser (test-only)
     engine/                   # Pure (state, action) => state reducers and selectors, no React
     hooks/                    # useSinglePlayerGame, useVsComputerGame: wiring over engine/
     services/                 # Pure rule evaluation and AI helper, no React
@@ -46,9 +46,9 @@ Key types include `CoordinateKey`, `Ship`, `CellStatus`, `ShotResult`, `GameStat
 
 ### `data/`
 
-Owns the raw ship configuration (`RAW_GAME_CONFIG`). `parseLayout` validates a raw config into typed `Ship` records and throws on any violation. Throwing was chosen over returning an error type because the layout is static data. An invalid layout is a programming mistake, not a runtime condition, and should fail loudly during development.
+Owns the raw ship configuration (`RAW_GAME_CONFIG`). Production code reads only `shipTypes` (sizes and counts), which `generateRandomLayout` in `services/placement.ts` consumes to build random fleets. The `layout` entries are static fixtures used exclusively by `parseLayout` in test files to construct deterministic fleets.
 
-`parseLayout` is currently used only by test files to build deterministic fleets from the static layout. Production code generates fleets via `generateRandomLayout` in `services/placement.ts`. `parseLayout` is a candidate for removal if no production consumer is added. Keeping dead code is a cost, and this function earns its place only as long as the test suite needs it.
+`parseLayout` validates a raw config into typed `Ship` records and throws on any violation. Throwing was chosen over returning an error type because the layout is static data. An invalid layout is a programming mistake, not a runtime condition, and should fail loudly during development.
 
 ### `utils/`
 
@@ -95,15 +95,15 @@ Receive props, render UI, emit typed callbacks. No game rules, no domain calcula
 
 `GameStatus` and `VsComputerGameStatus` are presentational components rendered by `App` in the sticky header rather than by their respective wiring components. This keeps wiring components focused: they wire state to props, nothing more.
 
-`Board` delegates keyboard navigation and focus management to a co-located `useBoardNavigation` hook. The hook owns `focusedCoord` state, `boardRef`, arrow key navigation, and post-fire focus advancement. It calls `nextUnfiredCoordinate` from `services/engine.ts` to determine where to move focus after a shot. `Board` itself is otherwise purely presentational.
+Arrow key navigation and roving tabindex live in `useGridNavigation`, a shared hook also consumed by the placement grid. `Board` uses `useBoardNavigation`, a thin wrapper that adds post-fire focus advancement by calling `nextUnfiredCoordinate` from `services/engine.ts`. `Board` itself is otherwise purely presentational.
 
 ### `app/`
 
-`App.tsx` renders a sticky `<header>` containing the `<h1>Battleship</h1>` landmark, mode toggle (`aria-pressed` buttons), difficulty selector (`role="group" aria-label="Difficulty"`), and an inline status slot.
+`App.tsx` renders a sticky header via `AppShellHeader` from `@nuka-ui/core`, containing the page heading, a mode toggle (`Tabs`/`TabsTrigger`), a difficulty selector (`RadioGroup`/`Radio`), and an inline status slot.
 
 The status slot renders `<GameStatus>` or `<VsComputerGameStatus>` conditionally based on `headerGameStatus.mode`. `headerGameStatus` is `useState<HeaderGameStatus | null>(null)`. The discriminated union drives which status component appears. It resets to `null` on mode or difficulty change so stale status from the previous game is never displayed.
 
-Each wiring component receives a typed `onStatusChange` callback. These callbacks are stabilised with `useCallback(fn, [])` to prevent an infinite render loop. Without stabilisation, the wiring component's `useEffect` would re-fire on every render because `onStatusChange` would be a new reference each time.
+Each wiring component receives a typed `onStatusChange` callback. These callbacks are stabilised with `useCallback(fn, [])` to prevent an infinite render loop. Without stabilisation, the wiring component's `useLayoutEffect` would re-fire on every render because `onStatusChange` would be a new reference each time.
 
 ---
 
