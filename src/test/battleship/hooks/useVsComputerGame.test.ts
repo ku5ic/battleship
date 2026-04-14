@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { useVsComputerGame } from "@/battleship/hooks/useVsComputerGame";
+import { generateRandomLayout } from "@/battleship/services/placement";
 import type { CoordinateKey } from "@/battleship/types";
 
 // Mock placement to return the same deterministic layout used by the
@@ -262,5 +263,31 @@ describe("useVsComputerGame", () => {
     // Player board should still be untouched after reset + timer flush.
     expect(result.current.board.player.shots.size).toBe(0);
     expect(result.current.activeTurn).toBe("player");
+  });
+
+  it("generates new ship layouts on reset", () => {
+    const mockGen = vi.mocked(generateRandomLayout);
+    const { result } = renderHook(() => useVsComputerGame("easy"));
+
+    const callsAfterMount = mockGen.mock.calls.length;
+    const playerShipsBefore = result.current.board.player.ships;
+    const computerShipsBefore = result.current.board.computer.ships;
+
+    act(() => {
+      result.current.reset();
+    });
+
+    // Two new calls: one for player ships, one for computer ships
+    expect(mockGen.mock.calls.length).toBeGreaterThanOrEqual(
+      callsAfterMount + 2,
+    );
+    expect(result.current.board.player.ships).not.toBe(playerShipsBefore);
+    expect(result.current.board.computer.ships).not.toBe(computerShipsBefore);
+    expect(result.current.board.player.ships).toHaveLength(5);
+    expect(result.current.board.computer.ships).toHaveLength(5);
+    expect(result.current.board.player.shots.size).toBe(0);
+    expect(result.current.board.computer.shots.size).toBe(0);
+    expect(result.current.activeTurn).toBe("player");
+    expect(result.current.winner).toBeNull();
   });
 });

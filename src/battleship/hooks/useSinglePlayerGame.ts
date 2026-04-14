@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useReducer } from "react";
+import { useCallback, useMemo, useReducer, useRef } from "react";
 import { generateRandomLayout } from "@/battleship/services/placement";
 import { RAW_GAME_CONFIG } from "@/battleship/data/config";
 import {
@@ -37,12 +37,18 @@ export function useSinglePlayerGame(
 ): UseSinglePlayerGameReturn {
   const { boardSize, columnLabels } = DIFFICULTY_CONFIG[difficulty];
 
-  // Ships and their position index are stable for this hook's lifetime.
-  // Difficulty changes are handled by remounting the hook via key prop.
+  // Incremented on reset to invalidate the ship-generation memo below.
+  // Lives in a ref because it is orchestration state, not game state:
+  // it never reaches the reducer or the return value.
+  const generationRef = useRef(0);
+
+  // Ships regenerate when boardSize changes (difficulty switch via key-remount)
+  // or when generationRef advances (reset).
   const { ships, positionIndex } = useMemo(() => {
     const generated = generateRandomLayout(RAW_GAME_CONFIG, boardSize);
     return { ships: generated, positionIndex: buildPositionIndex(generated) };
-  }, [boardSize]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boardSize, generationRef.current]);
 
   const reducer = useMemo(
     () => createSinglePlayerReducer(ships, positionIndex),
@@ -75,6 +81,7 @@ export function useSinglePlayerGame(
   }, []);
 
   const reset = useCallback((): void => {
+    generationRef.current += 1;
     dispatch({ type: "RESET" });
   }, []);
 
