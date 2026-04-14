@@ -69,10 +69,14 @@ export const SHIP_DISPLAY_NAMES: Record<ShipType, string> = {
   destroyer: "Destroyer",
 };
 
-/** Announced to screen readers via aria-live when a shot is fired. */
-export const SHOT_OUTCOME_LABELS: Record<ShotOutcome, string> = {
+/** Announced to screen readers via aria-live when a shot is fired.
+ *  The "sunk" outcome is handled separately in ShotResultAnnouncer
+ *  because it requires actor-specific phrasing. */
+export const SHOT_OUTCOME_LABELS: Record<
+  Exclude<ShotOutcome, "sunk">,
+  string
+> = {
   hit: "Hit!",
   miss: "Miss.",
-  sunk: "Ship sunk!",
   "already-fired": "You already fired here.",
 };

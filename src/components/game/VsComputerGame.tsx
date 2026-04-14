@@ -116,6 +116,7 @@ export function VsComputerGame({
       <ShotResultAnnouncer
         result={computerLastResult}
         announceKey={board.player.shots.size}
+        actor="computer"
       />
       <ShotResultAnnouncer
         result={playerLastResult}
