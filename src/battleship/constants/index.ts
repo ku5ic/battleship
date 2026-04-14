@@ -2,23 +2,8 @@ import type {
   Difficulty,
   DifficultyConfig,
   ShipType,
+  ShotOutcome,
 } from "@/battleship/types";
-
-export const BOARD_SIZE = 10 as const;
-
-/** Column labels rendered along the top axis of the board. */
-export const COLUMN_LABELS = [
-  "A",
-  "B",
-  "C",
-  "D",
-  "E",
-  "F",
-  "G",
-  "H",
-  "I",
-  "J",
-] as const;
 
 export const DIFFICULTY_CONFIG = {
   easy: {
@@ -85,7 +70,7 @@ export const SHIP_DISPLAY_NAMES: Record<ShipType, string> = {
 };
 
 /** Announced to screen readers via aria-live when a shot is fired. */
-export const SHOT_OUTCOME_LABELS: Record<string, string> = {
+export const SHOT_OUTCOME_LABELS: Record<ShotOutcome, string> = {
   hit: "Hit!",
   miss: "Miss.",
   sunk: "Ship sunk!",

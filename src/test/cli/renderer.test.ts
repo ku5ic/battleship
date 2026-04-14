@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseLayout } from "@/battleship/data/layout";
 import { RAW_GAME_CONFIG } from "@/battleship/data/config";
-import { COLUMN_LABELS } from "@/battleship/constants";
+import { DIFFICULTY_CONFIG } from "@/battleship/constants";
 import { selectSunkShipIds } from "@/battleship/services/engine";
 import type {
   BoardState,
@@ -30,7 +30,7 @@ import {
 //   carrier:    [2,9] [3,9] [4,9] [5,9] [6,9]
 
 const ships: Ship[] = parseLayout(RAW_GAME_CONFIG, 10);
-const columnLabels = COLUMN_LABELS;
+const columnLabels = DIFFICULTY_CONFIG.easy.columnLabels;
 const boardSize = 10;
 
 function buildShipCoordSet(fleet: readonly Ship[]): ReadonlySet<CoordinateKey> {

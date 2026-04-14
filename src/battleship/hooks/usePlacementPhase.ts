@@ -4,6 +4,7 @@ import type {
   Difficulty,
   PendingShip,
   PlacementCellStatus,
+  RawGameConfig,
   Ship,
   ShipType,
 } from "@/battleship/types";
@@ -14,6 +15,21 @@ import {
   generateRandomLayout,
 } from "@/battleship/services/placement";
 import { toKey } from "@/battleship/utils/coordinates";
+
+function getUnplacedShipTypes(
+  placedIds: ReadonlySet<ShipType>,
+  config: RawGameConfig,
+): ShipType[] {
+  return (
+    Object.entries(config.shipTypes) as [
+      ShipType,
+      { size: number; count: number },
+    ][]
+  )
+    .filter(([id]) => !placedIds.has(id))
+    .sort(([, a], [, b]) => b.size - a.size)
+    .map(([id]) => id);
+}
 
 // Reducer
 
@@ -161,15 +177,7 @@ export function usePlacementPhase(
 
   const remainingShipTypes = useMemo(() => {
     const placedIds = new Set(state.placedShips.map((s) => s.id));
-    return (
-      Object.entries(RAW_GAME_CONFIG.shipTypes) as [
-        ShipType,
-        { size: number; count: number },
-      ][]
-    )
-      .filter(([id]) => !placedIds.has(id))
-      .sort(([, a], [, b]) => b.size - a.size)
-      .map(([id]) => id);
+    return getUnplacedShipTypes(placedIds, RAW_GAME_CONFIG);
   }, [state.placedShips]);
 
   const isComplete = remainingShipTypes.length === 0;
@@ -220,18 +228,11 @@ export function usePlacementPhase(
     // Determine the next unplaced type after this placement
     const placedAfter = new Set(state.placedShips.map((s) => s.id));
     placedAfter.add(state.pendingShip.type);
-    const nextTypes = (
-      Object.entries(RAW_GAME_CONFIG.shipTypes) as [
-        ShipType,
-        { size: number; count: number },
-      ][]
-    )
-      .filter(([id]) => !placedAfter.has(id))
-      .sort(([, a], [, b]) => b.size - a.size);
+    const unplaced = getUnplacedShipTypes(placedAfter, RAW_GAME_CONFIG);
 
     const nextPending: PendingShip | null =
-      nextTypes.length > 0
-        ? { type: nextTypes[0][0], orientation: state.pendingShip.orientation }
+      unplaced.length > 0
+        ? { type: unplaced[0], orientation: state.pendingShip.orientation }
         : null;
 
     dispatch({ type: "PLACE_SHIP", coords, ship, nextPending });

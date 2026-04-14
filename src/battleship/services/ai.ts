@@ -1,5 +1,4 @@
 import { allBoardKeys } from "@/battleship/utils/coordinates";
-import { BOARD_SIZE } from "@/battleship/constants";
 import type { CellStatus, CoordinateKey } from "@/battleship/types";
 
 /**
@@ -8,7 +7,7 @@ import type { CellStatus, CoordinateKey } from "@/battleship/types";
  */
 export function chooseRandomUnfiredCoordinate(
   shotsReceived: ReadonlyMap<CoordinateKey, CellStatus>,
-  boardSize: number = BOARD_SIZE,
+  boardSize: number,
 ): CoordinateKey | null {
   const unfired = allBoardKeys(boardSize).filter(
     (key) => !shotsReceived.has(key),

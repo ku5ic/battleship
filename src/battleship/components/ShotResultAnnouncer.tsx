@@ -21,7 +21,7 @@ function buildAnnouncement(result: ShotResult | null): string {
     return `Hit! You sunk the ${shipName}!`;
   }
 
-  return SHOT_OUTCOME_LABELS[result.outcome] ?? "";
+  return SHOT_OUTCOME_LABELS[result.outcome];
 }
 
 /**
