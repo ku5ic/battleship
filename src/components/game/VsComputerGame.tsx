@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Board } from "@/components/board";
 import {
   Button,
@@ -65,7 +65,7 @@ export function VsComputerGame({
     }
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     onStatusChange({ mode: "vsComputer", winner, activeTurn, isAiThinking });
   }, [winner, activeTurn, isAiThinking, onStatusChange]);
 

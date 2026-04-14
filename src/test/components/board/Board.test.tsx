@@ -1,6 +1,20 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+
+// Tooltip fires delayed state updates that leak outside act() boundaries.
+// Board tests do not exercise tooltip behavior, so stub it out.
+vi.mock("@nuka-ui/core", async (importOriginal) => {
+  const actual = await importOriginal();
+  const passthrough = ({ children }: { children: React.ReactNode }) => children;
+  return {
+    ...(actual as Record<string, unknown>),
+    Tooltip: passthrough,
+    TooltipTrigger: passthrough,
+    TooltipContent: () => null,
+  };
+});
+
 import { Board } from "@/components/board/Board";
 import type { CellStatus, CoordinateKey } from "@/battleship/types";
 

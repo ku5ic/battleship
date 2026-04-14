@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { Board } from "@/components/board";
 import { Button } from "@nuka-ui/core";
 import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
@@ -35,7 +35,7 @@ export function SinglePlayerGame({
     reset,
   } = useSinglePlayerGame(difficulty);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     onStatusChange({ mode: "single", isGameOver, shotCount: shots.size });
   }, [isGameOver, shots.size, onStatusChange]);
 
