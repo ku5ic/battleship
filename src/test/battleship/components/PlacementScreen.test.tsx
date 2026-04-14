@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PlacementScreen } from "@/battleship/components/PlacementScreen";
@@ -319,7 +319,9 @@ describe("PlacementScreen", () => {
       name: /Place your fleet/i,
     });
     const cellA1 = within(grid).getByLabelText("A1, empty");
-    cellA1.focus();
+    act(() => {
+      cellA1.focus();
+    });
     await user.keyboard("{ArrowRight}");
     expect(within(grid).getByLabelText("B1, empty")).toHaveFocus();
   });
@@ -337,7 +339,9 @@ describe("PlacementScreen", () => {
       name: /Place your fleet/i,
     });
     const cellA1 = within(grid).getByLabelText("A1, empty");
-    cellA1.focus();
+    act(() => {
+      cellA1.focus();
+    });
     await user.keyboard("{ArrowDown}");
     expect(within(grid).getByLabelText("A2, empty")).toHaveFocus();
   });

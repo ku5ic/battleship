@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { Board } from "@/components/board";
-import { Button, toast } from "@nuka-ui/core";
+import { Button } from "@nuka-ui/core";
 import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
-import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import { useSinglePlayerGame } from "@/battleship/hooks/useSinglePlayerGame";
+import { useShotToast } from "@/battleship/hooks/useShotToast";
 import type { Difficulty, HeaderGameStatus } from "@/battleship/types";
 
 interface SinglePlayerGameProps {
@@ -39,23 +39,7 @@ export function SinglePlayerGame({
     onStatusChange({ mode: "single", isGameOver, shotCount: shots.size });
   }, [isGameOver, shots.size, onStatusChange]);
 
-  useEffect(() => {
-    if (!lastResult) return;
-    if (lastResult.outcome === "already-fired") return;
-    if (lastResult.outcome === "sunk") {
-      const name = lastResult.sunkShipId
-        ? SHIP_DISPLAY_NAMES[lastResult.sunkShipId]
-        : "Ship";
-      toast(`Hit! You sunk the ${name}!`, {
-        intent: "success",
-        duration: 3000,
-      });
-    } else if (lastResult.outcome === "hit") {
-      toast("Hit!", { intent: "success", duration: 2000 });
-    } else {
-      toast("Miss.", { duration: 2000 });
-    }
-  }, [lastResult]);
+  useShotToast(lastResult);
 
   return (
     <div className="flex flex-col md:flex-row md:items-start gap-y-4 md:gap-x-6 w-full">
