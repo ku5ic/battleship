@@ -57,7 +57,7 @@ export function Board({
       aria-readonly={!!disabled}
       onKeyDown={handleKeyDown}
       className="w-full select-none"
-      tabIndex={0}
+      tabIndex={-1}
     >
       {/* Column headers: decorative; cell aria-labels encode position */}
       <div

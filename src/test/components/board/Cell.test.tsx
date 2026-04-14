@@ -188,6 +188,32 @@ describe("Cell", () => {
     );
   });
 
+  it("retains tabIndex 0 when disabled and focused", () => {
+    render(
+      <Cell
+        coord="0,0"
+        columnLabel="A"
+        status="hit"
+        onFire={vi.fn()}
+        tabIndex={0}
+      />,
+    );
+    expect(screen.getByRole("button")).toHaveAttribute("tabindex", "0");
+  });
+
+  it("sets tabIndex -1 when disabled and not focused", () => {
+    render(
+      <Cell
+        coord="0,0"
+        columnLabel="A"
+        status="hit"
+        onFire={vi.fn()}
+        tabIndex={-1}
+      />,
+    );
+    expect(screen.getByRole("button")).toHaveAttribute("tabindex", "-1");
+  });
+
   it("does not apply scale class to a disabled unfired cell", () => {
     render(
       <Cell

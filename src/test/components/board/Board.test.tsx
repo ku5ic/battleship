@@ -211,6 +211,18 @@ describe("Board", () => {
     expect(screen.getByRole("grid")).toHaveAttribute("aria-readonly", "true");
   });
 
+  it("keeps the grid wrapper out of the tab order", () => {
+    render(
+      <Board
+        boardSize={10}
+        columnLabels={LABELS_10}
+        shots={noShots}
+        onFire={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("grid")).toHaveAttribute("tabindex", "-1");
+  });
+
   it("sets aria-readonly to false when not disabled", () => {
     render(
       <Board
