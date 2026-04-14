@@ -119,7 +119,7 @@ export function PlacementScreen({
 
   // Render
 
-  const gridTemplateColumns = `repeat(${String(boardSize)}, 1fr)`;
+  const gridTemplateColumns = `repeat(${String(boardSize)}, minmax(1.5rem, 1fr))`;
   const orientationLabel = pendingShip
     ? `Rotate ship (currently ${pendingShip.orientation})`
     : "Rotate ship (no ship selected)";
@@ -153,7 +153,7 @@ export function PlacementScreen({
           aria-rowcount={boardSize}
           aria-colcount={boardSize}
           onKeyDown={handleGridKeyDown}
-          className="grid w-full"
+          className="grid w-full overflow-x-auto"
           style={{ gridTemplateColumns }}
           tabIndex={-1}
         >
