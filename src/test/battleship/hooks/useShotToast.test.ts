@@ -106,7 +106,7 @@ describe("useShotToast", () => {
       ({ result }: { result: ShotResult | null }) => {
         useShotToast(result);
       },
-      { initialProps: { result: null } },
+      { initialProps: { result: null as ShotResult | null } },
     );
 
     unmount();
@@ -124,7 +124,7 @@ describe("useShotToast", () => {
       ({ result }: { result: ShotResult | null }) => {
         useShotToast(result);
       },
-      { initialProps: { result: null } },
+      { initialProps: { result: null as ShotResult | null } },
     );
 
     expect(mockToast).not.toHaveBeenCalled();
