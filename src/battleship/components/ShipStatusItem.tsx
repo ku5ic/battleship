@@ -16,7 +16,7 @@ export interface ShipStatusItemProps {
   onClick?: () => void;
 }
 
-function buildLabel(
+function buildShipStatusLabel(
   name: string,
   size: number,
   hitCount: number,
@@ -58,7 +58,7 @@ export function ShipStatusItem({
   onClick,
 }: ShipStatusItemProps) {
   const name = SHIP_DISPLAY_NAMES[id];
-  const label = buildLabel(
+  const label = buildShipStatusLabel(
     name,
     size,
     hitCount,
@@ -134,9 +134,5 @@ export function ShipStatusItem({
     );
   }
 
-  return (
-    <div className={className} aria-label={label}>
-      {content}
-    </div>
-  );
+  return <div className={className}>{content}</div>;
 }

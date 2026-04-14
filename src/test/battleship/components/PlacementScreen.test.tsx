@@ -24,11 +24,11 @@ describe("PlacementScreen", () => {
       />,
     );
 
-    const palette = screen.getByRole("listbox", {
+    const palette = screen.getByRole("list", {
       name: "Select a ship to place",
     });
-    const options = within(palette).getAllByRole("option");
-    expect(options).toHaveLength(5);
+    const items = within(palette).getAllByRole("listitem");
+    expect(items).toHaveLength(5);
   });
 
   it("ship palette items are buttons", () => {
@@ -40,7 +40,7 @@ describe("PlacementScreen", () => {
       />,
     );
 
-    const palette = screen.getByRole("listbox", {
+    const palette = screen.getByRole("list", {
       name: "Select a ship to place",
     });
     const buttons = within(palette).getAllByRole("button");

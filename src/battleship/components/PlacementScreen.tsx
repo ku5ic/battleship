@@ -170,18 +170,13 @@ export function PlacementScreen({
         >
           Your fleet
         </Heading>
-        <div
-          role="listbox"
+        <ul
           aria-label="Select a ship to place"
           className="divide-y divide-slate-700/50"
         >
           {/* Unplaced ships: selectable */}
           {remainingShipTypes.map((type) => (
-            <div
-              key={type}
-              role="option"
-              aria-selected={pendingShip?.type === type}
-            >
+            <li key={type}>
               <ShipStatusItem
                 id={type}
                 size={RAW_GAME_CONFIG.shipTypes[type].size}
@@ -193,11 +188,11 @@ export function PlacementScreen({
                   selectShip(type);
                 }}
               />
-            </div>
+            </li>
           ))}
           {/* Placed ships: re-placeable */}
           {placedShips.map((ship) => (
-            <div key={ship.id} role="option" aria-selected={false}>
+            <li key={ship.id}>
               <ShipStatusItem
                 id={ship.id}
                 size={ship.size}
@@ -208,9 +203,9 @@ export function PlacementScreen({
                   handleRemoveShip(ship.id);
                 }}
               />
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
 
         {/* Orientation toggle */}
         <div className="mt-4">
