@@ -1,6 +1,20 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+
+// Tooltip fires delayed state updates that leak outside act() boundaries.
+// Board tests do not exercise tooltip behavior, so stub it out.
+vi.mock("@nuka-ui/core", async (importOriginal) => {
+  const actual = await importOriginal();
+  const passthrough = ({ children }: { children: React.ReactNode }) => children;
+  return {
+    ...(actual as Record<string, unknown>),
+    Tooltip: passthrough,
+    TooltipTrigger: passthrough,
+    TooltipContent: () => null,
+  };
+});
+
 import { Board } from "@/components/board/Board";
 import type { CellStatus, CoordinateKey } from "@/battleship/types";
 
@@ -209,6 +223,18 @@ describe("Board", () => {
       />,
     );
     expect(screen.getByRole("grid")).toHaveAttribute("aria-readonly", "true");
+  });
+
+  it("keeps the grid wrapper out of the tab order", () => {
+    render(
+      <Board
+        boardSize={10}
+        columnLabels={LABELS_10}
+        shots={noShots}
+        onFire={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("grid")).toHaveAttribute("tabindex", "-1");
   });
 
   it("sets aria-readonly to false when not disabled", () => {

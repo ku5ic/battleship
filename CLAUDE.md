@@ -20,7 +20,7 @@ src/
   app/                          # App.tsx: entry point and mode toggle only
   battleship/
     components/                 # Presentational feature components, props-in/callbacks-out
-    constants/                  # BOARD_SIZE, DIFFICULTY_CONFIG, column labels, ship display names
+    constants/                  # DIFFICULTY_CONFIG, ship display names, shot outcome labels
     data/                       # config.ts (RAW_GAME_CONFIG), layout.ts (parseLayout, test-only)
     engine/                     # Pure (state, action) => state reducers and selectors, no React
     hooks/                      # useSinglePlayerGame, useVsComputerGame: wiring over engine/
@@ -50,10 +50,9 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 
 ### `data/`
 
-- Parses and validates raw input once at module load.
-- `parseLayout` throws on invalid input. This is intentional. The layout is static; an error is a programming mistake, not a runtime condition.
-- Parsed output is exported as a module-scope constant. Nothing re-parses at runtime.
-- No React, no hooks, no side effects beyond the initial parse.
+- Owns the raw ship configuration (`RAW_GAME_CONFIG`). Production code reads only `shipTypes`.
+- `parseLayout` validates layout entries into typed `Ship` records and throws on any violation. Used only by test files to build deterministic fleets.
+- No React, no hooks, no side effects.
 
 ### `utils/`
 

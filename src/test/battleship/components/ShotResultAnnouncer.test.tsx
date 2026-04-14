@@ -90,4 +90,39 @@ describe("ShotResultAnnouncer", () => {
       "Hit! You sunk the Ship!",
     );
   });
+
+  it("announces computer sunk with correct phrasing", () => {
+    render(
+      <ShotResultAnnouncer
+        result={{ coordinate: "1,0", outcome: "sunk", sunkShipId: "destroyer" }}
+        announceKey={0}
+        actor="computer"
+      />,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Computer sunk your Destroyer!",
+    );
+  });
+
+  it("announces hit the same way regardless of actor", () => {
+    render(
+      <ShotResultAnnouncer
+        result={{ coordinate: "0,0", outcome: "hit" }}
+        announceKey={0}
+        actor="computer"
+      />,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("Hit!");
+  });
+
+  it("announces miss the same way regardless of actor", () => {
+    render(
+      <ShotResultAnnouncer
+        result={{ coordinate: "9,9", outcome: "miss" }}
+        announceKey={0}
+        actor="computer"
+      />,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("Miss.");
+  });
 });

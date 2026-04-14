@@ -4,24 +4,31 @@ import {
 } from "@/battleship/constants";
 import type { ShotResult } from "@/battleship/types";
 
+type Actor = "player" | "computer";
+
 interface ShotResultAnnouncerProps {
   result: ShotResult | null;
   /** Monotonic counter that forces a DOM remount so consecutive identical
    *  outcomes (e.g. two misses) are each re-announced by the live region. */
   announceKey: number;
+  /** Who fired the shot. Defaults to "player". Controls the sunk message
+   *  phrasing so screen readers attribute the action to the correct side. */
+  actor?: Actor;
 }
 
-function buildAnnouncement(result: ShotResult | null): string {
+function buildAnnouncement(result: ShotResult | null, actor: Actor): string {
   if (!result) return "";
 
   if (result.outcome === "sunk") {
     const shipName = result.sunkShipId
       ? SHIP_DISPLAY_NAMES[result.sunkShipId]
       : "Ship";
-    return `Hit! You sunk the ${shipName}!`;
+    return actor === "computer"
+      ? `Computer sunk your ${shipName}!`
+      : `Hit! You sunk the ${shipName}!`;
   }
 
-  return SHOT_OUTCOME_LABELS[result.outcome] ?? "";
+  return SHOT_OUTCOME_LABELS[result.outcome];
 }
 
 /**
@@ -36,6 +43,7 @@ function buildAnnouncement(result: ShotResult | null): string {
 export function ShotResultAnnouncer({
   result,
   announceKey,
+  actor = "player",
 }: ShotResultAnnouncerProps) {
   return (
     <div
@@ -45,7 +53,7 @@ export function ShotResultAnnouncer({
       aria-atomic="true"
       className="sr-only"
     >
-      {buildAnnouncement(result)}
+      {buildAnnouncement(result, actor)}
     </div>
   );
 }

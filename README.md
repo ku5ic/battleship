@@ -20,7 +20,7 @@ Each game hook persists only what cannot be computed: the shots map, the last sh
 Firing a shot updates the shots map and the last result in a single `useReducer` dispatch. Two separate `useState` calls would create a frame where the shot count and the result disagree. The reducer is synchronous and pure (`(state, action) => state`) with side effects (AI delay, focus management) handled outside the reducer in `useEffect`.
 
 **4. Accessibility meets WCAG 2.2 AA, verified in implementation.**
-All interactive cells are `<button>` elements with computed accessible names encoding column, row, and current state. Keyboard navigation uses roving tabindex with `requestAnimationFrame`-deferred focus advancement after a shot. Shot results are announced via `aria-live` regions with separate announcer instances to prevent concurrent events from clobbering each other. Color is never the sole indicator of state; hit and miss have distinct icons. Touch targets and contrast meet AA at all breakpoints including 320 px width.
+All interactive cells are `<button>` elements with computed accessible names encoding column, row, and current state. Keyboard navigation uses roving tabindex with `requestAnimationFrame`-deferred focus advancement after a shot. Shot results are announced via `aria-live` regions with separate announcer instances to prevent concurrent events from clobbering each other. Color is never the sole indicator of state; hit and miss have distinct icons. Touch targets meet WCAG 2.5.8 (24px minimum) at all difficulties. On moderate and hard boards at very narrow viewports the grid scrolls horizontally to preserve the minimum target size. Contrast meets AA at every cell state.
 
 **5. Tests target the layer where a regression would hurt.**
 Domain functions have thorough unit coverage. A failure there means a game rule is broken. Hook tests use `renderHook` with deterministic AI mocks and exported timing constants overridden to `0` (no fake timers, which conflict with `userEvent`). Component tests target cells by `data-coord` attribute to avoid ambiguity with row-10 variants. The test directory mirrors `src/` one-to-one.
@@ -40,7 +40,7 @@ src/
   app/                        # Entry point: mode toggle, sticky header, status slot
   battleship/
     components/               # Presentational feature components: props in, callbacks out
-    constants/                # Board size, difficulty config, column labels, ship display names
+    constants/                # Difficulty config, ship display names, shot outcome labels
     data/                     # Raw config and layout parsing
     engine/                   # Pure (state, action) => state reducers, no React
     hooks/                    # useSinglePlayerGame, useVsComputerGame: wiring over engine
@@ -156,10 +156,10 @@ The implementation targets WCAG 2.2 AA.
 
 - Board cells are `<button>` elements, not `<div>` with click handlers
 - Each cell has a computed accessible name: column letter, row number, current state, and a "Press Space to fire" hint on fireable cells
-- Keyboard navigation uses roving tabindex; focus advances after a shot via `requestAnimationFrame`-deferred imperative focus to avoid a race with the disabled-state flush
+- Keyboard navigation uses roving tabindex on both the game board and the placement grid, backed by a shared `useGridNavigation` hook; on the game board, focus advances after a shot via `requestAnimationFrame`-deferred imperative focus to avoid a race with the disabled-state flush
 - Shot results are announced via `aria-live="polite"` regions; separate announcer instances prevent concurrent events from clobbering each other; the `key` remount technique handles repeated identical announcements
 - Color is backed by icons; hit and miss have distinct visual indicators beyond colour alone
-- Touch targets and contrast meet AA requirements at all breakpoints including 320 px width
+- Touch targets meet WCAG 2.5.8 (24px minimum) at all difficulties; on narrow viewports the board scrolls horizontally rather than shrinking cells below the threshold. Contrast meets AA at every cell state
 
 ---
 

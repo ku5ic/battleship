@@ -44,25 +44,13 @@ describe("ShipStatusItem", () => {
     expect(pipContainer?.children).toHaveLength(2);
   });
 
-  it("accessible label reflects zero hits", () => {
-    render(
+  it("does not place aria-label on the game-mode div", () => {
+    const { container } = render(
       <ShipStatusItem id="destroyer" size={2} hitCount={0} isSunk={false} />,
     );
-    expect(screen.getByLabelText("Destroyer: 0 of 2 hit")).toBeInTheDocument();
-  });
-
-  it("accessible label reflects partial hits", () => {
-    render(
-      <ShipStatusItem id="battleship" size={4} hitCount={2} isSunk={false} />,
-    );
-    expect(screen.getByLabelText("Battleship: 2 of 4 hit")).toBeInTheDocument();
-  });
-
-  it("accessible label says 'sunk' when the ship is sunk", () => {
-    render(
-      <ShipStatusItem id="destroyer" size={2} hitCount={2} isSunk={true} />,
-    );
-    expect(screen.getByLabelText("Destroyer: sunk")).toBeInTheDocument();
+    const div = container.firstElementChild;
+    expect(div?.tagName).toBe("DIV");
+    expect(div).not.toHaveAttribute("aria-label");
   });
 
   it("shows a Sunk badge when the ship is sunk", () => {

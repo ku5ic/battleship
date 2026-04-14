@@ -1,14 +1,6 @@
-import { useMemo, useRef, useState } from "react";
 import { nextUnfiredCoordinate } from "@/battleship/services/engine";
-import { allBoardKeys, fromKey, toKey } from "@/battleship/utils/coordinates";
 import type { CellStatus, CoordinateKey } from "@/battleship/types";
-
-const ARROW_DELTAS: Partial<Record<string, [number, number]>> = {
-  ArrowUp: [0, -1],
-  ArrowDown: [0, 1],
-  ArrowLeft: [-1, 0],
-  ArrowRight: [1, 0],
-};
+import { useGridNavigation } from "@/components/board/useGridNavigation";
 
 export function useBoardNavigation(
   boardSize: number,
@@ -21,34 +13,8 @@ export function useBoardNavigation(
   handleKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   handleCellFire: (fired: CoordinateKey) => void;
 } {
-  const [focusedCoord, setFocusedCoord] = useState<CoordinateKey>("0,0");
-  const boardRef = useRef<HTMLDivElement>(null);
-
-  // ALL_KEYS depends on boardSize. In practice boardSize is stable for the
-  // hook's lifetime; the component is remounted via key when difficulty changes.
-  const allKeys = useMemo(() => allBoardKeys(boardSize), [boardSize]);
-
-  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    const delta = ARROW_DELTAS[e.key];
-    if (!delta) return;
-
-    const target = e.target as HTMLElement;
-    const raw = target.dataset.coord;
-    if (!raw) return;
-
-    e.preventDefault();
-
-    const { col, row } = fromKey(raw as CoordinateKey);
-    const [dc, dr] = delta;
-    const nextCol = Math.min(boardSize - 1, Math.max(0, col + dc));
-    const nextRow = Math.min(boardSize - 1, Math.max(0, row + dr));
-    const nextCoord = toKey(nextCol, nextRow);
-
-    setFocusedCoord(nextCoord);
-    boardRef.current
-      ?.querySelector<HTMLElement>(`[data-coord="${nextCoord}"]`)
-      ?.focus();
-  }
+  const { gridRef, focusedCoord, setFocusedCoord, allKeys, handleKeyDown } =
+    useGridNavigation(boardSize);
 
   /**
    * Fires the shot then immediately advances keyboard focus to the next unfired
@@ -68,11 +34,17 @@ export function useBoardNavigation(
 
     setFocusedCoord(next);
     requestAnimationFrame(() => {
-      boardRef.current
+      gridRef.current
         ?.querySelector<HTMLElement>(`[data-coord="${next}"]`)
         ?.focus();
     });
   }
 
-  return { boardRef, focusedCoord, allKeys, handleKeyDown, handleCellFire };
+  return {
+    boardRef: gridRef,
+    focusedCoord,
+    allKeys,
+    handleKeyDown,
+    handleCellFire,
+  };
 }

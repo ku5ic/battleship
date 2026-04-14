@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useCallback, useMemo } from "react";
+import { useEffect, useReducer, useCallback, useMemo, useRef } from "react";
 import { generateRandomLayout } from "@/battleship/services/placement";
 import { RAW_GAME_CONFIG } from "@/battleship/data/config";
 import type {
@@ -71,8 +71,15 @@ export function useVsComputerGame(
 ): UseVsComputerGameReturn {
   const { boardSize, columnLabels } = DIFFICULTY_CONFIG[difficulty];
 
-  // Each player gets an independent random layout. Position indexes are
-  // derived once and stable for this hook's lifetime.
+  // Incremented on reset to invalidate the ship-generation memo below.
+  // Lives in a ref because it is orchestration state, not game state:
+  // it never reaches the reducer or the return value.
+  const generationRef = useRef(0);
+
+  // Ships regenerate when boardSize changes (difficulty switch via key-remount),
+  // when playerShipsOverride changes (placement phase), or when generationRef
+  // advances (reset). When an override is provided, only computer ships
+  // regenerate; the player's placed fleet is preserved.
   const {
     playerShips,
     computerShips,
@@ -88,7 +95,8 @@ export function useVsComputerGame(
       playerPositionIndex: buildPositionIndex(pShips),
       computerPositionIndex: buildPositionIndex(cShips),
     };
-  }, [boardSize, playerShipsOverride]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boardSize, playerShipsOverride, generationRef.current]);
 
   const reducer = useMemo(
     () => createVsComputerReducer(playerPositionIndex, computerPositionIndex),
@@ -156,6 +164,7 @@ export function useVsComputerGame(
   );
 
   const reset = useCallback(() => {
+    generationRef.current += 1;
     dispatch({ type: "RESET" });
   }, []);
 

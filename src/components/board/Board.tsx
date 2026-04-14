@@ -45,7 +45,7 @@ export function Board({
 
   // Inline style is justified: Tailwind cannot generate grid-template-columns
   // for arbitrary runtime values. The 1.5rem first track holds the row label.
-  const gridTemplateColumns = `1.5rem repeat(${String(boardSize)}, 1fr)`;
+  const gridTemplateColumns = `1.5rem repeat(${String(boardSize)}, minmax(1.5rem, 1fr))`;
 
   return (
     <div
@@ -56,8 +56,8 @@ export function Board({
       aria-colcount={boardSize}
       aria-readonly={!!disabled}
       onKeyDown={handleKeyDown}
-      className="w-full select-none"
-      tabIndex={0}
+      className="w-full select-none overflow-x-auto"
+      tabIndex={-1}
     >
       {/* Column headers: decorative; cell aria-labels encode position */}
       <div

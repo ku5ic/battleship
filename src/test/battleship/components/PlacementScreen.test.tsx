@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PlacementScreen } from "@/battleship/components/PlacementScreen";
@@ -24,11 +24,11 @@ describe("PlacementScreen", () => {
       />,
     );
 
-    const palette = screen.getByRole("listbox", {
+    const palette = screen.getByRole("list", {
       name: "Select a ship to place",
     });
-    const options = within(palette).getAllByRole("option");
-    expect(options).toHaveLength(5);
+    const items = within(palette).getAllByRole("listitem");
+    expect(items).toHaveLength(5);
   });
 
   it("ship palette items are buttons", () => {
@@ -40,7 +40,7 @@ describe("PlacementScreen", () => {
       />,
     );
 
-    const palette = screen.getByRole("listbox", {
+    const palette = screen.getByRole("list", {
       name: "Select a ship to place",
     });
     const buttons = within(palette).getAllByRole("button");
@@ -272,6 +272,78 @@ describe("PlacementScreen", () => {
 
     const liveRegion = document.querySelector('[aria-live="polite"]');
     expect(liveRegion?.textContent).toBe("Destroyer placed at A1");
+  });
+
+  it("placement grid has role grid and accessible name", () => {
+    render(
+      <PlacementScreen
+        difficulty="easy"
+        onConfirm={vi.fn()}
+        onRandomise={vi.fn()}
+      />,
+    );
+    const grid = screen.getByRole("grid", {
+      name: /Place your fleet/i,
+    });
+    expect(grid).toBeInTheDocument();
+    expect(grid).toHaveAttribute("aria-rowcount", "10");
+    expect(grid).toHaveAttribute("aria-colcount", "10");
+  });
+
+  it("only one placement cell has tabIndex 0", () => {
+    render(
+      <PlacementScreen
+        difficulty="easy"
+        onConfirm={vi.fn()}
+        onRandomise={vi.fn()}
+      />,
+    );
+    const grid = screen.getByRole("grid", {
+      name: /Place your fleet/i,
+    });
+    const buttons = within(grid).getAllByRole("button");
+    const focusable = buttons.filter((b) => b.getAttribute("tabindex") === "0");
+    expect(focusable).toHaveLength(1);
+  });
+
+  it("ArrowRight moves focus to the next cell", async () => {
+    const user = userEvent.setup();
+    render(
+      <PlacementScreen
+        difficulty="easy"
+        onConfirm={vi.fn()}
+        onRandomise={vi.fn()}
+      />,
+    );
+    const grid = screen.getByRole("grid", {
+      name: /Place your fleet/i,
+    });
+    const cellA1 = within(grid).getByLabelText("A1, empty");
+    act(() => {
+      cellA1.focus();
+    });
+    await user.keyboard("{ArrowRight}");
+    expect(within(grid).getByLabelText("B1, empty")).toHaveFocus();
+  });
+
+  it("ArrowDown moves focus to the cell below", async () => {
+    const user = userEvent.setup();
+    render(
+      <PlacementScreen
+        difficulty="easy"
+        onConfirm={vi.fn()}
+        onRandomise={vi.fn()}
+      />,
+    );
+    const grid = screen.getByRole("grid", {
+      name: /Place your fleet/i,
+    });
+    const cellA1 = within(grid).getByLabelText("A1, empty");
+    act(() => {
+      cellA1.focus();
+    });
+    await user.keyboard("{ArrowDown}");
+    expect(within(grid).getByLabelText("A2, empty")).toHaveFocus();
   });
 
   it("R key triggers orientation toggle", async () => {

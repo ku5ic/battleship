@@ -54,7 +54,7 @@ export function Cell({
           type="button"
           data-coord={coord}
           disabled={isDisabled}
-          tabIndex={isDisabled ? undefined : tabIndex}
+          tabIndex={isDisabled && tabIndex !== 0 ? -1 : tabIndex}
           aria-label={buildAriaLabel(columnLabel, row, status, isFireable)}
           onClick={() => {
             onFire(coord);

@@ -5,7 +5,14 @@ import { VsComputerGame } from "@/components/game/VsComputerGame";
 
 vi.mock("@nuka-ui/core", async (importOriginal) => {
   const actual = await importOriginal();
-  return { ...(actual as Record<string, unknown>), toast: vi.fn() };
+  const passthrough = ({ children }: { children: React.ReactNode }) => children;
+  return {
+    ...(actual as Record<string, unknown>),
+    toast: vi.fn(),
+    Tooltip: passthrough,
+    TooltipTrigger: passthrough,
+    TooltipContent: () => null,
+  };
 });
 import { AI_SHOT_DELAY_MS } from "@/battleship/hooks/useVsComputerGame";
 

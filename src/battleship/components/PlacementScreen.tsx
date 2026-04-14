@@ -3,6 +3,7 @@ import { cn } from "@/lib/cn";
 import { Button, Heading, Text } from "@nuka-ui/core";
 import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import { ShipStatusItem } from "@/battleship/components/ShipStatusItem";
+import { useGridNavigation } from "@/components/board/useGridNavigation";
 import { usePlacementPhase } from "@/battleship/hooks/usePlacementPhase";
 import { RAW_GAME_CONFIG } from "@/battleship/data/config";
 import { fromKey } from "@/battleship/utils/coordinates";
@@ -40,6 +41,12 @@ export function PlacementScreen({
     removeShip,
     confirm,
   } = usePlacementPhase(difficulty);
+
+  const {
+    gridRef,
+    focusedCoord,
+    handleKeyDown: handleGridKeyDown,
+  } = useGridNavigation(boardSize);
 
   // aria-live announcements: key-remount drives re-announcement
 
@@ -112,7 +119,7 @@ export function PlacementScreen({
 
   // Render
 
-  const gridTemplateColumns = `repeat(${String(boardSize)}, 1fr)`;
+  const gridTemplateColumns = `repeat(${String(boardSize)}, minmax(1.5rem, 1fr))`;
   const orientationLabel = pendingShip
     ? `Rotate ship (currently ${pendingShip.orientation})`
     : "Rotate ship (no ship selected)";
@@ -139,13 +146,27 @@ export function PlacementScreen({
         >
           Place your fleet
         </Heading>
-        <div className="grid w-full" style={{ gridTemplateColumns }}>
+        <div
+          ref={gridRef}
+          role="grid"
+          aria-label="Place your fleet. Use arrow keys to navigate."
+          aria-rowcount={boardSize}
+          aria-colcount={boardSize}
+          onKeyDown={handleGridKeyDown}
+          className="grid w-full overflow-x-auto"
+          style={{ gridTemplateColumns }}
+          tabIndex={-1}
+        >
           {Array.from(cellStatusMap.entries()).map(([coord, status]) => (
             <PlacementCell
               key={coord}
               coord={coord}
               status={status}
               columnLabels={columnLabels}
+              tabIndex={focusedCoord === coord ? 0 : -1}
+              onFocus={() => {
+                setHover(coord);
+              }}
               onPointerEnter={() => {
                 setHover(coord);
               }}
@@ -170,18 +191,13 @@ export function PlacementScreen({
         >
           Your fleet
         </Heading>
-        <div
-          role="listbox"
+        <ul
           aria-label="Select a ship to place"
           className="divide-y divide-slate-700/50"
         >
           {/* Unplaced ships: selectable */}
           {remainingShipTypes.map((type) => (
-            <div
-              key={type}
-              role="option"
-              aria-selected={pendingShip?.type === type}
-            >
+            <li key={type}>
               <ShipStatusItem
                 id={type}
                 size={RAW_GAME_CONFIG.shipTypes[type].size}
@@ -193,11 +209,11 @@ export function PlacementScreen({
                   selectShip(type);
                 }}
               />
-            </div>
+            </li>
           ))}
           {/* Placed ships: re-placeable */}
           {placedShips.map((ship) => (
-            <div key={ship.id} role="option" aria-selected={false}>
+            <li key={ship.id}>
               <ShipStatusItem
                 id={ship.id}
                 size={ship.size}
@@ -208,9 +224,9 @@ export function PlacementScreen({
                   handleRemoveShip(ship.id);
                 }}
               />
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
 
         {/* Orientation toggle */}
         <div className="mt-4">
@@ -267,6 +283,8 @@ interface PlacementCellProps {
   coord: CoordinateKey;
   status: PlacementCellStatus;
   columnLabels: readonly string[];
+  tabIndex: number;
+  onFocus: () => void;
   onPointerEnter: () => void;
   onPointerLeave: () => void;
   onClick: () => void;
@@ -283,6 +301,8 @@ function PlacementCell({
   coord,
   status,
   columnLabels,
+  tabIndex,
+  onFocus,
   onPointerEnter,
   onPointerLeave,
   onClick,
@@ -296,12 +316,14 @@ function PlacementCell({
       type="button"
       data-coord={coord}
       aria-label={label}
+      tabIndex={tabIndex}
+      onFocus={onFocus}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
       onClick={onClick}
       className={cn(
         "w-full aspect-square border",
-        "focus-visible:outline-none focus-visible:ring-2",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:z-10",
         "focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
         status === "empty" &&
           "bg-slate-700 border-slate-600 hover:bg-slate-600",

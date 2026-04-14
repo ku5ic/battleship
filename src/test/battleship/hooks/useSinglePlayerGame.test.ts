@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useSinglePlayerGame } from "@/battleship/hooks/useSinglePlayerGame";
+import { generateRandomLayout } from "@/battleship/services/placement";
 import type { CoordinateKey } from "@/battleship/types";
 
 // Mock placement to return the same deterministic layout used by the
@@ -146,6 +147,24 @@ describe("useSinglePlayerGame", () => {
     expect(result.current.shots.size).toBe(0);
     expect(result.current.lastResult).toBeNull();
     expect(result.current.sunkShipIds.size).toBe(0);
+    expect(result.current.isGameOver).toBe(false);
+  });
+
+  it("generates a new ship layout on reset", () => {
+    const mockGen = vi.mocked(generateRandomLayout);
+    const { result } = renderHook(() => useSinglePlayerGame("easy"));
+
+    const callsAfterMount = mockGen.mock.calls.length;
+    const shipsBefore = result.current.ships;
+
+    act(() => {
+      result.current.reset();
+    });
+
+    expect(mockGen.mock.calls).toHaveLength(callsAfterMount + 1);
+    expect(result.current.ships).not.toBe(shipsBefore);
+    expect(result.current.ships).toHaveLength(5);
+    expect(result.current.shots.size).toBe(0);
     expect(result.current.isGameOver).toBe(false);
   });
 });

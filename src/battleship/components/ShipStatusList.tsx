@@ -1,6 +1,18 @@
 import { Heading } from "@nuka-ui/core";
+import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import type { Ship, ShipType } from "@/battleship/types";
 import { ShipStatusItem } from "@/battleship/components/ShipStatusItem";
+
+function buildGameModeLabel(
+  name: string,
+  size: number,
+  hitCount: number,
+  isSunk: boolean,
+): string {
+  return isSunk
+    ? `${name}: sunk`
+    : `${name}: ${String(hitCount)} of ${String(size)} hit`;
+}
 
 interface ShipStatusListProps {
   ships: readonly Ship[];
@@ -34,16 +46,28 @@ export function ShipStatusList({
         className="divide-y divide-slate-700/50"
         aria-label={`${String(sunkShipIds.size)} of ${String(ships.length)} ships sunk`}
       >
-        {ships.map((ship) => (
-          <li key={ship.id}>
-            <ShipStatusItem
-              id={ship.id}
-              size={ship.size}
-              hitCount={hitCounts.get(ship.id) ?? 0}
-              isSunk={sunkShipIds.has(ship.id)}
-            />
-          </li>
-        ))}
+        {ships.map((ship) => {
+          const hitCount = hitCounts.get(ship.id) ?? 0;
+          const isSunk = sunkShipIds.has(ship.id);
+          return (
+            <li
+              key={ship.id}
+              aria-label={buildGameModeLabel(
+                SHIP_DISPLAY_NAMES[ship.id],
+                ship.size,
+                hitCount,
+                isSunk,
+              )}
+            >
+              <ShipStatusItem
+                id={ship.id}
+                size={ship.size}
+                hitCount={hitCount}
+                isSunk={isSunk}
+              />
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

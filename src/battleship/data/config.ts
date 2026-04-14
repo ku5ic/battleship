@@ -1,9 +1,11 @@
 import type { RawGameConfig } from "@/battleship/types";
 
 /**
- * The canonical ship layout provided by the assignment.
- * This is imported once and parsed into typed Ship records via parseLayout().
- * Nothing else in the app should reference raw positions directly.
+ * Raw ship configuration: type sizes, counts, and a static layout.
+ *
+ * Production code reads only shipTypes (via generateRandomLayout and
+ * the placement hook). The layout entries are consumed by parseLayout
+ * in test files to build deterministic fleets.
  */
 export const RAW_GAME_CONFIG: RawGameConfig = {
   shipTypes: {
