@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
-import { Button, Heading, Text, VisuallyHidden } from "@nuka-ui/core";
+import { Button, Eyebrow, Section, Text, VisuallyHidden } from "@nuka-ui/core";
 import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import { ShipStatusItem } from "@/battleship/components/ShipStatusItem";
 import { useGridNavigation } from "@/components/board/useGridNavigation";
@@ -137,15 +137,15 @@ export function PlacementScreen({
       </VisuallyHidden>
 
       {/* Placement grid */}
-      <section aria-label="Place your fleet" className="w-full">
-        <Heading
-          as="h2"
+      <Section as="section" aria-label="Place your fleet" className="w-full">
+        <Eyebrow
+          as="p"
           weight="semibold"
           color="muted"
           className="mb-2 text-xs uppercase tracking-widest"
         >
           Place your fleet
-        </Heading>
+        </Eyebrow>
         <div
           ref={gridRef}
           role="grid"
@@ -179,18 +179,22 @@ export function PlacementScreen({
             />
           ))}
         </div>
-      </section>
+      </Section>
 
       {/* Ship palette + controls */}
-      <section aria-label="Your fleet" className="w-full md:w-auto">
-        <Heading
-          as="h2"
+      <Section
+        as="section"
+        aria-label="Your fleet"
+        className="w-full md:w-auto"
+      >
+        <Eyebrow
+          as="p"
           weight="semibold"
           color="muted"
           className="mb-2 text-xs uppercase tracking-widest"
         >
           Your fleet
-        </Heading>
+        </Eyebrow>
         <ul
           aria-label="Select a ship to place"
           className="divide-y divide-slate-700/50"
@@ -272,7 +276,7 @@ export function PlacementScreen({
             </Text>
           )}
         </div>
-      </section>
+      </Section>
     </div>
   );
 }

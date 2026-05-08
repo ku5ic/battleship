@@ -1,6 +1,6 @@
 import { useLayoutEffect } from "react";
 import { Board } from "@/components/board";
-import { Button } from "@nuka-ui/core";
+import { Button, Section } from "@nuka-ui/core";
 import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
 import { useSinglePlayerGame } from "@/battleship/hooks/useSinglePlayerGame";
 import { useShotToast } from "@/battleship/hooks/useShotToast";
@@ -54,7 +54,7 @@ export function SinglePlayerGame({
         fleet aligned to the top of the board. On smaller screens they stack
         vertically, with the fleet centered below the board.
       */}
-      <section className="w-full">
+      <Section as="section" className="w-full">
         <Board
           boardSize={boardSize}
           columnLabels={columnLabels}
@@ -62,15 +62,15 @@ export function SinglePlayerGame({
           onFire={fireShot}
           disabled={isGameOver}
         />
-      </section>
+      </Section>
 
-      <section className="w-full md:w-auto">
+      <Section as="section" className="w-full md:w-auto">
         <ShipStatusList
           ships={ships}
           sunkShipIds={sunkShipIds}
           hitCounts={shipHitCounts}
         />
-      </section>
+      </Section>
 
       {isGameOver && (
         <div className="w-full flex justify-center mt-6">

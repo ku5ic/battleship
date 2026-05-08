@@ -1,4 +1,4 @@
-import { Heading } from "@nuka-ui/core";
+import { Eyebrow, Section } from "@nuka-ui/core";
 import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import type { Ship, ShipType } from "@/battleship/types";
 import { ShipStatusItem } from "@/battleship/components/ShipStatusItem";
@@ -33,15 +33,15 @@ export function ShipStatusList({
   hitCounts,
 }: ShipStatusListProps) {
   return (
-    <section aria-label="Fleet status">
-      <Heading
-        as="h2"
+    <Section as="section" aria-label="Fleet status">
+      <Eyebrow
+        as="p"
         weight="semibold"
         color="muted"
         className="mb-2 text-xs uppercase tracking-widest"
       >
         Fleet
-      </Heading>
+      </Eyebrow>
       <ul
         className="divide-y divide-slate-700/50"
         aria-label={`${String(sunkShipIds.size)} of ${String(ships.length)} ships sunk`}
@@ -69,6 +69,6 @@ export function ShipStatusList({
           );
         })}
       </ul>
-    </section>
+    </Section>
   );
 }
