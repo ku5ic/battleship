@@ -1,6 +1,6 @@
 import { useLayoutEffect } from "react";
 import { Board } from "@/components/board";
-import { Button } from "@nuka-ui/core";
+import { Button, Container, Section, SplitLayout } from "@nuka-ui/core";
 import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
 import { useSinglePlayerGame } from "@/battleship/hooks/useSinglePlayerGame";
 import { useShotToast } from "@/battleship/hooks/useShotToast";
@@ -42,35 +42,28 @@ export function SinglePlayerGame({
   useShotToast(lastResult);
 
   return (
-    <div className="flex flex-col md:flex-row md:items-start gap-y-4 md:gap-x-6 w-full">
-      {/*
-        ShotResultAnnouncer is visually hidden and announces transient shot
-        events (hit, miss, sunk, already-fired) via aria-live="polite".
-      */}
+    <Container padded={false} className="max-w-[56rem]">
       <ShotResultAnnouncer result={lastResult} announceKey={shots.size} />
 
-      {/*
-        On large screens the board and fleet panel sit side-by-side, with the
-        fleet aligned to the top of the board. On smaller screens they stack
-        vertically, with the fleet centered below the board.
-      */}
-      <section className="w-full">
-        <Board
-          boardSize={boardSize}
-          columnLabels={columnLabels}
-          shots={shots}
-          onFire={fireShot}
-          disabled={isGameOver}
-        />
-      </section>
+      <SplitLayout sidebar="right" sideWidth="md" stackBelow="md" gap="md">
+        <Section as="section" className="w-full max-w-[32rem]">
+          <Board
+            boardSize={boardSize}
+            columnLabels={columnLabels}
+            shots={shots}
+            onFire={fireShot}
+            disabled={isGameOver}
+          />
+        </Section>
 
-      <section className="w-full md:w-auto">
-        <ShipStatusList
-          ships={ships}
-          sunkShipIds={sunkShipIds}
-          hitCounts={shipHitCounts}
-        />
-      </section>
+        <Section as="section" className="w-full">
+          <ShipStatusList
+            ships={ships}
+            sunkShipIds={sunkShipIds}
+            hitCounts={shipHitCounts}
+          />
+        </Section>
+      </SplitLayout>
 
       {isGameOver && (
         <div className="w-full flex justify-center mt-6">
@@ -79,6 +72,6 @@ export function SinglePlayerGame({
           </Button>
         </div>
       )}
-    </div>
+    </Container>
   );
 }

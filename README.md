@@ -89,9 +89,9 @@ Board size scales with difficulty. Fleet composition is fixed.
 
 | Difficulty | Board | Columns |
 | ---------- | ----- | ------- |
-| Easy       | 10×10 | A–J     |
-| Moderate   | 15×15 | A–O     |
-| Hard       | 20×20 | A–T     |
+| Easy       | 10×10 | A-J     |
+| Moderate   | 15×15 | A-O     |
+| Hard       | 20×20 | A-T     |
 
 ### CLI
 
@@ -167,6 +167,6 @@ The implementation targets WCAG 2.2 AA.
 
 This project was built using a structured approach to AI-assisted development. AI generated drafts (components, hooks, services, tests) against a detailed specification and a strict set of architectural rules. Every output was reviewed, questioned, and either accepted, corrected, or rejected before being committed.
 
-The workflow is encoded in `.claude/commands/` as a sequence of phases: preflight audit, implementation plan, code generation, verification, and review. No code was written before the plan was approved; no code was committed before the verify step passed. All architectural decisions (what to persist, where logic lives, how layers interact) were made and owned by me.
+The workflow uses [`/flow:*` skills](https://github.com/ku5ic/dotfiles/tree/main/claude) from a shared dotfiles library: preflight audit, plan, implement, test, and review. The skills encode a repeatable discipline - no code is written before the plan is approved, no code is committed before verification passes. All architectural decisions (what to persist, where logic lives, how layers interact) were made and owned by me.
 
 [`docs/AI_USAGE.md`](docs/AI_USAGE.md) documents the specific tools, workflow, and the reasoning behind treating AI as a capable but supervised collaborator.

@@ -1,3 +1,4 @@
+import { VisuallyHidden } from "@nuka-ui/core";
 import {
   SHIP_DISPLAY_NAMES,
   SHOT_OUTCOME_LABELS,
@@ -46,14 +47,14 @@ export function ShotResultAnnouncer({
   actor = "player",
 }: ShotResultAnnouncerProps) {
   return (
-    <div
+    <VisuallyHidden
+      as="div"
       key={announceKey}
       role="status"
       aria-live="polite"
       aria-atomic="true"
-      className="sr-only"
     >
       {buildAnnouncement(result, actor)}
-    </div>
+    </VisuallyHidden>
   );
 }

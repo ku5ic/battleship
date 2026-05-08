@@ -94,7 +94,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 ### `components/board/` and `components/game/`
 
 - `Board` and `Cell` render a grid. They have no knowledge of ships, fleets, or game rules.
-- `SinglePlayerGame` and `VsComputerGame` are wiring components. They are the only place hooks are called. They pass results down as props; they contain no logic of their own.
+- `SinglePlayerGame` and `VsComputerGame` are wiring components. They are the only place their respective game hooks are called. They pass results down as props; they contain no logic of their own.
 - Wiring components are the sole callers of their respective hooks.
 
 ### `battleship/components/`
@@ -102,6 +102,7 @@ Every new file must land in the correct layer. If the right layer is ambiguous, 
 - Presentational only: receive props, render UI, emit callbacks.
 - No game rules, no direct hook calls, no data parsing, no domain calculations.
 - Derive nothing from raw state. Receive only what the hook has already prepared.
+- **Exception: `PlacementScreen`** is the wiring component for the placement phase. It calls `usePlacementPhase` and `useGridNavigation` directly, the same pattern as SinglePlayerGame and VsComputerGame for their phases. All other components in this directory are strictly presentational.
 
 ### `app/`
 

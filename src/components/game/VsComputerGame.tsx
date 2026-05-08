@@ -2,6 +2,9 @@ import { useLayoutEffect, useState } from "react";
 import { Board } from "@/components/board";
 import {
   Button,
+  Container,
+  Eyebrow,
+  Section,
   Tabs,
   TabsContent,
   TabsList,
@@ -77,8 +80,8 @@ export function VsComputerGame({
   }
 
   return (
-    <div className="max-w-lg mx-auto">
-      {/* Announcers: outside tabs so live regions persist across tab switches */}
+    <>
+      {/* Announcers: outside both branches so live regions persist across layout changes */}
       <ShotResultAnnouncer
         result={computerLastResult}
         announceKey={board.player.shots.size}
@@ -89,49 +92,110 @@ export function VsComputerGame({
         announceKey={board.computer.shots.size}
       />
 
-      <Tabs value={activeBoard} onValueChange={handleValueChange}>
-        <TabsList variant="pill" className="mb-4">
-          <TabsTrigger value="player">Your fleet</TabsTrigger>
-          <TabsTrigger value="enemy">Enemy fleet</TabsTrigger>
-        </TabsList>
+      {/* Mobile: tabs (hidden at xl+) */}
+      <Container padded={false} className="block xl:hidden max-w-lg">
+        <Tabs value={activeBoard} onValueChange={handleValueChange}>
+          <TabsList variant="pill" className="mb-4">
+            <TabsTrigger value="player">Your fleet</TabsTrigger>
+            <TabsTrigger value="enemy">Enemy fleet</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="player">
-          <Board
-            boardSize={boardSize}
-            columnLabels={columnLabels}
-            shots={board.player.shots}
-            disabled
-          />
+          <TabsContent value="player">
+            <Board
+              boardSize={boardSize}
+              columnLabels={columnLabels}
+              shots={board.player.shots}
+              disabled
+            />
+            <ShipStatusList
+              ships={board.player.ships}
+              sunkShipIds={board.player.sunkShipIds}
+              hitCounts={playerShipHitCounts}
+            />
+          </TabsContent>
+
+          <TabsContent value="enemy">
+            <Board
+              boardSize={boardSize}
+              columnLabels={columnLabels}
+              shots={board.computer.shots}
+              onFire={(coord: CoordinateKey) => {
+                playerFireShot(coord);
+              }}
+              disabled={activeTurn !== "player" || gameOver}
+            />
+            <ShipStatusList
+              ships={board.computer.ships}
+              sunkShipIds={board.computer.sunkShipIds}
+              hitCounts={computerShipHitCounts}
+            />
+          </TabsContent>
+        </Tabs>
+      </Container>
+
+      {/* Desktop: side by side (visible at xl+) */}
+      {/* jsdom does not match min-width: 1280px so tests only see the mobile branch above */}
+      <Container
+        padded={false}
+        className="hidden xl:grid xl:grid-cols-2 xl:gap-6 max-w-[68rem]"
+      >
+        <Section as="section" spacing="none">
+          <Eyebrow
+            as="p"
+            weight="semibold"
+            color="muted"
+            className="mb-2 text-xs uppercase tracking-widest"
+          >
+            Your fleet
+          </Eyebrow>
+          <div className="max-w-[32rem]">
+            <Board
+              boardSize={boardSize}
+              columnLabels={columnLabels}
+              shots={board.player.shots}
+              disabled
+            />
+          </div>
           <ShipStatusList
             ships={board.player.ships}
             sunkShipIds={board.player.sunkShipIds}
             hitCounts={playerShipHitCounts}
           />
-        </TabsContent>
+        </Section>
 
-        <TabsContent value="enemy">
-          <Board
-            boardSize={boardSize}
-            columnLabels={columnLabels}
-            shots={board.computer.shots}
-            onFire={(coord: CoordinateKey) => {
-              playerFireShot(coord);
-            }}
-            disabled={activeTurn !== "player" || gameOver}
-          />
+        <Section as="section" spacing="none">
+          <Eyebrow
+            as="p"
+            weight="semibold"
+            color="muted"
+            className="mb-2 text-xs uppercase tracking-widest"
+          >
+            Enemy fleet
+          </Eyebrow>
+          <div className="max-w-[32rem]">
+            <Board
+              boardSize={boardSize}
+              columnLabels={columnLabels}
+              shots={board.computer.shots}
+              onFire={(coord: CoordinateKey) => {
+                playerFireShot(coord);
+              }}
+              disabled={activeTurn !== "player" || gameOver}
+            />
+          </div>
           <ShipStatusList
             ships={board.computer.ships}
             sunkShipIds={board.computer.sunkShipIds}
             hitCounts={computerShipHitCounts}
           />
-        </TabsContent>
-      </Tabs>
+        </Section>
+      </Container>
 
       <div className="w-full flex justify-center mt-6">
         <Button variant="outline" onClick={reset}>
           {gameOver ? "Play again" : "Restart"}
         </Button>
       </div>
-    </div>
+    </>
   );
 }
