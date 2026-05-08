@@ -1,5 +1,6 @@
-@import "tailwindcss";
 @import "@nuka-ui/core/styles";
+@import "@nuka-ui/core/styles/tailwind";
+@import "tailwindcss";
 
 [data-theme="dark"] {
   --nuka-bg-base: #0f172a;
