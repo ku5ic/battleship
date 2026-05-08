@@ -1,4 +1,4 @@
-import { Badge } from "@nuka-ui/core";
+import { Badge, Chip } from "@nuka-ui/core";
 import { cn } from "@/lib/cn";
 import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import type { ShipType } from "@/battleship/types";
@@ -113,26 +113,25 @@ export function ShipStatusItem({
     </>
   );
 
-  const className = cn(
+  const baseClassName = cn(
     "flex items-center gap-3 py-2",
     isMuted && "opacity-50",
-    isSelected && "ring-2 ring-yellow-400 ring-offset-2 ring-offset-slate-900",
-    onClick !== undefined && "w-full rounded px-2 text-left",
   );
 
   if (onClick !== undefined) {
     return (
-      <button
-        type="button"
-        className={className}
+      <Chip
+        variant="subtle"
+        intent="default"
+        selected={isSelected ?? false}
+        className={cn(baseClassName, "w-full px-2 text-left")}
         aria-label={label}
-        aria-pressed={isSelected ?? false}
         onClick={onClick}
       >
         {content}
-      </button>
+      </Chip>
     );
   }
 
-  return <div className={className}>{content}</div>;
+  return <div className={baseClassName}>{content}</div>;
 }

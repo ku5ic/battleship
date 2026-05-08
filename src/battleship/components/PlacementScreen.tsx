@@ -244,6 +244,7 @@ export function PlacementScreen({
           <div className="mt-4">
             <Button
               variant="outline"
+              fullWidth
               disabled={pendingShip === null}
               onClick={handleOrientationToggle}
             >
@@ -262,11 +263,12 @@ export function PlacementScreen({
 
           {/* Action buttons */}
           <div className="mt-4 flex flex-col gap-2">
-            <Button variant="outline" onClick={onRandomise}>
+            <Button variant="outline" fullWidth onClick={onRandomise}>
               Randomise for me
             </Button>
             <Button
               variant="outline"
+              fullWidth
               disabled={!isComplete}
               onClick={handleConfirm}
             >
