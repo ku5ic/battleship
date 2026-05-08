@@ -14,10 +14,10 @@ Every architectural choice (what to persist vs derive, where logic lives, how la
 
 ## The workflow
 
-Development followed a strict phase sequence encoded in `.claude/commands/`:
+Development followed a strict phase sequence using [`/flow:*` skills](https://github.com/ku5ic/dotfiles/tree/main/claude) - a shared Claude Code skill library maintained in dotfiles and applied across projects. The skills are invoked as slash commands inside Claude Code and encode a repeatable workflow: each phase has defined inputs, outputs, and stop conditions. The AI cannot skip a phase or proceed past an approval gate unilaterally.
 
 ```
-/cmd-preflight -> /cmd-plan → [approval] -> /cmd-implement → /cmd-verify -> /cmd-review -> [approval]
+/flow:preflight -> /flow:plan -> [approval] -> /flow:implement -> /flow:test -> /flow:review -> [approval]
 ```
 
 **Preflight:** before any task, audit the existing codebase. Identify relevant types, utilities, and logic. State the delta: what needs to change and why. No code is generated in this phase.
@@ -26,7 +26,7 @@ Development followed a strict phase sequence encoded in `.claude/commands/`:
 
 **Implement:** write the approved code, one complete file at a time. No scope expansion. No reinventing what already exists.
 
-**Verify:** check every constraint before human review: architecture boundaries, TypeScript correctness, accessibility compliance, test coverage, CI simulation. If anything fails, fix it before proceeding.
+**Test:** check every constraint before human review: architecture boundaries, TypeScript correctness, accessibility compliance, test coverage, CI simulation. If anything fails, fix it before proceeding.
 
 **Review:** surface the implementation with decisions, tradeoffs, and deferred observations. Explicit review prompts for anything requiring human judgment.
 
