@@ -10,6 +10,7 @@ import {
   Heading,
   Radio,
   RadioGroup,
+  SkipLink,
   Tabs,
   TabsContent,
   TabsList,
@@ -67,6 +68,7 @@ export function App() {
 
   return (
     <AppShell className="bg-slate-900 text-white">
+      <SkipLink targetId="game-content">Skip to game</SkipLink>
       <Tabs
         value={mode}
         onValueChange={(v) => {
@@ -126,6 +128,7 @@ export function App() {
 
         <AppShellBody>
           <AppShellMain
+            id="game-content"
             padded={false}
             className="flex flex-col items-center justify-start pt-6 pb-8 px-2 sm:px-4"
           >

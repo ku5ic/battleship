@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
-import { Button, Heading, Text } from "@nuka-ui/core";
+import { Button, Heading, Text, VisuallyHidden } from "@nuka-ui/core";
 import { SHIP_DISPLAY_NAMES } from "@/battleship/constants";
 import { ShipStatusItem } from "@/battleship/components/ShipStatusItem";
 import { useGridNavigation } from "@/components/board/useGridNavigation";
@@ -127,14 +127,14 @@ export function PlacementScreen({
   return (
     <div className="flex flex-col md:flex-row md:items-start gap-y-4 md:gap-x-6 w-full">
       {/* aria-live region for placement announcements */}
-      <div
+      <VisuallyHidden
+        as="div"
         key={`${announcement}-${String(announcementKey)}`}
         aria-live="polite"
         aria-atomic="true"
-        className="sr-only"
       >
         {announcement}
-      </div>
+      </VisuallyHidden>
 
       {/* Placement grid */}
       <section aria-label="Place your fleet" className="w-full">
