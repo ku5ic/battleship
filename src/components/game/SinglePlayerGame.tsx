@@ -1,6 +1,6 @@
 import { useLayoutEffect } from "react";
 import { Board } from "@/components/board";
-import { Button, Section, SplitLayout } from "@nuka-ui/core";
+import { Button, Container, Section, SplitLayout } from "@nuka-ui/core";
 import { ShipStatusList, ShotResultAnnouncer } from "@/battleship/components";
 import { useSinglePlayerGame } from "@/battleship/hooks/useSinglePlayerGame";
 import { useShotToast } from "@/battleship/hooks/useShotToast";
@@ -42,11 +42,11 @@ export function SinglePlayerGame({
   useShotToast(lastResult);
 
   return (
-    <div className="w-full">
+    <Container padded={false} className="max-w-[56rem]">
       <ShotResultAnnouncer result={lastResult} announceKey={shots.size} />
 
       <SplitLayout sidebar="right" sideWidth="md" stackBelow="md" gap="md">
-        <Section as="section" className="w-full">
+        <Section as="section" className="w-full max-w-[32rem]">
           <Board
             boardSize={boardSize}
             columnLabels={columnLabels}
@@ -72,6 +72,6 @@ export function SinglePlayerGame({
           </Button>
         </div>
       )}
-    </div>
+    </Container>
   );
 }

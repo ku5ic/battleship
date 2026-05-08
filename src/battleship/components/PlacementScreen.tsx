@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import {
   Button,
+  Container,
   Eyebrow,
   Section,
   SplitLayout,
@@ -143,151 +144,157 @@ export function PlacementScreen({
         {announcement}
       </VisuallyHidden>
 
-      <SplitLayout sidebar="right" sideWidth="md" stackBelow="md" gap="md">
-        {/* Placement grid */}
-        <Section as="section" aria-label="Place your fleet" className="w-full">
-          <Eyebrow
-            as="p"
-            weight="semibold"
-            color="muted"
-            className="mb-2 text-xs uppercase tracking-widest"
+      <Container padded={false} className="max-w-[56rem]">
+        <SplitLayout sidebar="right" sideWidth="md" stackBelow="md" gap="md">
+          {/* Placement grid */}
+          <Section
+            as="section"
+            aria-label="Place your fleet"
+            className="w-full max-w-[32rem]"
           >
-            Place your fleet
-          </Eyebrow>
-          <div
-            ref={gridRef}
-            role="grid"
-            aria-label="Place your fleet. Use arrow keys to navigate."
-            aria-rowcount={boardSize}
-            aria-colcount={boardSize}
-            onKeyDown={handleGridKeyDown}
-            className="grid w-full overflow-x-auto"
-            style={{ gridTemplateColumns }}
-            tabIndex={-1}
-          >
-            {Array.from(cellStatusMap.entries()).map(([coord, status]) => (
-              <PlacementCell
-                key={coord}
-                coord={coord}
-                status={status}
-                columnLabels={columnLabels}
-                tabIndex={focusedCoord === coord ? 0 : -1}
-                onFocus={() => {
-                  setHover(coord);
-                }}
-                onPointerEnter={() => {
-                  setHover(coord);
-                }}
-                onPointerLeave={() => {
-                  setHover(null);
-                }}
-                onClick={() => {
-                  handlePlaceShip(coord);
-                }}
-              />
-            ))}
-          </div>
-        </Section>
-
-        {/* Ship palette + controls */}
-        <Section
-          as="section"
-          aria-label="Your fleet"
-          className="w-full md:w-auto"
-        >
-          <Eyebrow
-            as="p"
-            weight="semibold"
-            color="muted"
-            className="mb-2 text-xs uppercase tracking-widest"
-          >
-            Your fleet
-          </Eyebrow>
-          <ul
-            aria-label="Select a ship to place"
-            className="divide-y divide-slate-700/50"
-          >
-            {/* Unplaced ships: selectable */}
-            {remainingShipTypes.map((type) => (
-              <li key={type}>
-                <ShipStatusItem
-                  id={type}
-                  size={RAW_GAME_CONFIG.shipTypes[type].size}
-                  hitCount={0}
-                  isSunk={false}
-                  isPlaced={false}
-                  isSelected={pendingShip?.type === type}
-                  onClick={() => {
-                    selectShip(type);
-                  }}
-                />
-              </li>
-            ))}
-            {/* Placed ships: re-placeable */}
-            {placedShips.map((ship) => (
-              <li key={ship.id}>
-                <ShipStatusItem
-                  id={ship.id}
-                  size={ship.size}
-                  hitCount={0}
-                  isSunk={false}
-                  isPlaced={true}
-                  onClick={() => {
-                    handleRemoveShip(ship.id);
-                  }}
-                />
-              </li>
-            ))}
-          </ul>
-
-          {/* Orientation toggle */}
-          <div className="mt-4">
-            <Button
-              variant="outline"
-              fullWidth
-              disabled={pendingShip === null}
-              onClick={handleOrientationToggle}
-            >
-              {orientationLabel}
-            </Button>
-            <Text
+            <Eyebrow
               as="p"
-              size="xs"
               weight="semibold"
               color="muted"
-              className="mt-1 uppercase tracking-widest"
+              className="mb-2 text-xs uppercase tracking-widest"
             >
-              Press R to rotate
-            </Text>
-          </div>
+              Place your fleet
+            </Eyebrow>
+            <div
+              ref={gridRef}
+              role="grid"
+              aria-label="Place your fleet. Use arrow keys to navigate."
+              aria-rowcount={boardSize}
+              aria-colcount={boardSize}
+              onKeyDown={handleGridKeyDown}
+              className="grid w-full overflow-x-auto"
+              style={{ gridTemplateColumns }}
+              tabIndex={-1}
+            >
+              {Array.from(cellStatusMap.entries()).map(([coord, status]) => (
+                <PlacementCell
+                  key={coord}
+                  coord={coord}
+                  status={status}
+                  columnLabels={columnLabels}
+                  tabIndex={focusedCoord === coord ? 0 : -1}
+                  onFocus={() => {
+                    setHover(coord);
+                  }}
+                  onPointerEnter={() => {
+                    setHover(coord);
+                  }}
+                  onPointerLeave={() => {
+                    setHover(null);
+                  }}
+                  onClick={() => {
+                    handlePlaceShip(coord);
+                  }}
+                />
+              ))}
+            </div>
+          </Section>
 
-          {/* Action buttons */}
-          <div className="mt-4 flex flex-col gap-2">
-            <Button variant="outline" fullWidth onClick={onRandomise}>
-              Randomise for me
-            </Button>
-            <Button
-              variant="outline"
-              fullWidth
-              disabled={!isComplete}
-              onClick={handleConfirm}
+          {/* Ship palette + controls */}
+          <Section
+            as="section"
+            aria-label="Your fleet"
+            className="w-full md:w-auto"
+          >
+            <Eyebrow
+              as="p"
+              weight="semibold"
+              color="muted"
+              className="mb-2 text-xs uppercase tracking-widest"
             >
-              Start game
-            </Button>
-            {!isComplete && (
+              Your fleet
+            </Eyebrow>
+            <ul
+              aria-label="Select a ship to place"
+              className="divide-y divide-slate-700/50"
+            >
+              {/* Unplaced ships: selectable */}
+              {remainingShipTypes.map((type) => (
+                <li key={type}>
+                  <ShipStatusItem
+                    id={type}
+                    size={RAW_GAME_CONFIG.shipTypes[type].size}
+                    hitCount={0}
+                    isSunk={false}
+                    isPlaced={false}
+                    isSelected={pendingShip?.type === type}
+                    onClick={() => {
+                      selectShip(type);
+                    }}
+                  />
+                </li>
+              ))}
+              {/* Placed ships: re-placeable */}
+              {placedShips.map((ship) => (
+                <li key={ship.id}>
+                  <ShipStatusItem
+                    id={ship.id}
+                    size={ship.size}
+                    hitCount={0}
+                    isSunk={false}
+                    isPlaced={true}
+                    onClick={() => {
+                      handleRemoveShip(ship.id);
+                    }}
+                  />
+                </li>
+              ))}
+            </ul>
+
+            {/* Orientation toggle */}
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                fullWidth
+                disabled={pendingShip === null}
+                onClick={handleOrientationToggle}
+              >
+                {orientationLabel}
+              </Button>
               <Text
                 as="p"
                 size="xs"
                 weight="semibold"
                 color="muted"
-                className="uppercase tracking-widest"
+                className="mt-1 uppercase tracking-widest"
               >
-                Place all ships to continue
+                Press R to rotate
               </Text>
-            )}
-          </div>
-        </Section>
-      </SplitLayout>
+            </div>
+
+            {/* Action buttons */}
+            <div className="mt-4 flex flex-col gap-2">
+              <Button variant="outline" fullWidth onClick={onRandomise}>
+                Randomise for me
+              </Button>
+              <Button
+                variant="outline"
+                fullWidth
+                disabled={!isComplete}
+                onClick={handleConfirm}
+              >
+                Start game
+              </Button>
+              {!isComplete && (
+                <Text
+                  as="p"
+                  size="xs"
+                  weight="semibold"
+                  color="muted"
+                  className="uppercase tracking-widest"
+                >
+                  Place all ships to continue
+                </Text>
+              )}
+            </div>
+          </Section>
+        </SplitLayout>
+      </Container>
     </>
   );
 }
