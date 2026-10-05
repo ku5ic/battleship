@@ -1,6 +1,6 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { VsComputerGame } from "@/components/game/VsComputerGame";
 
 vi.mock("@nuka-ui/core", async (importOriginal) => {
@@ -88,22 +88,26 @@ async function switchToPlayerTab(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("tab", { name: "Your fleet" }));
 }
 
-// Timer strategy
-//
-// The vs-computer hook's AI turn fires after a real setTimeout(AI_SHOT_DELAY_MS).
-// Using vi.useFakeTimers() with shouldAdvanceTime: true lets the fake clock
-// track wall-clock time so userEvent's internal delays resolve naturally,
-// while still allowing manual advancement via vi.advanceTimersByTime() to
-// flush the AI timer deterministically without waiting the full 1000ms.
+// The component switches back to the enemy tab when the AI turn ends, so
+// tests must wait for that before opening the player tab.
+async function waitForPlayerTurn() {
+  await waitFor(
+    () => {
+      expect(cellIn(enemyPanel(), "0,0")).toBeEnabled();
+    },
+    { timeout: AI_TURN_TIMEOUT_MS },
+  );
+}
+
+// Real timers throughout: fake timers race userEvent's internal delays and
+// made these tests flaky on slow CI runners. The hook reads AI_SHOT_DELAY_MS
+// from its own module scope, so it cannot be overridden here; tests that need
+// the AI turn wait out the real delay instead.
+const AI_TURN_TIMEOUT_MS = AI_SHOT_DELAY_MS * 2;
 
 describe("VsComputerGame", () => {
   beforeEach(() => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it("renders both board tabs", () => {
@@ -175,11 +179,7 @@ describe("VsComputerGame", () => {
 
     await switchToEnemyTab(user);
     await user.click(cellIn(enemyPanel(), "9,9")); // miss
-
-    act(() => {
-      vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
-    });
-
+    await waitForPlayerTurn();
     await switchToPlayerTab(user);
 
     expect(cellIn(playerPanel(), "9,8")).toHaveAccessibleName(/miss/i);
@@ -246,11 +246,11 @@ describe("VsComputerGame", () => {
     await user.click(cellIn(enemyPanel(), "9,9")); // miss, AI timer starts
     await user.click(screen.getByRole("button", { name: "Restart" }));
 
-    // Flush the cancelled timer: if the timeout weren't cleared by reset,
-    // the AI shot would land and mark a cell on the player board.
-    act(() => {
-      vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
-    });
+    // Wait out the AI delay: if reset didn't clear the timeout, the AI shot
+    // would land and mark a cell on the player board.
+    await act(
+      () => new Promise((resolve) => setTimeout(resolve, AI_SHOT_DELAY_MS)),
+    );
 
     await switchToPlayerTab(user);
 
@@ -259,7 +259,7 @@ describe("VsComputerGame", () => {
       .filter((b) => /hit|miss/i.test(b.getAttribute("aria-label") ?? ""));
 
     expect(firedOnPlayerBoard).toHaveLength(0);
-  });
+  }, 10000);
 
   it("calls onStatusChange with initial vs-computer status on mount", () => {
     const onStatusChange = vi.fn();
@@ -297,7 +297,7 @@ describe("VsComputerGame", () => {
   });
 
   it("uses provided playerShips on the player board", async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const user = userEvent.setup();
 
     // Custom layout: single destroyer at 9,8, exactly where the AI fires
     const customPlayerShips = [
@@ -344,17 +344,17 @@ describe("VsComputerGame", () => {
     // Fire a miss to trigger the AI turn
     await switchToEnemyTab(user);
     await user.click(cellIn(enemyPanel(), "9,9"));
-
-    // Advance past AI delay
-    act(() => {
-      vi.advanceTimersByTime(AI_SHOT_DELAY_MS);
-    });
-
+    // A computer hit keeps the turn, so the tab never switches back; open
+    // the player tab now and wait for the shot.
     await switchToPlayerTab(user);
 
     // The AI fires at "9,8" (our mocked AI target), which is a destroyer
     // coordinate in our custom layout, so it should register as a hit
-    const cell = cellIn(playerPanel(), "9,8");
-    expect(cell).toBeDisabled();
+    await waitFor(
+      () => {
+        expect(cellIn(playerPanel(), "9,8")).toHaveAccessibleName(/hit/i);
+      },
+      { timeout: AI_TURN_TIMEOUT_MS },
+    );
   });
 });
